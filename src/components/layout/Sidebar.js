@@ -1,15 +1,16 @@
+// Sidebar v2.0 - 包含文书生成功能
 import { router } from '../../router.js';
 
 export default {
     name: 'Sidebar',
     data() {
         return {
-            currentPath: router.currentRoute
+            currentPath: window.location.hash.slice(1) || '/'
         };
     },
     mounted() {
         window.addEventListener('hashchange', () => {
-            this.currentPath = router.currentRoute;
+            this.currentPath = window.location.hash.slice(1) || '/';
         });
     },
     methods: {
@@ -38,14 +39,6 @@ export default {
                 <i class="fas fa-folder-open"></i>
                 <span>案件管理</span>
             </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-file-alt"></i>
-                <span>文档库</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-check-square"></i>
-                <span>待办事项</span>
-            </a>
 
             <div class="nav-group-title" style="margin-top: 24px;">智能分析</div>
             <a @click.prevent="navigate('/legal-research')" 
@@ -57,6 +50,11 @@ export default {
                :class="['nav-item', { active: isActive('/contract-review') }]">
                 <i class="fas fa-file-contract"></i>
                 <span>合同审查</span>
+            </a>
+            <a @click.prevent="navigate('/doc-generate')" 
+               :class="['nav-item', { active: isActive('/doc-generate') }]">
+                <i class="fas fa-pen-fancy"></i>
+                <span>文书生成</span>
             </a>
 
             <div class="sidebar-footer">

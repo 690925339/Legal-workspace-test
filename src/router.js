@@ -2,6 +2,8 @@
 const routes = {
     '/': 'CaseList',
     '/detail': 'CaseDetail',
+    '/evidence-upload': 'EvidenceUpload',
+    '/doc-generate': 'DocGenerate',
     '/login': 'Login',
     '/register': 'Register'
 };
@@ -10,7 +12,12 @@ const router = {
     currentRoute: window.location.hash.slice(1) || '/',
 
     push(path) {
-        window.location.hash = path;
+        if (window.location.hash === '#' + path) {
+            // 如果 hash 已经是目标路径，手动触发 hashchange 事件
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } else {
+            window.location.hash = path;
+        }
         this.currentRoute = path;
     },
 

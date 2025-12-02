@@ -3,6 +3,8 @@ import AppLayout from './components/layout/AppLayout.js';
 import Sidebar from './components/layout/Sidebar.js';
 import CaseList from './views/CaseList.js';
 import CaseDetail from './views/CaseDetail.js';
+import EvidenceUpload from './views/EvidenceUpload.js';
+import DocGenerate from './views/DocGenerate.js';
 import Login from './views/Login.js';
 import Register from './views/Register.js';
 import CaseForm from './views/CaseForm.js';
@@ -14,23 +16,24 @@ const { createApp } = Vue;
 const App = {
     data() {
         return {
-            currentRoute: router.currentRoute
+            currentRoute: window.location.hash.slice(1) || '/'
         };
     },
     computed: {
         currentView() {
             const path = this.currentRoute;
+            console.log('Current route:', path); // 调试用
             if (path === '/login') {
                 return 'Login';
             }
             if (path === '/register') {
                 return 'Register';
             }
-            if (path.startsWith('/detail')) {
-                return 'CaseDetail';
+            if (path === '/evidence-upload') {
+                return 'EvidenceUpload';
             }
-            if (path === '/create' || path.startsWith('/edit')) {
-                return 'CaseForm';
+            if (path === '/doc-generate') {
+                return 'DocGenerate';
             }
             if (path === '/contract-review') {
                 return 'ContractReview';
@@ -38,22 +41,39 @@ const App = {
             if (path === '/legal-research') {
                 return 'LegalResearch';
             }
+            if (path.startsWith('/detail')) {
+                return 'CaseDetail';
+            }
+            if (path === '/create' || path.startsWith('/edit')) {
+                return 'CaseForm';
+            }
             return 'CaseList';
         },
         showLayout() {
             return this.currentRoute !== '/login' && this.currentRoute !== '/register';
         }
     },
-    mounted() {
-        window.addEventListener('hashchange', () => {
-            this.currentRoute = router.currentRoute;
-        });
+    created() {
+        // 监听 hash 变化
+        window.addEventListener('hashchange', this.onRouteChange);
+    },
+    beforeUnmount() {
+        window.removeEventListener('hashchange', this.onRouteChange);
+    },
+    methods: {
+        onRouteChange() {
+            const newRoute = window.location.hash.slice(1) || '/';
+            console.log('Route changed to:', newRoute); // 调试用
+            this.currentRoute = newRoute;
+        }
     },
     components: {
         AppLayout,
         Sidebar,
         CaseList,
         CaseDetail,
+        EvidenceUpload,
+        DocGenerate,
         Login,
         Register,
         CaseForm,
@@ -89,6 +109,8 @@ app.component('Register', Register);
 app.component('CaseForm', CaseForm);
 app.component('ContractReview', ContractReview);
 app.component('LegalResearch', LegalResearch);
+app.component('EvidenceUpload', EvidenceUpload);
+app.component('DocGenerate', DocGenerate);
 
 // 挂载应用
 app.mount('#app');

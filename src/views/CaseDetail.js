@@ -4,9 +4,8 @@ export default {
     name: 'CaseDetail',
     data() {
         return {
-            activeTab: 'general',
+            activeTab: 'basic',
             activeCategory: 'basic',
-            isProcessRunning: false,
             caseData: {
                 id: 'CASE-2023-001',
                 name: 'ABC 公司诉 XYZ 有限公司合同纠纷案',
@@ -27,14 +26,7 @@ export default {
                     id: 'basic',
                     name: '基本资料',
                     icon: 'fas fa-file-alt',
-                    items: [
-                        { id: 'general', name: '一般资料' },
-                        { id: 'analysis', name: '资料分析' },
-                        { id: 'litigation', name: '诉讼分析' },
-                        { id: 'complaint', name: '起诉状' },
-                        { id: 'arbitration', name: '仲裁申请' },
-                        { id: 'enforcement', name: '强制执行文书' }
-                    ]
+                    items: []
                 },
                 {
                     id: 'evidence',
@@ -136,7 +128,37 @@ export default {
                     }
                 ]
             },
-            // AI 助手数据
+            evidenceFiles: [
+                {
+                    id: 'ev001',
+                    name: '购销合同.pdf',
+                    type: 'pdf',
+                    size: 2048576,
+                    uploadTime: '2023-10-02 10:20',
+                    category: 'contract',
+                    status: 'success',
+                    progress: 100,
+                    confidence: 0.95
+                },
+                {
+                    id: 'ev002',
+                    name: '银行转账记录.png',
+                    type: 'image',
+                    size: 512000,
+                    uploadTime: '2023-10-03 14:15',
+                    category: 'payment',
+                    status: 'success',
+                    progress: 100,
+                    confidence: 0.98
+                }
+            ],
+            uploadingFiles: [],
+            evidenceCategories: [
+                { id: 'contract', name: '合同协议', color: '#e0f2fe', textColor: '#0369a1' },
+                { id: 'payment', name: '支付凭证', color: '#dcfce7', textColor: '#15803d' },
+                { id: 'correspondence', name: '往来函件', color: '#f3e8ff', textColor: '#7e22ce' },
+                { id: 'other', name: '其他证据', color: '#f3f4f6', textColor: '#4b5563' }
+            ],
             aiAssistant: {
                 input: '',
                 messages: [
@@ -177,9 +199,13 @@ export default {
             const category = this.tabStructure.find(c => c.id === categoryId);
             console.log('Found category:', category);
             if (category && category.items.length > 0) {
+                // 有子标签时，切换到第一个子标签
                 this.activeTab = category.items[0].id;
-                console.log('Set activeTab to:', this.activeTab);
+            } else {
+                // 没有子标签时，直接使用分类ID作为activeTab
+                this.activeTab = categoryId;
             }
+            console.log('Set activeTab to:', this.activeTab);
         },
         switchTab(tabId) {
             this.activeTab = tabId;
@@ -230,29 +256,6 @@ export default {
         useSuggestion(text) {
             this.aiAssistant.input = text;
             this.sendMessage();
-        },
-        triggerUpload() {
-            this.$refs.evidenceInput.click();
-        },
-        handleEvidenceUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                alert(`已上传证据文件: ${file.name}`);
-                // Add a new item to the list
-                this.evidenceAnalysis.items.push({
-                    id: Date.now(),
-                    name: file.name,
-                    priority: 3,
-                    priorityLabel: '中',
-                    priorityColor: '#2196f3',
-                    status: 'collected',
-                    statusText: '✓ 已收集',
-                    desc: '用户上传的证据文件',
-                    checked: true,
-                    bgClass: 'bg-red-light'
-                });
-                this.updateEvidenceStats();
-            }
         },
         toggleStatus(item) {
             if (item.status === 'collected') {
@@ -313,6 +316,126 @@ export default {
             link.click();
             document.body.removeChild(link);
         },
+        // 证据管理方法
+        triggerFileUpload() {
+            this.$refs.fileInput.click();
+        },
+        handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            files.forEach(file => {
+                this.uploadEvidence(file);
+            });
+
+            // 重置 input 以允许重复选择同一文件
+            event.target.value = '';
+        },
+        uploadEvidence(file) {
+            const fileId = Date.now() + Math.random().toString(36).substr(2, 9);
+            const uploadItem = {
+                id: fileId,
+                file: file,
+                name: file.name,
+                type: this.getFileType(file.name),
+                size: file.size,
+                progress: 0,
+                status: 'uploading', // uploading, analyzing, success, error
+                error: null
+            };
+
+            this.uploadingFiles.push(uploadItem);
+            this.simulateUpload(uploadItem);
+        },
+        getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image';
+            if (['pdf'].includes(ext)) return 'pdf';
+            if (['doc', 'docx'].includes(ext)) return 'word';
+            return 'other';
+        },
+        simulateUpload(item) {
+            // 模拟上传进度
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) {
+                    clearInterval(interval);
+                    item.progress = 90;
+                    item.status = 'analyzing';
+                    this.simulateAnalysis(item);
+                } else {
+                    item.progress = Math.floor(progress);
+                }
+            }, 200);
+        },
+        simulateAnalysis(item) {
+            // 模拟 AI 分析和分类
+            setTimeout(() => {
+                // 模拟 10% 的失败率
+                if (Math.random() < 0.1) {
+                    item.status = 'error';
+                    item.error = '文件解析失败，请重试';
+                    return;
+                }
+
+                item.progress = 100;
+                item.status = 'success';
+
+                // 模拟自动分类
+                const categories = ['contract', 'payment', 'correspondence', 'other'];
+                const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+
+                // 添加到已完成列表
+                this.evidenceFiles.unshift({
+                    id: item.id,
+                    name: item.name,
+                    type: item.type,
+                    size: item.size,
+                    uploadTime: new Date().toLocaleString(),
+                    category: randomCategory,
+                    status: 'success',
+                    progress: 100,
+                    confidence: (0.8 + Math.random() * 0.2).toFixed(2)
+                });
+
+                // 从上传列表中移除
+                const index = this.uploadingFiles.findIndex(f => f.id === item.id);
+                if (index !== -1) {
+                    this.uploadingFiles.splice(index, 1);
+                }
+            }, 1500);
+        },
+        retryUpload(item) {
+            item.status = 'uploading';
+            item.progress = 0;
+            item.error = null;
+            this.simulateUpload(item);
+        },
+        removeUploadingFile(item) {
+            const index = this.uploadingFiles.findIndex(f => f.id === item.id);
+            if (index !== -1) {
+                this.uploadingFiles.splice(index, 1);
+            }
+        },
+        formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+        getCategoryName(categoryId) {
+            const category = this.evidenceCategories.find(c => c.id === categoryId);
+            return category ? category.name : '未知';
+        },
+        getCategoryStyle(categoryId) {
+            const category = this.evidenceCategories.find(c => c.id === categoryId);
+            return category ? { backgroundColor: category.color, color: category.textColor } : {};
+        },
+        reclassifyEvidence(file, newCategoryId) {
+            file.category = newCategoryId;
+        },
         toggleProcess() {
             this.isProcessRunning = !this.isProcessRunning;
             if (this.isProcessRunning) {
@@ -320,6 +443,9 @@ export default {
             } else {
                 this.caseData.status = '已暂停';
             }
+        },
+        navigateToEvidenceUpload() {
+            router.push('/evidence-upload');
         }
     },
     template: `
@@ -360,13 +486,6 @@ export default {
                         <button class="icon-btn" style="border: 1px solid var(--border-medium); border-radius: 12px;">
                             <i class="fas fa-share-alt"></i>
                         </button>
-                        <button 
-                            :class="['primary-btn', { 'warning-btn': isProcessRunning }]" 
-                            @click="toggleProcess"
-                        >
-                            <i :class="isProcessRunning ? 'fas fa-pause' : 'fas fa-play'" style="font-size: 12px;"></i> 
-                            {{ isProcessRunning ? '暂停流程' : '启动流程' }}
-                        </button>
                     </div>
                 </div>
             </div>
@@ -398,8 +517,8 @@ export default {
 
             <!-- Content Canvas -->
             <div class="content-canvas">
-                <!-- Tab: General Info -->
-                <div v-if="activeTab === 'general'" class="tab-pane">
+                <!-- Tab: Basic Info -->
+                <div v-if="activeTab === 'basic'" class="tab-pane">
                     <div class="dashboard-grid">
                         <!-- 基本信息卡片 -->
                         <div class="modern-card">
@@ -510,86 +629,23 @@ export default {
                     </div>
                 </div>
 
-                <!-- Tab: Data Analysis -->
-                <div v-if="activeTab === 'analysis'" class="tab-pane">
-                    <div class="reader-layout">
-                        <div class="reader-sidebar">
-                            <div class="section-title">DOCUMENTS</div>
-                            <div class="doc-list-modern">
-                                <div class="doc-item-modern active">
-                                    <div class="doc-icon pdf-icon">
-                                        <i class="fas fa-file-pdf"></i>
-                                    </div>
-                                    <div class="doc-info">
-                                        <div class="doc-name">广告发布合同.pdf</div>
-                                        <div class="doc-size">1.2MB</div>
-                                    </div>
-                                </div>
-                                <div class="doc-item-modern">
-                                    <div class="doc-icon word-icon">
-                                        <i class="fas fa-file-word"></i>
-                                    </div>
-                                    <div class="doc-info">
-                                        <div class="doc-name">补充协议.docx</div>
-                                        <div class="doc-size">800KB</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="section-title">SECTIONS</div>
-                            <div class="reader-nav">
-                                <div class="nav-pill active">
-                                    <span>合同主体</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                                <div class="nav-pill">
-                                    <span>合同内容</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                                <div class="nav-pill">
-                                    <span>金额明细</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="reader-content">
-                            <div class="content-typography">
-                                <h3>合同主体分析</h3>
-                                <p>甲方：ABC 公司（委托方）</p>
-                                <p>乙方：XYZ 有限公司（服务方）</p>
-                                <p>本合同为广告发布服务合同，甲方委托乙方在其平台上发布广告内容...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Tab: AI Evidence Analysis -->
                 <div v-if="activeTab === 'ai-evidence'" class="tab-pane">
                     <!-- Header -->
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-bottom: 30px; color: white;">
+                    <div style="background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 30px; color: white;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h2 style="margin: 0 0 10px 0; font-size: 24px;">
+                                <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">
                                     <i class="fas fa-brain" style="margin-right: 10px;"></i> AI 智能证据分析
                                 </h2>
-                                <p style="margin: 0; opacity: 0.9;">基于案件类型「{{ caseData.type }}」，AI 为您生成证据收集建议</p>
+                                <p style="margin: 0; opacity: 0.7; font-size: 14px;">基于案件类型「{{ caseData.type }}」，AI 为您生成证据收集建议</p>
                             </div>
-                            <div style="display: flex; gap: 12px;">
-                                <input 
-                                    type="file" 
-                                    ref="evidenceInput" 
-                                    style="display: none" 
-                                    @change="handleEvidenceUpload"
-                                >
-                                <button class="btn-glass" @click="triggerUpload">
-                                    <i class="fas fa-upload" style="margin-right: 6px;"></i> 上传证据
-                                </button>
+                            <div style="display: flex; gap: 10px;">
                                 <button class="btn-glass" @click="exportEvidenceList">
-                                    <i class="fas fa-download" style="margin-right: 6px;"></i> 导出清单
+                                    <i class="fas fa-download"></i> 导出清单
                                 </button>
                                 <button class="btn-glass">
-                                    <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> 重新分析
+                                    <i class="fas fa-sync-alt"></i> 重新分析
                                 </button>
                             </div>
                         </div>
@@ -673,8 +729,8 @@ export default {
 
                     <!-- AI Recommendations -->
                     <div class="ai-tips-box">
-                        <h4 style="margin: 0 0 12px 0; color: #f57c00; font-size: 16px;">
-                            <i class="fas fa-lightbulb" style="margin-right: 8px;"></i> AI 建议
+                        <h4 style="margin: 0 0 12px 0; color: #1a1a1a; font-size: 15px; font-weight: 600;">
+                            <i class="fas fa-lightbulb" style="margin-right: 8px; color: #999;"></i> AI 建议
                         </h4>
                         <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); line-height: 1.6;">
                             <li>建议优先补充「往来函件、邮件记录」，这对证明违约事实至关重要</li>
@@ -723,8 +779,66 @@ export default {
                     </div>
                 </div>
 
+                <!-- Evidence List Tab -->
+                <div v-if="activeTab === 'evidence-list'" class="tab-pane">
+                    <!-- Evidence List -->
+                    <div class="evidence-list-section">
+                        <div class="section-header">
+                            <h4 class="section-title">证据列表 ({{ evidenceFiles.length }})</h4>
+                            <div class="list-actions">
+                                <button class="primary-btn" @click="navigateToEvidenceUpload">
+                                    <i class="fas fa-upload"></i> 上传证据
+                                </button>
+                                <button class="filter-btn"><i class="fas fa-filter"></i> 筛选</button>
+                                <button class="filter-btn"><i class="fas fa-sort"></i> 排序</button>
+                            </div>
+                        </div>
+                        
+                        <div class="evidence-table-container">
+                            <table class="evidence-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"><input type="checkbox"></th>
+                                        <th width="35%">文件名称</th>
+                                        <th width="15%">分类</th>
+                                        <th width="12%">大小</th>
+                                        <th width="18%">上传时间</th>
+                                        <th width="15%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="file in evidenceFiles" :key="file.id" class="evidence-row">
+                                        <td><input type="checkbox"></td>
+                                        <td>
+                                            <div class="file-cell">
+                                                <i :class="['fas', file.type === 'pdf' ? 'fa-file-pdf' : file.type === 'word' ? 'fa-file-word' : 'fa-file-image']" 
+                                                   :style="{ color: file.type === 'pdf' ? '#ef4444' : file.type === 'word' ? '#3b82f6' : '#10b981' }"></i>
+                                                <span class="file-name-text">{{ file.name }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="category-tag-sm" :style="getCategoryStyle(file.category)">
+                                                {{ getCategoryName(file.category) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-secondary">{{ formatSize(file.size) }}</td>
+                                        <td class="text-secondary">{{ file.uploadTime }}</td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <button class="icon-btn-sm" title="预览"><i class="fas fa-eye"></i></button>
+                                                <button class="icon-btn-sm" title="下载"><i class="fas fa-download"></i></button>
+                                                <button class="icon-btn-sm" title="删除"><i class="fas fa-trash-alt"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Other tabs placeholder -->
-                <div v-if="!['general', 'analysis', 'ai-evidence', 'ai-assistant'].includes(activeTab)" class="tab-pane">
+                <div v-if="!['basic', 'ai-evidence', 'ai-assistant', 'evidence-list'].includes(activeTab)" class="tab-pane">
                     <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                         <i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
                         <div style="font-size: 16px;">{{ currentTabName }}</div>

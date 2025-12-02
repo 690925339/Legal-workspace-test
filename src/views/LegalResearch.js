@@ -4,13 +4,13 @@ export default {
     name: 'LegalResearch',
     data() {
         return {
-            activeTab: 'cases', // 'cases' or 'regulations'
+            activeTab: 'cases',
             searchQuery: '',
             suggestions: [
                 '哪些属于夫妻共同财产',
                 '收养未成年需要具备哪些条件',
                 '无因管理如何认定',
-                '2023年3月，经朋友提醒，我得知，在游戏开黑软件上有一个以自己的...'
+                '劳动合同解除的法定条件'
             ]
         };
     },
@@ -23,76 +23,92 @@ export default {
             alert('搜索功能开发中: ' + this.searchQuery);
         },
         refreshSuggestions() {
-            // Mock refresh
-            const newSuggestions = [
+            var newSuggestions = [
                 '如何认定工伤赔偿标准',
                 '知识产权侵权判定原则',
                 '房屋租赁合同纠纷处理',
                 '离婚诉讼中抚养权归属问题'
             ];
             this.suggestions = newSuggestions;
+        },
+        useSuggestion(text) {
+            this.searchQuery = text;
         }
     },
     template: `
-        <div class="legal-research-page">
-            <div class="content-canvas">
-                <div class="research-container">
-                    <div class="research-header">
-                        <h1>法律检索，智能化检索法规和案例</h1>
-                        <p>输入搜索内容检索相关司法案例、法律法规</p>
-                        
-                        <div class="research-tabs">
-                            <button 
-                                :class="['research-tab-btn', { active: activeTab === 'cases' }]"
-                                @click="switchTab('cases')"
-                            >
-                                案例
-                            </button>
-                            <button 
-                                :class="['research-tab-btn', { active: activeTab === 'regulations' }]"
-                                @click="switchTab('regulations')"
-                            >
-                                法规
-                            </button>
-                        </div>
+        <div class="smart-page">
+            <div class="smart-container">
+                <!-- 页面头部 -->
+                <div class="smart-header">
+                    <h1>法律检索，智能化检索法规和案例</h1>
+                    <p>输入搜索内容检索相关司法案例、法律法规</p>
+                    
+                    <!-- 标签切换 -->
+                    <div class="smart-tabs">
+                        <button 
+                            :class="['smart-tab-btn', { active: activeTab === 'cases' }]"
+                            @click="switchTab('cases')"
+                        >
+                            案例检索
+                        </button>
+                        <button 
+                            :class="['smart-tab-btn', { active: activeTab === 'regulations' }]"
+                            @click="switchTab('regulations')"
+                        >
+                            法规检索
+                        </button>
                     </div>
+                </div>
 
-                    <div class="search-card">
-                        <textarea 
-                            class="search-textarea" 
-                            placeholder="请输入需要检索的内容，支持按Shift+Enter换行"
-                            v-model="searchQuery"
-                            @keydown.enter.exact.prevent="handleSearch"
-                        ></textarea>
-                        
-                        <div class="search-actions">
-                            <button class="filter-btn-pill">
-                                <i class="fas fa-filter"></i> 筛选
+                <!-- 搜索卡片 -->
+                <div class="smart-card">
+                    <textarea 
+                        class="smart-textarea" 
+                        placeholder="请输入需要检索的内容，例如：合同纠纷、劳动争议、知识产权侵权等..."
+                        v-model="searchQuery"
+                        @keydown.enter.exact.prevent="handleSearch"
+                    ></textarea>
+                    
+                    <div class="smart-card-footer">
+                        <div class="smart-search-actions">
+                            <button class="smart-btn-pill">
+                                <i class="fas fa-filter"></i> 筛选条件
                             </button>
-                            <button class="search-submit-btn" @click="handleSearch">
-                                <i class="fas fa-search"></i>
+                            <button class="smart-btn-pill">
+                                <i class="fas fa-clock"></i> 检索历史
                             </button>
                         </div>
+                        <button class="smart-btn-primary" @click="handleSearch" :disabled="!searchQuery.trim()">
+                            <i class="fas fa-search"></i> 开始检索
+                        </button>
                     </div>
+                </div>
 
-                    <div class="suggestions-section">
-                        <div class="suggestions-header">
-                            <span>试试这么问：</span>
-                            <button class="refresh-btn" @click="refreshSuggestions">
-                                <i class="fas fa-sync-alt"></i> 换一批
-                            </button>
-                        </div>
-                        <div class="suggestions-grid">
-                            <div 
-                                v-for="(suggestion, index) in suggestions" 
-                                :key="index"
-                                class="suggestion-card"
-                                @click="searchQuery = suggestion"
-                            >
-                                {{ suggestion }}
-                            </div>
+                <!-- 搜索建议 -->
+                <div class="smart-suggestions">
+                    <div class="smart-suggestions-header">
+                        <span>试试这么问：</span>
+                        <button class="smart-btn-secondary" @click="refreshSuggestions">
+                            <i class="fas fa-sync-alt"></i> 换一批
+                        </button>
+                    </div>
+                    <div class="smart-suggestions-grid">
+                        <div 
+                            v-for="(suggestion, index) in suggestions" 
+                            :key="index"
+                            class="smart-suggestion-item"
+                            @click="useSuggestion(suggestion)"
+                        >
+                            {{ suggestion }}
                         </div>
                     </div>
+                </div>
+
+                <!-- 底部提示 -->
+                <div class="smart-footer-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>检索结果基于最新法律法规数据库，仅供参考</span>
+                    <a href="#">了解更多 ></a>
                 </div>
             </div>
         </div>
