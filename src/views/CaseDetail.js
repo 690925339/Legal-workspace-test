@@ -5,6 +5,8 @@ export default {
     data() {
         return {
             activeTab: 'general',
+            activeCategory: 'basic',
+            isProcessRunning: false,
             caseData: {
                 id: 'CASE-2023-001',
                 name: 'ABC 公司诉 XYZ 有限公司合同纠纷案',
@@ -20,16 +22,37 @@ export default {
                 lastUpdate: '2小时前',
                 assignee: '张三'
             },
-            tabs: [
-                { id: 'general', name: '一般资料' },
-                { id: 'analysis', name: '资料分析' },
-                { id: 'litigation', name: '诉讼分析' },
-                { id: 'complaint', name: '起诉状' },
-                { id: 'evidence-list', name: '证据清单' },
-                { id: 'arbitration', name: '仲裁申请' },
-                { id: 'enforcement', name: '强制执行文书' },
-                { id: 'ai-evidence', name: 'AI证据分析' },
-                { id: 'ai-assistant', name: 'AI助手' }
+            tabStructure: [
+                {
+                    id: 'basic',
+                    name: '基本资料',
+                    icon: 'fas fa-file-alt',
+                    items: [
+                        { id: 'general', name: '一般资料' },
+                        { id: 'analysis', name: '资料分析' },
+                        { id: 'litigation', name: '诉讼分析' },
+                        { id: 'complaint', name: '起诉状' },
+                        { id: 'arbitration', name: '仲裁申请' },
+                        { id: 'enforcement', name: '强制执行文书' }
+                    ]
+                },
+                {
+                    id: 'evidence',
+                    name: '证据管理',
+                    icon: 'fas fa-folder-open',
+                    items: [
+                        { id: 'evidence-list', name: '证据清单' },
+                        { id: 'ai-evidence', name: 'AI证据分析' }
+                    ]
+                },
+                {
+                    id: 'ai',
+                    name: 'AI助手',
+                    icon: 'fas fa-robot',
+                    items: [
+                        { id: 'ai-assistant', name: 'AI对话' }
+                    ]
+                }
             ],
             // AI 证据分析数据
             evidenceAnalysis: {
@@ -132,7 +155,32 @@ export default {
             }
         };
     },
+    computed: {
+        currentTabs() {
+            if (!this.tabStructure) return [];
+            const category = this.tabStructure.find(c => c.id === this.activeCategory);
+            return category ? category.items : [];
+        },
+        currentTabName() {
+            if (!this.tabStructure) return '';
+            for (const category of this.tabStructure) {
+                const tab = category.items.find(t => t.id === this.activeTab);
+                if (tab) return tab.name;
+            }
+            return '';
+        }
+    },
     methods: {
+        switchCategory(categoryId) {
+            console.log('Switching to category:', categoryId);
+            this.activeCategory = categoryId;
+            const category = this.tabStructure.find(c => c.id === categoryId);
+            console.log('Found category:', category);
+            if (category && category.items.length > 0) {
+                this.activeTab = category.items[0].id;
+                console.log('Set activeTab to:', this.activeTab);
+            }
+        },
         switchTab(tabId) {
             this.activeTab = tabId;
         },
@@ -182,6 +230,96 @@ export default {
         useSuggestion(text) {
             this.aiAssistant.input = text;
             this.sendMessage();
+        },
+        triggerUpload() {
+            this.$refs.evidenceInput.click();
+        },
+        handleEvidenceUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                alert(`已上传证据文件: ${file.name}`);
+                // Add a new item to the list
+                this.evidenceAnalysis.items.push({
+                    id: Date.now(),
+                    name: file.name,
+                    priority: 3,
+                    priorityLabel: '中',
+                    priorityColor: '#2196f3',
+                    status: 'collected',
+                    statusText: '✓ 已收集',
+                    desc: '用户上传的证据文件',
+                    checked: true,
+                    bgClass: 'bg-red-light'
+                });
+                this.updateEvidenceStats();
+            }
+        },
+        toggleStatus(item) {
+            if (item.status === 'collected') {
+                item.status = 'missing';
+                item.statusText = '✗ 未收集';
+                item.bgClass = '';
+                item.checked = false;
+            } else {
+                item.status = 'collected';
+                item.statusText = '✓ 已收集';
+                item.bgClass = 'bg-red-light';
+                item.checked = true;
+            }
+            this.updateEvidenceStats();
+        },
+        updateEvidenceStats() {
+            const items = this.evidenceAnalysis.items;
+            const total = items.length;
+            const collected = items.filter(i => i.status === 'collected').length;
+            const missing = total - collected;
+
+            // Completeness
+            const percentage = Math.round((collected / total) * 100);
+            this.evidenceAnalysis.stats.completeness.value = `${percentage}%`;
+            this.evidenceAnalysis.stats.completeness.label = `(${collected}/${total})`;
+
+            // High Priority (Priority >= 4)
+            const highPriorityItems = items.filter(i => i.priority >= 4);
+            const highPriorityTotal = highPriorityItems.length;
+            const highPriorityCollected = highPriorityItems.filter(i => i.status === 'collected').length;
+
+            this.evidenceAnalysis.stats.collected.value = `${Math.round((highPriorityCollected / highPriorityTotal) * 100)}%`;
+            this.evidenceAnalysis.stats.collected.label = `(${highPriorityCollected}/${highPriorityTotal})`;
+
+            // Missing
+            this.evidenceAnalysis.stats.missing.value = `${missing} 项`;
+        },
+        exportEvidenceList() {
+            const items = this.evidenceAnalysis.items;
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Add BOM for Excel compatibility
+            csvContent += "建议收集的证据,重要性评分,收集状态,说明\n";
+
+            items.forEach(item => {
+                const row = [
+                    item.name,
+                    item.priorityLabel,
+                    item.statusText,
+                    item.desc
+                ].map(field => `"${field}"`).join(","); // Quote fields to handle commas
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "证据收集清单.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+        toggleProcess() {
+            this.isProcessRunning = !this.isProcessRunning;
+            if (this.isProcessRunning) {
+                this.caseData.status = '处理中';
+            } else {
+                this.caseData.status = '已暂停';
+            }
         }
     },
     template: `
@@ -222,17 +360,34 @@ export default {
                         <button class="icon-btn" style="border: 1px solid var(--border-medium); border-radius: 12px;">
                             <i class="fas fa-share-alt"></i>
                         </button>
-                        <button class="primary-btn">
-                            <i class="fas fa-play" style="font-size: 12px;"></i> 启动流程
+                        <button 
+                            :class="['primary-btn', { 'warning-btn': isProcessRunning }]" 
+                            @click="toggleProcess"
+                        >
+                            <i :class="isProcessRunning ? 'fas fa-pause' : 'fas fa-play'" style="font-size: 12px;"></i> 
+                            {{ isProcessRunning ? '暂停流程' : '启动流程' }}
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="tabs-container">
+            <!-- Level 1 Tabs (Categories) -->
+            <div class="category-tabs">
                 <div 
-                    v-for="tab in tabs" 
+                    v-for="category in tabStructure" 
+                    :key="category.id"
+                    :class="['category-tab', { active: activeCategory === category.id }]"
+                    @click="switchCategory(category.id)"
+                >
+                    <i :class="category.icon" style="margin-right: 8px;"></i>
+                    {{ category.name }}
+                </div>
+            </div>
+
+            <!-- Level 2 Tabs (Sub-items) -->
+            <div class="tabs-container" v-if="currentTabs.length > 1">
+                <div 
+                    v-for="tab in currentTabs" 
                     :key="tab.id"
                     :class="['tab-pill', { active: activeTab === tab.id }]"
                     @click="switchTab(tab.id)"
@@ -420,9 +575,23 @@ export default {
                                 </h2>
                                 <p style="margin: 0; opacity: 0.9;">基于案件类型「{{ caseData.type }}」，AI 为您生成证据收集建议</p>
                             </div>
-                            <button class="btn-glass">
-                                <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> 重新分析
-                            </button>
+                            <div style="display: flex; gap: 12px;">
+                                <input 
+                                    type="file" 
+                                    ref="evidenceInput" 
+                                    style="display: none" 
+                                    @change="handleEvidenceUpload"
+                                >
+                                <button class="btn-glass" @click="triggerUpload">
+                                    <i class="fas fa-upload" style="margin-right: 6px;"></i> 上传证据
+                                </button>
+                                <button class="btn-glass" @click="exportEvidenceList">
+                                    <i class="fas fa-download" style="margin-right: 6px;"></i> 导出清单
+                                </button>
+                                <button class="btn-glass">
+                                    <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> 重新分析
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -458,10 +627,11 @@ export default {
                             <thead>
                                 <tr>
                                     <th width="5%"><input type="checkbox"></th>
-                                    <th width="35%">建议收集的证据</th>
+                                    <th width="30%">建议收集的证据</th>
                                     <th width="15%">重要性评分</th>
                                     <th width="15%">收集状态</th>
-                                    <th width="30%">说明</th>
+                                    <th width="20%">说明</th>
+                                    <th width="15%">操作</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -480,6 +650,22 @@ export default {
                                         </span>
                                     </td>
                                     <td style="color: var(--text-secondary); font-size: 13px;">{{ item.desc }}</td>
+                                    <td>
+                                        <button 
+                                            v-if="item.status === 'missing'"
+                                            class="action-btn-pill success"
+                                            @click="toggleStatus(item)"
+                                        >
+                                            <i class="fas fa-check"></i> 标记已收
+                                        </button>
+                                        <button 
+                                            v-else
+                                            class="action-btn-pill warning"
+                                            @click="toggleStatus(item)"
+                                        >
+                                            <i class="fas fa-times"></i> 标记未收
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -541,7 +727,7 @@ export default {
                 <div v-if="!['general', 'analysis', 'ai-evidence', 'ai-assistant'].includes(activeTab)" class="tab-pane">
                     <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                         <i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <div style="font-size: 16px;">{{ tabs.find(t => t.id === activeTab).name }}</div>
+                        <div style="font-size: 16px;">{{ currentTabName }}</div>
                         <div style="font-size: 14px; margin-top: 8px;">内容开发中...</div>
                     </div>
                 </div>

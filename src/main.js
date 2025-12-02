@@ -6,6 +6,8 @@ import CaseDetail from './views/CaseDetail.js';
 import Login from './views/Login.js';
 import Register from './views/Register.js';
 import CaseForm from './views/CaseForm.js';
+import ContractReview from './views/ContractReview.js';
+import LegalResearch from './views/LegalResearch.js';
 
 const { createApp } = Vue;
 
@@ -30,6 +32,12 @@ const App = {
             if (path === '/create' || path.startsWith('/edit')) {
                 return 'CaseForm';
             }
+            if (path === '/contract-review') {
+                return 'ContractReview';
+            }
+            if (path === '/legal-research') {
+                return 'LegalResearch';
+            }
             return 'CaseList';
         },
         showLayout() {
@@ -48,7 +56,9 @@ const App = {
         CaseDetail,
         Login,
         Register,
-        CaseForm
+        CaseForm,
+        ContractReview,
+        LegalResearch
     },
     template: `
         <div id="app">
@@ -77,6 +87,8 @@ app.component('CaseDetail', CaseDetail);
 app.component('Login', Login);
 app.component('Register', Register);
 app.component('CaseForm', CaseForm);
+app.component('ContractReview', ContractReview);
+app.component('LegalResearch', LegalResearch);
 
 // 挂载应用
 app.mount('#app');

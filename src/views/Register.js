@@ -24,11 +24,14 @@ export default {
                 <div class="brand-content">
                     <div class="brand-logo">
                         <div class="logo-box">LOGO</div>
-                        <span>LegalMind</span>
+                        <div class="brand-text">
+                            <div class="brand-name">ALPHA&LEADER</div>
+                            <div class="brand-subtitle">安华理达</div>
+                        </div>
                     </div>
                     <div class="brand-quote">"效率是把事情做对，效能是做对的事情"</div>
                     <div class="brand-desc">
-                        加入数千名信赖 LegalMind 管理法律实务的专业人士行列。
+                        加入数千名信赖 ALPHA&LEADER 管理法律实务的专业人士行列。
                     </div>
                 </div>
             </div>

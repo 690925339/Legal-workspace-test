@@ -26,7 +26,10 @@ export default {
                 <div class="brand-icon">
                     <i class="fas fa-gavel"></i>
                 </div>
-                <span>LegalMind</span>
+                <div class="brand-text">
+                    <div class="brand-name">ALPHA&LEADER</div>
+                    <div class="brand-subtitle">安华理达</div>
+                </div>
             </div>
 
             <div class="nav-group-title">工作台</div>
@@ -45,13 +48,15 @@ export default {
             </a>
 
             <div class="nav-group-title" style="margin-top: 24px;">智能分析</div>
-            <a href="#" class="nav-item">
-                <i class="fas fa-chart-pie"></i>
-                <span>数据洞察</span>
+            <a @click.prevent="navigate('/legal-research')" 
+               :class="['nav-item', { active: isActive('/legal-research') }]">
+                <i class="fas fa-search"></i>
+                <span>法律检索</span>
             </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-balance-scale"></i>
-                <span>量刑预测</span>
+            <a @click.prevent="navigate('/contract-review')" 
+               :class="['nav-item', { active: isActive('/contract-review') }]">
+                <i class="fas fa-file-contract"></i>
+                <span>合同审查</span>
             </a>
 
             <div class="sidebar-footer">

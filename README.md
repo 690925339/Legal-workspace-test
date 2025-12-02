@@ -1,4 +1,4 @@
-# Vue Legal Workspace
+# Alpha&Leader Legal Workspace
 
 一个现代化的法律案件管理系统，基于 Vue 3 (CDN) 构建。
 

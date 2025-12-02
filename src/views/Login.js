@@ -24,7 +24,10 @@ export default {
                 <div class="brand-content">
                     <div class="brand-logo">
                         <div class="logo-box">LOGO</div>
-                        <span>LegalMind</span>
+                        <div class="brand-text">
+                            <div class="brand-name">ALPHA&LEADER</div>
+                            <div class="brand-subtitle">安华理达</div>
+                        </div>
                     </div>
                     <div class="brand-quote">"迟来的正义即非正义"</div>
                     <div class="brand-desc">
