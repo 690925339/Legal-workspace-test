@@ -40,7 +40,14 @@ export default {
             <div class="smart-container">
                 <!-- 页面头部 -->
                 <div class="smart-header">
-                    <h1>法律检索，智能化检索法规和案例</h1>
+                    <div class="smart-header-title-row">
+                        <div class="smart-header-actions">
+                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                                <i class="fas fa-history"></i> 历史记录
+                            </button>
+                        </div>
+                        <h1>法律检索，智能化检索法规和案例</h1>
+                    </div>
                     <p>输入搜索内容检索相关司法案例、法律法规</p>
                     
                     <!-- 标签切换 -->
@@ -74,9 +81,6 @@ export default {
                             <button class="smart-btn-pill">
                                 <i class="fas fa-filter"></i> 筛选条件
                             </button>
-                            <button class="smart-btn-pill">
-                                <i class="fas fa-clock"></i> 检索历史
-                            </button>
                         </div>
                         <button class="smart-btn-primary" @click="handleSearch" :disabled="!searchQuery.trim()">
                             <i class="fas fa-search"></i> 开始检索
@@ -108,7 +112,6 @@ export default {
                 <div class="smart-footer-info">
                     <i class="fas fa-info-circle"></i>
                     <span>检索结果基于最新法律法规数据库，仅供参考</span>
-                    <a href="#">了解更多 ></a>
                 </div>
             </div>
         </div>

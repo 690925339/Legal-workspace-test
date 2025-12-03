@@ -25,7 +25,7 @@ export default {
                 return;
             }
             this.isGenerating = true;
-            
+
             setTimeout(() => {
                 var docType = this.activeType === 'complaint' ? '起诉状' : '答辩状';
                 this.generatedDoc = {
@@ -38,7 +38,7 @@ export default {
         getMockDocument(type) {
             var content = '';
             var date = new Date().toLocaleDateString('zh-CN');
-            
+
             if (type === 'complaint') {
                 content = '原告：[原告姓名/公司名称]\n';
                 content += '住所地：[地址]\n';
@@ -102,7 +102,14 @@ export default {
             <div class="smart-container">
                 <!-- 页面头部 -->
                 <div class="smart-header">
-                    <h1>文书生成，一键生成专属法律文书</h1>
+                    <div class="smart-header-title-row">
+                        <div class="smart-header-actions">
+                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                                <i class="fas fa-history"></i> 历史记录
+                            </button>
+                        </div>
+                        <h1>文书生成，一键生成专属法律文书</h1>
+                    </div>
                     <p>根据案情描述，自动总结法律诉求并撰写法律文书</p>
                     
                     <!-- 标签切换 -->
@@ -167,7 +174,6 @@ export default {
                 <div class="smart-footer-info">
                     <i class="fas fa-info-circle"></i>
                     <span>生成的文书仅供参考，请根据实际情况进行修改</span>
-                    <a href="#">了解更多 ></a>
                 </div>
             </div>
         </div>

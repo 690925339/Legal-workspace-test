@@ -21,11 +21,24 @@ export default {
                 lastUpdate: '2小时前',
                 assignee: '张三'
             },
+            showEditModal: false,
             tabStructure: [
                 {
                     id: 'basic',
-                    name: '基本资料',
+                    name: '基础信息',
                     icon: 'fas fa-file-alt',
+                    items: []
+                },
+                {
+                    id: 'case-facts',
+                    name: '案情描述',
+                    icon: 'fas fa-file-text',
+                    items: []
+                },
+                {
+                    id: 'stakeholders',
+                    name: '当事人信息',
+                    icon: 'fas fa-users',
                     items: []
                 },
                 {
@@ -38,19 +51,19 @@ export default {
                     ]
                 },
                 {
-                    id: 'ai',
-                    name: 'AI助手',
-                    icon: 'fas fa-robot',
-                    items: [
-                        { id: 'ai-assistant', name: 'AI对话' }
-                    ]
+                    id: 'financials',
+                    name: '财务信息',
+                    icon: 'fas fa-dollar-sign',
+                    items: []
                 },
                 {
-                    id: 'relationship',
-                    name: '关系洞察',
-                    icon: 'fas fa-project-diagram',
+                    id: 'advanced',
+                    name: '高级功能',
+                    icon: 'fas fa-cogs',
                     items: [
-                        { id: 'relationship-graph', name: '关系图谱' }
+                        { id: 'ai-analysis', name: 'AI分析' },
+                        { id: 'relationship-graph', name: '关系洞察' },
+                        { id: 'timeline', name: '案件时间轴' }
                     ]
                 }
             ],
@@ -293,6 +306,16 @@ export default {
         },
         goBack() {
             router.push('/');
+        },
+        editCase() {
+            this.showEditModal = true;
+        },
+        onCaseSaved(updatedData) {
+            console.log('Case updated:', updatedData);
+            // Update local data
+            this.caseData = { ...this.caseData, ...updatedData };
+            this.showEditModal = false;
+            alert('案件信息已更新');
         },
         getStarRating(priority) {
             return '★'.repeat(priority) + '☆'.repeat(5 - priority);
@@ -682,6 +705,7 @@ export default {
                 <div class="top-actions">
                     <button class="icon-btn"><i class="fas fa-search"></i></button>
                     <button class="icon-btn"><i class="fas fa-bell"></i></button>
+                    <button class="icon-btn" @click="editCase" title="编辑案件"><i class="fas fa-edit"></i></button>
                     <button class="icon-btn"><i class="fas fa-cog"></i></button>
                 </div>
             </header>
@@ -690,7 +714,7 @@ export default {
             <div class="case-header-area">
                 <div class="case-title-wrapper">
                     <div>
-                        <div class="case-tags" style="margin-bottom: 12px;">
+                        <div class="case-tags" style="margin-bottom: 8px;">
                             <span :class="['tag', 'status-' + (caseData.statusCode || 'active')]">{{ caseData.status }}</span>
                             <span class="tag">{{ caseData.type }}</span>
                             <span class="tag">{{ caseData.category }}</span>
@@ -727,13 +751,15 @@ export default {
 
             <!-- Level 2 Tabs (Sub-items) -->
             <div class="tabs-container" v-if="currentTabs.length > 1">
-                <div 
-                    v-for="tab in currentTabs" 
-                    :key="tab.id"
-                    :class="['tab-pill', { active: activeTab === tab.id }]"
-                    @click="switchTab(tab.id)"
-                >
-                    {{ tab.name }}
+                <div class="smart-tabs">
+                    <div 
+                        v-for="tab in currentTabs" 
+                        :key="tab.id"
+                        :class="['tab-pill', { active: activeTab === tab.id }]"
+                        @click="switchTab(tab.id)"
+                    >
+                        {{ tab.name }}
+                    </div>
                 </div>
             </div>
 
@@ -745,46 +771,46 @@ export default {
                         <!-- 基本信息卡片 -->
                         <div class="modern-card">
                             <div class="card-header">
-                                <div class="card-title">基本信息</div>
+                                <div class="card-title">基础信息</div>
                                 <button class="icon-btn" style="font-size: 14px;">
                                     <i class="fas fa-pen"></i>
                                 </button>
                             </div>
                             <div class="info-row">
-                                <span class="label">客户名称</span>
-                                <span class="value">{{ caseData.client }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">对方当事人</span>
-                                <span class="value">{{ caseData.opposingParty }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">受理机关</span>
-                                <span class="value">{{ caseData.court }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">涉案金额</span>
-                                <span class="value">{{ caseData.amount }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">立案日期</span>
-                                <span class="value">{{ caseData.filingDate }}</span>
+                                <span class="label">案件标题</span>
+                                <span class="value">{{ caseData.name }}</span>
                             </div>
                             <div class="info-row">
                                 <span class="label">案件编号</span>
                                 <span class="value">{{ caseData.id }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">潜在编号</span>
-                                <span class="value">POT-2023-005</span>
+                                <span class="label">案由</span>
+                                <span class="value">{{ caseData.type }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">CS负责人</span>
-                                <span class="value">张三</span>
+                                <span class="label">具体案由</span>
+                                <span class="value">{{ caseData.category }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">SR负责人</span>
-                                <span class="value">李四</span>
+                                <span class="label">案件阶段</span>
+                                <span class="value">{{ caseData.status }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">管辖法院/仲裁委</span>
+                                <span class="value">{{ caseData.court }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">承办法官</span>
+                                <span class="value">{{ caseData.judge || '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">立案日期</span>
+                                <span class="value">{{ caseData.filingDate }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">诉讼时效/上诉截止日</span>
+                                <span class="value" style="color: #dc2626; font-weight: 500;">{{ caseData.deadline || '-' }}</span>
                             </div>
                         </div>
 
@@ -851,50 +877,192 @@ export default {
                     </div>
                 </div>
 
+                <!-- Tab: Case Facts -->
+                <div v-if="activeTab === 'case-facts'" class="tab-pane">
+                    <div class="modern-card">
+                        <div class="card-header">
+                            <div class="card-title">案情描述</div>
+                            <button class="icon-btn" style="font-size: 14px;">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                        <div class="info-row" style="display: block;">
+                            <span class="label" style="marginBottom: 8px;">案情摘要</span>
+                            <p style="margin: 8px 0 0 0; color: #1a1a1a; line-height: 1.8; font-size: 14px;">
+                                2023年3月，原告张某与被告某科技有限公司签订软件开发合同，约定开发费用100万元。项目于2023年9月完成并交付，被告已支付50万元，剩余50万元尾款迟迟未支付。多次催款无果后，原告诉至法院。
+                            </p>
+                        </div>
+                        <div class="info-row" style="display: block; margin-top: 16px;">
+                            <span class="label">争议焦点</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                <span class="tag" style="background: #e0e7ff; color: #4f46e5; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
+                                    软件是否已实际交付
+                                </span>
+                                <span class="tag" style="background: #e0e7ff; color: #4f46e5; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
+                                    质量验收是否合格
+                                </span>
+                                <span class="tag" style="background: #e0e7ff; color: #4f46e5; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
+                                    违约损失金额
+                                   </span>
+                            </div>
+                        </div>
+                        <div class="info-row" style="margin-top: 16px;">
+                            <span class="label">客户诉求</span>
+                            <span class="value">支付剩余款项50万元 + 违约金8万元 + 利息</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Stakeholders -->
+                <div v-if="activeTab === 'stakeholders'" class="tab-pane">
+                    <div class="modern-card">
+                        <div class="card-header">
+                            <div class="card-title">当事人信息</div>
+                            <button class="icon-btn" style="font-size: 14px;">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-weight: 600; font-size: 15px; margin-bottom: 12px; color: #1a1a1a;">
+                                <i class="fas fa-user" style="margin-right: 8px; color: #4f46e5;"></i>
+                                原告（我方客户）
+                            </div>
+                            <div class="info-row">
+                                <span class="label">姓名/名称</span>
+                                <span class="value">张三</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">主体类型</span>
+                                <span class="value">自然人</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">身份证号</span>
+                                <span class="value">110101198001011234</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #e5e5e5; padding-top: 20px;">
+                            <div style="font-weight: 600; font-size: 15px; margin-bottom: 12px; color: #1a1a1a;">
+                                <i class="fas fa-building" style="margin-right: 8px; color: #dc2626;"></i>
+                                被告
+                            </div>
+                            <div class="info-row">
+                                <span class="label">公司名称</span>
+                                <span class="value">某科技有限公司</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">主体类型</span>
+                                <span class="value">法人企业</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">法定代表人</span>
+                                <span class="value">李四</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">统一信用代码</span>
+                                <span class="value">91110000MA01A2B3C4</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">对方代理律师</span>
+                                <span class="value">王律师（某律所）</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Financials -->
+                <div v-if="activeTab === 'financials'" class="tab-pane">
+                    <div class="modern-card">
+                        <div class="card-header">
+                            <div class="card-title">财务信息</div>
+                            <button class="icon-btn" style="font-size: 14px;">
+                                <i class="fas fa-calculator"></i>
+                            </button>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">诉讼标的额</span>
+                            <span class="value" style="color: #1a1a1a; font-weight: 600; font-size: 16px;">¥580,000</span>
+                        </div>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 6px; margin: 12px 0; font-size: 13px; color: #666;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>欠款本金</span>
+                                <span>¥500,000</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>违约金</span>
+                                <span>¥80,000</span>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">律师费报价</span>
+                            <span class="value">¥85,000</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">预估诉讼费</span>
+                            <span class="value">¥11,300（按标的额计算）</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">计费时长</span>
+                            <span class="value">45.5 小时</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: AI Analysis -->
+                <div v-if="activeTab === 'ai-analysis'" class="tab-pane">
+                    <div class="modern-card">
+                        <div class="card-header" style="background: #1a1a1a; color: white; margin: -20px; margin-bottom: 20px; padding: 20px; border-radius: 12px 12px 0 0;">
+                            <div class="card-title" style="color: white;">
+                                <i class="fas fa-brain" style="margin-right: 8px;"></i>
+                                AI智能分析
+                            </div>
+                            <button class="icon-btn" style="font-size: 14px; color: white; border-color: rgba(255,255,255,0.3);">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">胜诉率预测</span>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="flex: 1; height: 8px; background: #e5e5e5; border-radius: 4px; overflow: hidden;">
+                                    <div style="width: 75%; height: 100%; background: #1a1a1a;"></div>
+                                </div>
+                                <span class="value" style="color: #1a1a1a; font-weight: 600; font-size: 18px;">75%</span>
+                            </div>
+                        </div>
+                        <div class="info-row" style="display: block; margin-top: 16px;">
+                            <span class="label">风险点提示</span>
+                            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #fef3c7; border-left: 3px solid #d97706; border-radius: 4px;">
+                                    <i class="fas fa-exclamation-triangle" style="color: #d97706; margin-top: 2px;"></i>
+                                    <span style="font-size: 13px; color: #92400e;">部分项目验收文件缺失，需补充邮件往来记录</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #f5f5f5; border-left: 3px solid #666; border-radius: 4px;">
+                                    <i class="fas fa-info-circle" style="color: #666; margin-top: 2px;"></i>
+                                    <span style="font-size: 13px; color: #1a1a1a;">合同中付款条件约定不够明确，建议重点举证</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-row" style="display: block; margin-top: 16px;">
+                            <span class="label">AI策略建议</span>
+                            <p style="margin: 8px 0 0 0; color: #1a1a1a; line-height: 1.8; font-size: 13px; background: #f5f5f5; padding: 12px; border-radius: 6px;">
+                                建议重点收集：1）项目交付确认的邮件记录；2）被告方的验收反馈意见；3）双方关于质量问题的沟通记录。同时准备技术专家鉴定，证明软件功能符合合同约定。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab: AI Evidence Analysis -->
                 <div v-if="activeTab === 'ai-evidence'" class="tab-pane">
-                    <!-- Header -->
-                    <div style="background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 30px; color: white;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">
-                                    <i class="fas fa-brain" style="margin-right: 10px;"></i> AI 智能证据分析
-                                </h2>
-                                <p style="margin: 0; opacity: 0.7; font-size: 14px;">基于案件类型「{{ caseData.type }}」，AI 为您生成证据收集建议</p>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button class="btn-glass" @click="exportEvidenceList">
-                                    <i class="fas fa-download"></i> 导出清单
-                                </button>
-                                <button class="btn-glass">
-                                    <i class="fas fa-sync-alt"></i> 重新分析
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Action Buttons -->
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+                        <button class="smart-btn-secondary" @click="exportEvidenceList">
+                            <i class="fas fa-download"></i> 导出清单
+                        </button>
+                        <button class="smart-btn-secondary">
+                            <i class="fas fa-sync-alt"></i> 重新分析
+                        </button>
                     </div>
-
-                    <!-- Statistics -->
-                    <div class="stats-grid">
-                        <div class="stat-card blue">
-                            <div class="stat-label">证据完整度</div>
-                            <div class="stat-value blue-text">
-                                {{ evidenceAnalysis.stats.completeness.value }} 
-                                <span class="stat-sub">{{ evidenceAnalysis.stats.completeness.label }}</span>
-                            </div>
-                        </div>
-                        <div class="stat-card green">
-                            <div class="stat-label">高优先级已收集</div>
-                            <div class="stat-value green-text">
-                                {{ evidenceAnalysis.stats.collected.value }} 
-                                <span class="stat-sub">{{ evidenceAnalysis.stats.collected.label }}</span>
-                            </div>
-                        </div>
-                        <div class="stat-card orange">
-                            <div class="stat-label">建议补充</div>
-                            <div class="stat-value orange-text">{{ evidenceAnalysis.stats.missing.value }}</div>
-                        </div>
-                    </div>
-
+                    
+                    
                     <!-- Evidence Table -->
                     <h3 style="color: var(--text-primary); margin-bottom: 16px; font-size: 18px;">
                         <i class="fas fa-list-check" style="margin-right: 8px;"></i> 证据收集清单
@@ -1003,27 +1171,17 @@ export default {
 
                 <!-- Tab: Relationship Insights -->
                 <div v-if="activeTab === 'relationship-graph'" class="tab-pane">
-                    <!-- Header -->
-                    <div style="background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 30px; color: white;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">
-                                    <i class="fas fa-project-diagram" style="margin-right: 10px;"></i> 关系洞察
-                                </h2>
-                                <p style="margin: 0; opacity: 0.7; font-size: 14px;">AI 自动抽取案件中的关键人物、公司及其关系，生成可视化关系图谱</p>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button class="btn-glass" @click="initRelationshipGraph">
-                                    <i class="fas fa-sync-alt"></i> 刷新图谱
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Action Buttons -->
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                        <button class="smart-btn-secondary" @click="initRelationshipGraph">
+                            <i class="fas fa-sync-alt"></i> 刷新图谱
+                        </button>
                     </div>
-
+                    
                     <!-- Main Content -->
-                    <div style="display: grid; grid-template-columns: 1fr 350px; gap: 24px;">
-                        <!-- Graph Container -->
-                        <div class="modern-card" style="padding: 0; overflow: hidden;">
+                    <div>
+                        <!-- Graph Container (Full Width) -->
+                        <div class="modern-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
                             <div style="padding: 20px; border-bottom: 1px solid var(--border-medium);">
                                 <h3 style="margin: 0; font-size: 16px; font-weight: 600;">关系图谱</h3>
                                 <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-secondary);">
@@ -1031,11 +1189,11 @@ export default {
                                     点击节点查看详情 · 拖拽节点调整位置 · 滚轮缩放
                                 </p>
                             </div>
-                            <div ref="relationshipGraph" class="relationship-graph-container" @vue:mounted="initRelationshipGraph"></div>
+                            <div ref="relationshipGraph" class="relationship-graph-container" style="height: 600px;" @vue:mounted="initRelationshipGraph"></div>
                         </div>
 
-                        <!-- Side Panel -->
-                        <div>
+                        <!-- Bottom Section: Entity Details, Legend and Statistics -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
                             <!-- Entity Details -->
                             <div class="modern-card" v-if="relationshipData.selectedNode">
                                 <div class="card-header">
@@ -1062,7 +1220,7 @@ export default {
                             </div>
 
                             <!-- Legend -->
-                            <div class="modern-card" style="margin-top: 20px;">
+                            <div class="modern-card">
                                 <div class="card-header">
                                     <div class="card-title">
                                         <i class="fas fa-list" style="margin-right: 8px;"></i>
@@ -1100,7 +1258,7 @@ export default {
                             </div>
 
                             <!-- Statistics -->
-                            <div class="modern-card" style="margin-top: 20px;">
+                            <div class="modern-card">
                                 <div class="card-header">
                                     <div class="card-title">
                                         <i class="fas fa-chart-bar" style="margin-right: 8px;"></i>
@@ -1186,15 +1344,113 @@ export default {
                     </div>
                 </div>
 
-                <!-- Other tabs placeholder -->
-                <div v-if="!['basic', 'ai-evidence', 'ai-assistant', 'evidence-list', 'relationship-graph'].includes(activeTab)" class="tab-pane">
-                    <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                        <i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
-                        <div style="font-size: 16px;">{{ currentTabName }}</div>
-                        <div style="font-size: 14px; margin-top: 8px;">内容开发中...</div>
+                <!-- Tab: Timeline -->
+                <div v-if="activeTab === 'timeline'" class="tab-pane">
+                    <div class="modern-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-stream" style="margin-right: 8px;"></i>
+                                案件时间轴
+                            </div>
+                            <button class="smart-btn-secondary">
+                                <i class="fas fa-plus"></i> 添加事件
+                            </button>
+                        </div>
+                        <div class="timeline" style="padding: 20px 0;">
+                            <div class="timeline-item active">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">案件立项</div>
+                                    <div class="timeline-date">2023-10-01</div>
+                                    <div class="timeline-desc">案件正式受理，开始准备相关材料</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item active">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">证据收集</div>
+                                    <div class="timeline-date">2023-10-15 - 进行中</div>
+                                    <div class="timeline-desc">收集合同原件、转账记录等关键证据</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">起诉状撰写</div>
+                                    <div class="timeline-date">待开始</div>
+                                    <div class="timeline-desc">准备起诉状及相关法律文书</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">法院立案</div>
+                                    <div class="timeline-date">预计 2023-12-01</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                        即将上线
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generated Documents List -->
+                    <div class="modern-card" style="margin-top: 24px;">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-folder-open" style="margin-right: 8px;"></i>
+                                已生成文书
+                            </div>
+                        </div>
+                        <div class="table-container" style="margin-top: 20px;">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th width="40%">文书名称</th>
+                                        <th width="15%">类型</th>
+                                        <th width="20%">生成时间</th>
+                                        <th width="10%">状态</th>
+                                        <th width="15%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                <i class="fas fa-file-alt" style="color: #4f46e5;"></i>
+                                                <span style="font-weight: 500;">民事起诉状_张三诉某科技公司.docx</span>
+                                            </div>
+                                        </td>
+                                        <td>起诉状</td>
+                                        <td>2023-11-20 14:30</td>
+                                        <td>
+                                            <span class="status-badge-sm success">已完成</span>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button class="icon-btn-sm" title="预览"><i class="fas fa-eye"></i></button>
+                                                <button class="icon-btn-sm" title="编辑"><i class="fas fa-edit"></i></button>
+                                                <button class="icon-btn-sm" title="下载"><i class="fas fa-download"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+            <!-- Case Form Modal -->
+            <CaseForm 
+                :visible="showEditModal" 
+                :edit-id="caseData.id"
+                @close="showEditModal = false"
+                @saved="onCaseSaved"
+            />
         </div>
     `
 };

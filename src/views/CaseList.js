@@ -79,7 +79,9 @@ export default {
                     lastUpdate: '1小时前'
                 }
             ],
-            searchQuery: ''
+            searchQuery: '',
+            showCaseModal: false,
+            currentCaseId: null
         };
     },
     computed: {
@@ -100,7 +102,8 @@ export default {
             router.push('/detail/' + caseId);
         },
         editCase(caseId) {
-            router.push('/edit/' + caseId);
+            this.currentCaseId = caseId;
+            this.showCaseModal = true;
         },
         deleteCase(caseItem) {
             if (confirm('确定要删除案件 ' + caseItem.code + ' 吗？此操作不可恢复。')) {
@@ -109,7 +112,31 @@ export default {
             }
         },
         createCase() {
-            router.push('/create');
+            this.currentCaseId = null;
+            this.showCaseModal = true;
+        },
+        onCaseSaved(caseData) {
+            console.log('Case saved:', caseData);
+            // In a real app, refresh list or add item
+            if (!this.currentCaseId) {
+                // Add new mock item
+                this.cases.unshift({
+                    id: Date.now(),
+                    name: caseData.name,
+                    code: 'CASE-NEW-' + Math.floor(Math.random() * 1000),
+                    type: '民事 · ' + (caseData.legalCause || '未分类'),
+                    client: caseData.clientName || '新客户',
+                    status: 'active',
+                    statusText: '进行中',
+                    lastUpdate: '刚刚',
+                    assignees: [{ name: '我', color: '#dbeafe', textColor: '#1e40af' }]
+                });
+            }
+            // Close modal is handled by CaseForm emitting close, but we can also close here if needed
+            // The CaseForm emits 'saved' then 'close', so we just handle data here.
+            // Wait, CaseForm emits 'saved' then 'close'.
+            // Actually, let's make sure we close the modal.
+            this.showCaseModal = false;
         },
         getStatusClass(status) {
             return `status-badge status-${status}`;
@@ -205,6 +232,14 @@ export default {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Case Form Modal -->
+            <CaseForm 
+                :visible="showCaseModal" 
+                :edit-id="currentCaseId"
+                @close="showCaseModal = false"
+                @saved="onCaseSaved"
+            />
         </div>
     `
 };

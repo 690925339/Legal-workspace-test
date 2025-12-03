@@ -108,7 +108,14 @@ export default {
             <div class="smart-container">
                 <!-- 页面头部 -->
                 <div class="smart-header">
-                    <h1>合同审查，一键开启智能审查</h1>
+                    <div class="smart-header-title-row">
+                        <div class="smart-header-actions">
+                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                                <i class="fas fa-history"></i> 历史记录
+                            </button>
+                        </div>
+                        <h1>合同审查，一键开启智能审查</h1>
+                    </div>
                     <p>快速识别合同风险点，提供专业的法律审查建议</p>
                     
                     <!-- 标签切换 -->
@@ -247,13 +254,6 @@ export default {
                         </div>
                     </div>
                 </template>
-
-                <!-- 底部提示 -->
-                <div class="smart-footer-info">
-                    <i class="fas fa-info-circle"></i>
-                    <span>合同审查剩余额度：3 份</span>
-                    <a href="#">了解更多 ></a>
-                </div>
             </div>
         </div>
     `
