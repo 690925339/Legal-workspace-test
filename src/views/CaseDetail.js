@@ -22,6 +22,21 @@ export default {
                 assignee: '张三'
             },
             showEditModal: false,
+            showStatusDropdown: false,
+            statusOptions: [
+                { code: 'draft', text: '草稿', color: '#f3f4f6', textColor: '#4b5563' },
+                { code: 'active', text: '进行中', color: '#dbeafe', textColor: '#1e40af' },
+                { code: 'closed', text: '已结案', color: '#d1fae5', textColor: '#065f46' }
+            ],
+            stageOptions: [
+                '咨询',
+                '立案',
+                '一审',
+                '二审',
+                '再审',
+                '执行',
+                '结案'
+            ],
             tabStructure: [
                 {
                     id: 'basic',
@@ -64,7 +79,7 @@ export default {
                         { id: 'ai-analysis', name: 'AI分析' },
                         { id: 'ai-assistant', name: 'AI对话助手' },
                         { id: 'relationship-graph', name: '关系洞察' },
-                        { id: 'timeline', name: '案件时间轴' }
+                        { id: 'timeline', name: '证据时间轴' }
                     ]
                 }
             ],
@@ -291,46 +306,25 @@ export default {
     methods: {
         loadCaseData(id) {
             // 模拟根据ID加载数据
-            if (id == 4) {
-                // 未签约案件数据
-                this.caseData = {
-                    id: 'CASE-2023-004',
-                    name: '某科技公司 知识产权纠纷案',
-                    status: '未签约',
-                    statusCode: 'unsigned', // 添加状态码用于样式判断
-                    type: '知识产权',
-                    category: '民事',
-                    client: '某科技公司',
-                    opposingParty: '待确定',
-                    court: '待确定',
-                    filingDate: '-',
-                    amount: '待评估',
-                    description: '客户咨询中，尚未签订委托合同。',
-                    lastUpdate: '1小时前',
-                    assignee: '张三'
-                };
-                // 未签约案件也显示完整功能，不限制标签页
-                // 使用默认的 tabStructure (在 data 中定义)
-                this.activeTab = 'basic';
-            } else {
-                // 默认案件数据 (ID 1)
-                this.caseData = {
-                    id: 'CASE-2023-001',
-                    name: 'ABC 公司诉 XYZ 有限公司合同纠纷案',
-                    status: '进行中',
-                    statusCode: 'active',
-                    type: '合同纠纷',
-                    category: '民事',
-                    client: 'ABC 公司',
-                    opposingParty: 'XYZ 有限公司',
-                    court: '上海市浦东新区人民法院',
-                    filingDate: '2023-10-01',
-                    amount: '500,000.00 CNY',
-                    description: '因被告未按合同约定支付广告费用引发的纠纷。',
-                    lastUpdate: '2小时前',
-                    assignee: '张三'
-                };
-            }
+            // 默认加载案件1的数据
+            // 默认案件数据 (ID 1)
+            this.caseData = {
+                id: 'CASE-2023-001',
+                name: 'ABC 公司诉 XYZ 有限公司合同纠纷案',
+                status: '进行中',
+                statusCode: 'active',
+                type: '合同纠纷',
+                category: '民事',
+                client: 'ABC 公司',
+                opposingParty: 'XYZ 有限公司',
+                court: '上海市浦东新区人民法院',
+                filingDate: '2023-10-01',
+                amount: '500,000.00 CNY',
+                description: '因被告未按合同约定支付广告费用引发的纠纷。',
+                lastUpdate: '2小时前',
+                assignee: '张三',
+                stage: '一审'  // 添加案件阶段字段
+            };
         },
         switchCategory(categoryId) {
             console.log('Switching to category:', categoryId);
@@ -361,6 +355,16 @@ export default {
             this.caseData = { ...this.caseData, ...updatedData };
             this.showEditModal = false;
             alert('案件信息已更新');
+        },
+        toggleStatusDropdown() {
+            this.showStatusDropdown = !this.showStatusDropdown;
+        },
+        changeStatus(statusOption) {
+            this.caseData.status = statusOption.text;
+            this.caseData.statusCode = statusOption.code;
+            this.showStatusDropdown = false;
+            // 这里可以添加保存到后端的逻辑
+            console.log('Status changed to:', statusOption);
         },
         getStarRating(priority) {
             return '★'.repeat(priority) + '☆'.repeat(5 - priority);
@@ -807,7 +811,13 @@ export default {
                 category: this.caseData.category,
                 court: this.caseData.court,
                 filingDate: this.caseData.filingDate,
-                status: this.caseData.status
+                stage: this.caseData.stage || '咨询',
+                // 联络人信息
+                contactName: this.contactData.name,
+                contactRole: this.contactData.role,
+                contactPhone: this.contactData.phone,
+                contactEmail: this.contactData.email,
+                contactAddress: this.contactData.address
             };
             this.showBasicInfoModal = true;
         },
@@ -819,7 +829,13 @@ export default {
             this.caseData.category = this.editForm.category;
             this.caseData.court = this.editForm.court;
             this.caseData.filingDate = this.editForm.filingDate;
-            this.caseData.status = this.editForm.status;
+            this.caseData.stage = this.editForm.stage;
+            // Update contact data
+            this.contactData.name = this.editForm.contactName;
+            this.contactData.role = this.editForm.contactRole;
+            this.contactData.phone = this.editForm.contactPhone;
+            this.contactData.email = this.editForm.contactEmail;
+            this.contactData.address = this.editForm.contactAddress;
             this.showBasicInfoModal = false;
             alert('基础信息已更新');
         },
@@ -850,13 +866,18 @@ export default {
             this.showFinancialsModal = false;
             alert('财务信息已更新');
         },
-        // Contact person methods
-        editContact() {
-            this.showContactModal = true;
+        // 证据时间轴方法
+        refreshTimeline() {
+            alert('正在重新生成证据时间轴...');
+            // TODO: Call AI to regenerate timeline
         },
-        saveContact() {
-            this.showContactModal = false;
-            alert('联络人信息已更新');
+        editTimeline() {
+            alert('编辑功能开发中...');
+            // TODO: Open timeline editor modal
+        },
+        exportTimeline() {
+            alert('正在导出证据时间轴...');
+            // TODO: Export timeline as PDF or Word
         }
     },
     template: `
@@ -880,7 +901,11 @@ export default {
                 <div class="case-title-wrapper">
                     <div>
                         <div class="case-tags" style="margin-bottom: 8px;">
-                            <span :class="['tag', 'status-' + (caseData.statusCode || 'active')]">{{ caseData.status }}</span>
+                            <span 
+                                :class="['tag', 'status-' + (caseData.statusCode || 'active')]"
+                            >
+                                {{ caseData.status }}
+                            </span>
                             <span class="tag">{{ caseData.type }}</span>
                             <span class="tag">{{ caseData.category }}</span>
                         </div>
@@ -941,101 +966,71 @@ export default {
                                     <i class="fas fa-pen"></i>
                                 </button>
                             </div>
-                            <div class="info-row">
-                                <span class="label">案件标题</span>
-                                <span class="value">{{ caseData.name }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">案件编号</span>
-                                <span class="value">{{ caseData.id }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">案由</span>
-                                <span class="value">{{ caseData.type }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">具体案由</span>
-                                <span class="value">{{ caseData.category }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">案件阶段</span>
-                                <span class="value">{{ caseData.status }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">管辖法院/仲裁委</span>
-                                <span class="value">{{ caseData.court }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">承办法官</span>
-                                <span class="value">{{ caseData.judge || '-' }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">立案日期</span>
-                                <span class="value">{{ caseData.filingDate }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">诉讼时效/上诉截止日</span>
-                                <span class="value" style="color: #dc2626; font-weight: 500;">{{ caseData.deadline || '-' }}</span>
-                            </div>
-                        </div>
-
-                        <!-- 联络人卡片 -->
-                        <div class="modern-card">
-                            <div class="card-header">
-                                <div class="card-title">联络人</div>
-                                <button class="icon-btn" style="font-size: 14px;" @click="editContact">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-                                <div class="contact-avatar">
-                                    <i class="fas fa-user"></i>
+                            
+                            <!-- 使用两列网格布局 -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px;">
+                                <div class="info-row">
+                                    <span class="label">案件标题</span>
+                                    <span class="value">{{ caseData.name }}</span>
                                 </div>
-                                <div>
-                                    <div style="font-weight: 600; font-size: 16px;">{{ contactData.name }}</div>
-                                    <div style="color: var(--text-secondary); font-size: 13px;">{{ contactData.role }}</div>
+                                <div class="info-row">
+                                    <span class="label">案件编号</span>
+                                    <span class="value">{{ caseData.id }}</span>
                                 </div>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">电话</span>
-                                <span class="value">{{ contactData.phone }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">邮箱</span>
-                                <span class="value">{{ contactData.email }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">地址</span>
-                                <span class="value">{{ contactData.address }}</span>
-                            </div>
-                        </div>
-
-                        <!-- 案件进度卡片 -->
-                        <div class="modern-card">
-                            <div class="card-header">
-                                <div class="card-title">案件进度</div>
-                            </div>
-                            <div class="timeline">
-                                <div class="timeline-item active">
-                                    <div class="timeline-dot"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-title">案件立项</div>
-                                        <div class="timeline-date">2023-10-01</div>
-                                    </div>
+                                <div class="info-row">
+                                    <span class="label">案由</span>
+                                    <span class="value">{{ caseData.type }}</span>
                                 </div>
-                                <div class="timeline-item active">
-                                    <div class="timeline-dot"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-title">证据收集</div>
-                                        <div class="timeline-date">进行中</div>
-                                    </div>
+                                <div class="info-row">
+                                    <span class="label">具体案由</span>
+                                    <span class="value">{{ caseData.category }}</span>
                                 </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-dot"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-title">起诉状撰写</div>
-                                        <div class="timeline-date">待开始</div>
-                                    </div>
+                                <div class="info-row">
+                                    <span class="label">案件阶段</span>
+                                    <span class="value">{{ caseData.stage || '-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">管辖法院/仲裁委</span>
+                                    <span class="value">{{ caseData.court }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">承办法官</span>
+                                    <span class="value">{{ caseData.judge || '-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">立案日期</span>
+                                    <span class="value">{{ caseData.filingDate }}</span>
+                                </div>
+                                <div class="info-row" style="grid-column: span 2;">
+                                    <span class="label">诉讼时效/上诉截止日</span>
+                                    <span class="value" style="color: #dc2626; font-weight: 500;">{{ caseData.deadline || '-' }}</span>
+                                </div>
+                                
+                                <!-- 联络人信息分隔线 -->
+                                <div style="grid-column: span 2; border-top: 1px solid #e5e5e5; margin: 12px 0;"></div>
+                                <div style="grid-column: span 2; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #666;">
+                                    <i class="fas fa-address-book" style="margin-right: 8px;"></i>联络人信息
+                                </div>
+                                
+                                <div class="info-row">
+                                    <span class="label">姓名</span>
+                                    <span class="value">{{ contactData.name }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">职位/角色</span>
+                                    <span class="value">{{ contactData.role }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">电话</span>
+                                    <span class="value">{{ contactData.phone }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">邮箱</span>
+                                    <span class="value">{{ contactData.email }}</span>
+                                </div>
+                                <div class="info-row" style="grid-column: span 2;">
+                                    <span class="label">地址</span>
+                                    <span class="value">{{ contactData.address }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1649,46 +1644,73 @@ export default {
 
                 <!-- Tab: Timeline -->
                 <div v-if="activeTab === 'timeline'" class="tab-pane">
+                    <!-- Action Buttons -->
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 20px;">
+                        <button class="smart-btn-secondary" @click="refreshTimeline">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                        <button class="smart-btn-secondary" @click="editTimeline">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="smart-btn-secondary" @click="exportTimeline">
+                            <i class="fas fa-download"></i> 导出
+                        </button>
+                    </div>
+                    
                     <div class="modern-card">
                         <div class="card-header">
                             <div class="card-title">
                                 <i class="fas fa-stream" style="margin-right: 8px;"></i>
-                                案件时间轴
+                                证据时间轴
                             </div>
-                            <button class="smart-btn-secondary">
-                                <i class="fas fa-plus"></i> 添加事件
-                            </button>
                         </div>
                         <div class="timeline" style="padding: 20px 0;">
                             <div class="timeline-item active">
                                 <div class="timeline-dot"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-date">2023-10-01</div>
-                                    <div class="timeline-title">案件立项</div>
-                                    <div class="timeline-desc">案件正式受理，开始准备相关材料</div>
+                                    <div class="timeline-date">2023-09-15</div>
+                                    <div class="timeline-title">买卖合同签订</div>
+                                    <div class="timeline-desc">双方签订买卖合同，约定交易金额及交付时间</div>
                                 </div>
                             </div>
                             <div class="timeline-item active">
                                 <div class="timeline-dot"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-date">2023-10-15 - 进行中</div>
-                                    <div class="timeline-title">证据收集</div>
-                                    <div class="timeline-desc">收集合同原件、转账记录等关键证据</div>
+                                    <div class="timeline-date">2023-09-20</div>
+                                    <div class="timeline-title">首次付款</div>
+                                    <div class="timeline-desc">买方通过银行转账支付首期款项 50,000 元</div>
                                 </div>
                             </div>
-                            <div class="timeline-item">
+                            <div class="timeline-item active">
                                 <div class="timeline-dot"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-date">待开始</div>
-                                    <div class="timeline-title">起诉状撰写</div>
-                                    <div class="timeline-desc">准备起诉状及相关法律文书</div>
+                                    <div class="timeline-date">2023-10-05</div>
+                                    <div class="timeline-title">货物交付</div>
+                                    <div class="timeline-desc">卖方交付货物，买方签收确认</div>
                                 </div>
                             </div>
-                            <div class="timeline-item">
+                            <div class="timeline-item active">
                                 <div class="timeline-dot"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-date">预计 2023-12-01</div>
-                                    <div class="timeline-title">法院立案</div>
+                                    <div class="timeline-date">2023-10-15</div>
+                                    <div class="timeline-title">质量异议提出</div>
+                                    <div class="timeline-desc">买方发现货物存在质量问题，通过邮件提出异议</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item active">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-date">2023-10-25</div>
+                                    <div class="timeline-title">协商未果</div>
+                                    <div class="timeline-desc">双方多次沟通未能达成一致，买方拒绝支付尾款</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item active">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-date">2023-11-01</div>
+                                    <div class="timeline-title">律师函发送</div>
+                                    <div class="timeline-desc">卖方委托律师向买方发送律师函，要求支付尾款</div>
                                 </div>
                             </div>
                         </div>
@@ -1801,8 +1823,37 @@ export default {
                             <input type="date" class="smart-input" v-model="editForm.filingDate">
                         </div>
                         <div class="smart-form-group">
-                            <label class="smart-label">案件状态</label>
-                            <input type="text" class="smart-input" v-model="editForm.status" placeholder="请输入案件状态">
+                            <label class="smart-label">案件阶段</label>
+                            <select class="smart-select" v-model="editForm.stage">
+                                <option v-for="stage in stageOptions" :key="stage" :value="stage">{{ stage }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 联络人信息分隔 -->
+                        <div style="grid-column: span 2; border-top: 1px solid #e5e5e5; margin: 16px 0;"></div>
+                        <div style="grid-column: span 2; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #666;">
+                            <i class="fas fa-address-book" style="margin-right: 8px;"></i>联络人信息
+                        </div>
+                        
+                        <div class="smart-form-group">
+                            <label class="smart-label">姓名</label>
+                            <input type="text" class="smart-input" v-model="editForm.contactName" placeholder="请输入联络人姓名">
+                        </div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">职位/角色</label>
+                            <input type="text" class="smart-input" v-model="editForm.contactRole" placeholder="请输入职位或角色">
+                        </div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">电话</label>
+                            <input type="text" class="smart-input" v-model="editForm.contactPhone" placeholder="请输入联系电话">
+                        </div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">邮箱</label>
+                            <input type="email" class="smart-input" v-model="editForm.contactEmail" placeholder="请输入邮箱地址">
+                        </div>
+                        <div class="smart-form-group" style="grid-column: span 2;">
+                            <label class="smart-label">地址</label>
+                            <input type="text" class="smart-input" v-model="editForm.contactAddress" placeholder="请输入联系地址">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1876,43 +1927,6 @@ export default {
                 </div>
             </div>
 
-            <!-- Contact Person Edit Modal -->
-            <div v-if="showContactModal" class="modal-overlay" @click.self="showContactModal = false">
-                <div class="modal-container" style="width: 600px;">
-                    <div class="modal-header">
-                        <div class="modal-title">编辑联络人</div>
-                        <button class="modal-close" @click="showContactModal = false">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="smart-form-group">
-                            <label class="smart-label required">姓名</label>
-                            <input type="text" class="smart-input" v-model="contactData.name" placeholder="请输入联络人姓名">
-                        </div>
-                        <div class="smart-form-group">
-                            <label class="smart-label">职位/角色</label>
-                            <input type="text" class="smart-input" v-model="contactData.role" placeholder="请输入职位或角色">
-                        </div>
-                        <div class="smart-form-group">
-                            <label class="smart-label">电话</label>
-                            <input type="text" class="smart-input" v-model="contactData.phone" placeholder="请输入联系电话">
-                        </div>
-                        <div class="smart-form-group">
-                            <label class="smart-label">邮箱</label>
-                            <input type="email" class="smart-input" v-model="contactData.email" placeholder="请输入邮箱地址">
-                        </div>
-                        <div class="smart-form-group">
-                            <label class="smart-label">地址</label>
-                            <input type="text" class="smart-input" v-model="contactData.address" placeholder="请输入联系地址">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="smart-btn-secondary" @click="showContactModal = false">取消</button>
-                        <button class="smart-btn-primary" @click="saveContact"><i class="fas fa-save"></i> 保存</button>
-                    </div>
-                </div>
-            </div>
 
             <!-- Case Form Modal -->
             <CaseForm 

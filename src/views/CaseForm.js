@@ -23,7 +23,9 @@ export default {
                 court: '',
                 judge: '',
                 filingDate: '',
+                filingDate: '',
                 deadline: '',
+                status: 'active', // Default status
 
                 // 当事人信息
                 clients: [
@@ -72,7 +74,7 @@ export default {
     methods: {
         resetForm() {
             this.form = {
-                name: '', caseId: '', type: '', legalCause: '', caseStage: '', court: '', judge: '', filingDate: '', deadline: '',
+                name: '', caseId: '', type: '', legalCause: '', caseStage: '', court: '', judge: '', filingDate: '', deadline: '', status: 'active',
                 clients: [{ name: '', type: 'individual', id: '' }],
                 opposingParties: [{ name: '', type: 'company', rep: '', counsel: '' }],
                 description: '', disputeFocus: '', objective: '',
@@ -93,7 +95,9 @@ export default {
                 court: '上海市浦东新区人民法院',
                 judge: '张法官',
                 filingDate: '2023-10-01',
+                filingDate: '2023-10-01',
                 deadline: '2024-10-01',
+                status: 'active', // Mock status
 
                 // 当事人信息
                 clients: [
@@ -114,6 +118,19 @@ export default {
                 courtCost: '8,800.00',
                 billableHours: '12.5'
             };
+
+            // Mock status based on ID to match CaseList
+            if (id == 2) {
+                this.form.status = 'draft';
+                this.form.name = '张三 诉 李四 借贷纠纷案';
+                this.form.caseId = 'CASE-2023-002';
+            } else if (id == 3) {
+                this.form.status = 'closed';
+                this.form.name = '甲乙丙丁 劳动争议仲裁案';
+                this.form.caseId = 'CASE-2023-003';
+            } else {
+                this.form.status = 'active';
+            }
         },
         addClient() {
             this.form.clients.push({ name: '', type: 'individual', id: '' });
@@ -131,18 +148,25 @@ export default {
                 this.form.opposingParties.splice(index, 1);
             }
         },
-        saveCase() {
+        saveCase(status) {
             if (!this.validateForm()) return;
+
+            // If status is provided (e.g. 'draft' or 'active' for new cases), update it
+            if (status && typeof status === 'string') {
+                this.form.status = status;
+            }
+
             // In a real app, we would save to backend here
             this.$emit('saved', this.form);
             this.close();
         },
-        saveAndNew() {
-            if (!this.validateForm()) return;
-            this.$emit('saved', this.form);
-            alert('案件已保存！');
-            this.resetForm();
-            // Keep modal open for new entry
+
+        closeCase() {
+            if (confirm('确定要结案吗？\n\n注意：结案后案件信息将无法修改。')) {
+                this.form.status = 'closed';
+                this.form.caseStage = 'closed';
+                this.saveCase();
+            }
         },
         close() {
             this.$emit('close');
@@ -180,6 +204,7 @@ export default {
                 
                 <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px;">
                     <form @submit.prevent>
+                        <fieldset :disabled="form.status === 'closed'" style="border: none; padding: 0; margin: 0; min-inline-size: min-content; width: 100%;">
                         <!-- 1. 基础信息 -->
                         <div class="smart-card" style="margin-bottom: 24px; box-shadow: none; border: 1px solid #e5e5e5;">
                             <div class="card-header" style="padding: 15px 20px; border-bottom: 1px solid #e5e5e5; background: #fafafa;">
@@ -409,17 +434,27 @@ export default {
                                 </div>
                             </div>
                         </div>
+                        </fieldset>
                     </form>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="smart-btn-secondary" @click="close">
-                        取消
+                        {{ form.status === 'closed' ? '关闭' : '取消' }}
                     </button>
-                    <button v-if="!isEdit" type="button" class="smart-btn-secondary" @click="saveAndNew">
-                        保存并新建
-                    </button>
-                    <button type="button" class="smart-btn-primary" @click="saveCase">
+                    
+                    <!-- New Case Buttons -->
+                    <template v-if="!isEdit">
+                        <button type="button" class="smart-btn-secondary" @click="saveCase('draft')">
+                            保存
+                        </button>
+                        <button type="button" class="smart-btn-primary" @click="saveCase('active')">
+                            提交
+                        </button>
+                    </template>
+
+                    <!-- Edit Case Buttons -->
+                    <button v-if="isEdit && form.status !== 'closed'" type="button" class="smart-btn-primary" @click="saveCase()">
                         <i class="fas fa-save"></i> 保存
                     </button>
                 </div>

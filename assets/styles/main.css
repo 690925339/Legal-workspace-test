@@ -426,10 +426,7 @@ body {
     color: #be123c;
 }
 
-.status-unsigned {
-    background: #fef3c7;
-    color: #d97706;
-}
+
 
 .avatar-stack {
     display: flex;
@@ -535,6 +532,14 @@ body {
     font-weight: 500;
     background-color: var(--bg-hover);
     color: var(--text-secondary);
+}
+
+.status-dropdown .status-option-hover:hover {
+    background: #f5f5f5;
+}
+
+.status-dropdown .status-option-hover:last-child {
+    border-bottom: none;
 }
 
 .tabs-container {
@@ -3822,10 +3827,7 @@ label.required::after {
     color: #be123c;
 }
 
-.status-unsigned {
-    background: #fef3c7;
-    color: #d97706;
-}
+
 
 .avatar-stack {
     display: flex;
@@ -3996,6 +3998,25 @@ label.required::after {
 
 .smart-btn-primary:hover {
     background: #333333;
+}
+
+.smart-btn-danger {
+    padding: 10px 24px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.smart-btn-danger:hover {
+    background: #b91c1c;
 }
 
 .smart-btn-secondary {

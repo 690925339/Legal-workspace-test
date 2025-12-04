@@ -59,24 +59,6 @@ export default {
                         { name: '李', color: '#fce7f3', textColor: '#9d174d' }
                     ],
                     lastUpdate: '2023-10-20'
-                },
-                {
-                    id: 4,
-                    name: '某科技公司 知识产权纠纷案',
-                    code: 'CASE-2023-004',
-                    type: '民事 · 知识产权',
-                    client: '某科技公司',
-                    opposingParty: '待确定',
-                    court: '待确定',
-                    filingDate: '-',
-                    amount: '待评估',
-                    description: '客户咨询中，尚未签订委托合同。',
-                    status: 'unsigned',
-                    statusText: '未签约',
-                    assignees: [
-                        { name: '张', color: '#dbeafe', textColor: '#1e40af' }
-                    ],
-                    lastUpdate: '1小时前'
                 }
             ],
             searchQuery: '',
@@ -140,6 +122,18 @@ export default {
         },
         getStatusClass(status) {
             return `status-badge status-${status}`;
+        },
+        closeCase(caseItem) {
+            if (caseItem.status !== 'active') {
+                alert('只有进行中的案件才能结案');
+                return;
+            }
+            if (confirm('确定要结案吗？\n\n注意：结案后案件信息将无法修改。')) {
+                caseItem.status = 'closed';
+                caseItem.statusText = '已结案';
+                caseItem.lastUpdate = '刚刚';
+                alert('案件已结案');
+            }
         }
     },
     template: `
@@ -222,6 +216,9 @@ export default {
                                     </button>
                                     <button class="action-btn" @click.stop="editCase(caseItem.id)" title="编辑">
                                         <i class="fas fa-pen"></i>
+                                    </button>
+                                    <button v-if="caseItem.status === 'active'" class="action-btn" @click.stop="closeCase(caseItem)" title="结案" style="color: #dc2626;">
+                                        <i class="fas fa-folder-minus"></i>
                                     </button>
                                     <button class="action-btn delete" @click.stop="deleteCase(caseItem)" title="删除">
                                         <i class="fas fa-trash"></i>
