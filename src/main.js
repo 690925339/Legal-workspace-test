@@ -12,6 +12,8 @@ import ContractReview from './views/ContractReview.js';
 import LegalResearch from './views/LegalResearch.js';
 
 import Settings from './views/Settings.js';
+import UserProfile from './views/UserProfile.js';
+import ProductFeedback from './views/ProductFeedback.js';
 
 const { createApp } = Vue;
 
@@ -45,6 +47,12 @@ const App = {
             }
             if (path === '/settings') {
                 return 'Settings';
+            }
+            if (path === '/profile') {
+                return 'UserProfile';
+            }
+            if (path === '/feedback') {
+                return 'ProductFeedback';
             }
             if (path.startsWith('/detail')) {
                 return 'CaseDetail';
@@ -84,7 +92,9 @@ const App = {
         CaseForm,
         ContractReview,
         LegalResearch,
-        Settings
+        Settings,
+        UserProfile,
+        ProductFeedback
     },
     template: `
         <div id="app">

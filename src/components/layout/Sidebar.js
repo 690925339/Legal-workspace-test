@@ -31,7 +31,6 @@ export default {
             return this.currentPath === path;
         },
         toggleUserMenu() {
-            if (this.isCollapsed) return; // Disable menu when collapsed for simplicity, or implement a side popover
             this.showUserMenu = !this.showUserMenu;
         },
         toggleCollapse() {
@@ -82,11 +81,11 @@ export default {
             </a>
 
             <div class="sidebar-footer" style="position: relative;">
-                <div v-if="showUserMenu && !isCollapsed" class="user-menu-popover" style="
+                <div v-if="showUserMenu" class="user-menu-popover" style="
                     position: absolute;
                     bottom: 100%;
                     left: 0;
-                    width: 100%;
+                    min-width: 230px;
                     background: white;
                     border: 1px solid #e5e5e5;
                     border-radius: 8px;
@@ -95,6 +94,19 @@ export default {
                     padding: 4px 0;
                     z-index: 100;
                 ">
+                    <a @click.prevent="navigate('/profile')" class="menu-item" style="
+                        display: flex;
+                        align-items: center;
+                        padding: 10px 16px;
+                        color: #1a1a1a;
+                        text-decoration: none;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+                        <i class="fas fa-user-circle" style="width: 20px; margin-right: 8px; color: #666;"></i>
+                        个人资料
+                    </a>
                     <a @click.prevent="navigate('/notifications')" class="menu-item" style="
                         display: flex;
                         align-items: center;
@@ -108,7 +120,7 @@ export default {
                         <i class="fas fa-bell" style="width: 20px; margin-right: 8px; color: #666;"></i>
                         站内信
                     </a>
-                    <a @click.prevent="navigate('/settings')" class="menu-item" style="
+                    <a @click.prevent="navigate('/help')" class="menu-item" style="
                         display: flex;
                         align-items: center;
                         padding: 10px 16px;
@@ -118,8 +130,21 @@ export default {
                         cursor: pointer;
                         transition: background 0.2s;
                     " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
-                        <i class="fas fa-cog" style="width: 20px; margin-right: 8px; color: #666;"></i>
-                        设置
+                        <i class="fas fa-question-circle" style="width: 20px; margin-right: 8px; color: #666;"></i>
+                        帮助文档
+                    </a>
+                    <a @click.prevent="navigate('/feedback')" class="menu-item" style="
+                        display: flex;
+                        align-items: center;
+                        padding: 10px 16px;
+                        color: #1a1a1a;
+                        text-decoration: none;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+                        <i class="fas fa-comment-alt" style="width: 20px; margin-right: 8px; color: #666;"></i>
+                        产品反馈
                     </a>
                     <div style="height: 1px; background: #e5e5e5; margin: 4px 0;"></div>
                     <a @click.prevent="navigate('/login')" class="menu-item" style="
@@ -145,7 +170,6 @@ export default {
                         <div class="user-name">李律师</div>
                         <div class="user-role">高级合伙人</div>
                     </div>
-                    <i v-show="!isCollapsed" :class="['fas', showUserMenu ? 'fa-chevron-down' : 'fa-chevron-up']" style="color: var(--text-tertiary); font-size: 12px;"></i>
                 </a>
             </div>
         </aside>

@@ -62,6 +62,7 @@ export default {
                     icon: 'fas fa-cogs',
                     items: [
                         { id: 'ai-analysis', name: 'AI分析' },
+                        { id: 'ai-assistant', name: 'AI对话助手' },
                         { id: 'relationship-graph', name: '关系洞察' },
                         { id: 'timeline', name: '案件时间轴' }
                     ]
@@ -196,6 +197,36 @@ export default {
                     '查找类似的判决案例'
                 ]
             },
+            // 当事人信息数据
+            stakeholders: {
+                plaintiffs: [
+                    {
+                        id: 1,
+                        name: '张三',
+                        type: 'person',
+                        idNumber: '110101198001011234',
+                        phone: '13800138000',
+                        address: '北京市朝阳区某某街道123号',
+                        role: '原告'
+                    }
+                ],
+                defendants: [
+                    {
+                        id: 1,
+                        name: '某科技有限公司',
+                        type: 'company',
+                        legalRepresentative: '李四',
+                        creditCode: '91110000MA01A2B3C4',
+                        address: '北京市海淀区某某大厦10层',
+                        lawyer: '王律师（某律所）',
+                        role: '被告'
+                    }
+                ],
+                thirdParties: []
+            },
+            showStakeholderModal: false,
+            currentStakeholder: null,
+            stakeholderType: 'plaintiff', // plaintiff, defendant, thirdParty
             // 关系洞察数据
             relationshipData: {
                 nodes: [
@@ -320,26 +351,31 @@ export default {
         getStarRating(priority) {
             return '★'.repeat(priority) + '☆'.repeat(5 - priority);
         },
-        sendMessage() {
-            if (!this.aiAssistant.input.trim()) return;
+        sendMessage(message) {
+            const content = message || this.aiAssistant.input.trim();
+            if (!content) return;
 
             // 添加用户消息
             this.aiAssistant.messages.push({
                 id: Date.now(),
                 role: 'user',
-                content: this.aiAssistant.input
+                content: content
             });
 
-            const userQuestion = this.aiAssistant.input;
+            const userQuestion = content;
             this.aiAssistant.input = '';
 
             // 模拟 AI 回复
             setTimeout(() => {
                 let reply = '这是一个很好的问题。基于目前的证据分析，我认为...';
-                if (userQuestion.includes('胜诉')) {
+                if (userQuestion.includes('胜诉') || userQuestion.includes('概率') || userQuestion.includes('分析本案')) {
                     reply = '根据目前的证据情况（完整度50%），胜诉概率约为 60%。如果能补充"往来函件"和"催告函"，胜诉概率可提升至 80% 以上。';
-                } else if (userQuestion.includes('起草')) {
+                } else if (userQuestion.includes('起草') || userQuestion.includes('律师函')) {
                     reply = '好的，正在为您起草相关文书。请稍候...';
+                } else if (userQuestion.includes('证据') || userQuestion.includes('清单')) {
+                    reply = '根据案件类型分析，建议收集以下证据：\n\n1. 合同原件及附件\n2. 支付凭证（转账记录、发票等）\n3. 往来邮件和函件\n4. 催告函及送达证明\n\n这些证据将有助于证明合同关系的成立和履行情况。';
+                } else if (userQuestion.includes('案例') || userQuestion.includes('判决')) {
+                    reply = '我为您找到了3个类似案例：\n\n1. (2022)沪01民初123号 - 软件开发合同纠纷，原告胜诉\n2. (2021)京03民终456号 - 技术服务合同纠纷，部分支持\n3. (2023)粤01民初789号 - 软件交付纠纷，调解结案\n\n这些案例的共同点是都涉及软件交付标准的认定问题。';
                 }
 
                 this.aiAssistant.messages.push({
@@ -550,6 +586,64 @@ export default {
         },
         navigateToEvidenceUpload() {
             router.push('/evidence-upload');
+        },
+        // 当事人管理方法
+        addStakeholder(type) {
+            this.stakeholderType = type;
+            this.currentStakeholder = {
+                id: null,
+                name: '',
+                type: 'person', // person or company
+                idNumber: '',
+                phone: '',
+                address: '',
+                role: type === 'plaintiff' ? '原告' : (type === 'defendant' ? '被告' : '第三人'),
+                // 公司特有字段
+                legalRepresentative: '',
+                creditCode: '',
+                lawyer: ''
+            };
+            this.showStakeholderModal = true;
+        },
+        editStakeholder(type, stakeholder) {
+            this.stakeholderType = type;
+            this.currentStakeholder = JSON.parse(JSON.stringify(stakeholder)); // Deep copy
+            this.showStakeholderModal = true;
+        },
+        deleteStakeholder(type, id) {
+            if (!confirm('确定要删除该当事人吗？')) return;
+
+            let listName = '';
+            if (type === 'plaintiff') listName = 'plaintiffs';
+            else if (type === 'defendant') listName = 'defendants';
+            else listName = 'thirdParties';
+
+            this.stakeholders[listName] = this.stakeholders[listName].filter(item => item.id !== id);
+        },
+        saveStakeholder() {
+            if (!this.currentStakeholder.name) {
+                alert('请输入姓名/名称');
+                return;
+            }
+
+            let listName = '';
+            if (this.stakeholderType === 'plaintiff') listName = 'plaintiffs';
+            else if (this.stakeholderType === 'defendant') listName = 'defendants';
+            else listName = 'thirdParties';
+
+            if (this.currentStakeholder.id) {
+                // 编辑
+                const index = this.stakeholders[listName].findIndex(item => item.id === this.currentStakeholder.id);
+                if (index !== -1) {
+                    this.stakeholders[listName].splice(index, 1, this.currentStakeholder);
+                }
+            } else {
+                // 新增
+                this.currentStakeholder.id = Date.now();
+                this.stakeholders[listName].push(this.currentStakeholder);
+            }
+
+            this.showStakeholderModal = false;
         },
         // 关系洞察方法
         initRelationshipGraph() {
@@ -912,56 +1006,162 @@ export default {
 
                 <!-- Tab: Stakeholders -->
                 <div v-if="activeTab === 'stakeholders'" class="tab-pane">
-                    <div class="modern-card">
+                    <!-- 原告列表 -->
+                    <div class="modern-card" style="margin-bottom: 20px;">
                         <div class="card-header">
-                            <div class="card-title">当事人信息</div>
-                            <button class="icon-btn" style="font-size: 14px;">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-weight: 600; font-size: 15px; margin-bottom: 12px; color: #1a1a1a;">
+                            <div class="card-title">
                                 <i class="fas fa-user" style="margin-right: 8px; color: #4f46e5;"></i>
                                 原告（我方客户）
                             </div>
+                            <button class="smart-btn-secondary" style="font-size: 13px; padding: 6px 16px;" @click="addStakeholder('plaintiff')">
+                                <i class="fas fa-plus"></i> 添加原告
+                            </button>
+                        </div>
+                        <div v-for="(plaintiff, index) in stakeholders.plaintiffs" :key="plaintiff.id" 
+                             :style="{borderTop: index > 0 ? '1px solid #e5e5e5' : 'none', paddingTop: index > 0 ? '16px' : '0', marginTop: index > 0 ? '16px' : '0'}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;">
+                                    {{ plaintiff.type === 'person' ? '自然人' : '法人/组织' }} {{ index + 1 }}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="icon-btn" style="font-size: 12px;" @click="editStakeholder('plaintiff', plaintiff)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="icon-btn" style="font-size: 12px; color: #dc2626;" @click="deleteStakeholder('plaintiff', plaintiff.id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="info-row">
                                 <span class="label">姓名/名称</span>
-                                <span class="value">张三</span>
+                                <span class="value">{{ plaintiff.name }}</span>
                             </div>
-                            <div class="info-row">
-                                <span class="label">主体类型</span>
-                                <span class="value">自然人</span>
-                            </div>
-                            <div class="info-row">
+                            <div class="info-row" v-if="plaintiff.type === 'person'">
                                 <span class="label">身份证号</span>
-                                <span class="value">110101198001011234</span>
+                                <span class="value">{{ plaintiff.idNumber }}</span>
+                            </div>
+                            <div class="info-row" v-if="plaintiff.type === 'company'">
+                                <span class="label">统一信用代码</span>
+                                <span class="value">{{ plaintiff.creditCode }}</span>
+                            </div>
+                            <div class="info-row" v-if="plaintiff.phone">
+                                <span class="label">联系电话</span>
+                                <span class="value">{{ plaintiff.phone }}</span>
+                            </div>
+                            <div class="info-row" v-if="plaintiff.address">
+                                <span class="label">地址</span>
+                                <span class="value">{{ plaintiff.address }}</span>
                             </div>
                         </div>
-                        <div style="border-top: 1px solid #e5e5e5; padding-top: 20px;">
-                            <div style="font-weight: 600; font-size: 15px; margin-bottom: 12px; color: #1a1a1a;">
+                        <div v-if="stakeholders.plaintiffs.length === 0" style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="fas fa-user-plus" style="font-size: 32px; margin-bottom: 12px; opacity: 0.3;"></i>
+                            <div>暂无原告信息，点击上方按钮添加</div>
+                        </div>
+                    </div>
+
+                    <!-- 被告列表 -->
+                    <div class="modern-card" style="margin-bottom: 20px;">
+                        <div class="card-header">
+                            <div class="card-title">
                                 <i class="fas fa-building" style="margin-right: 8px; color: #dc2626;"></i>
                                 被告
                             </div>
-                            <div class="info-row">
-                                <span class="label">公司名称</span>
-                                <span class="value">某科技有限公司</span>
+                            <button class="smart-btn-secondary" style="font-size: 13px; padding: 6px 16px;" @click="addStakeholder('defendant')">
+                                <i class="fas fa-plus"></i> 添加被告
+                            </button>
+                        </div>
+                        <div v-for="(defendant, index) in stakeholders.defendants" :key="defendant.id"
+                             :style="{borderTop: index > 0 ? '1px solid #e5e5e5' : 'none', paddingTop: index > 0 ? '16px' : '0', marginTop: index > 0 ? '16px' : '0'}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;">
+                                    {{ defendant.type === 'person' ? '自然人' : '法人/组织' }} {{ index + 1 }}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="icon-btn" style="font-size: 12px;" @click="editStakeholder('defendant', defendant)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="icon-btn" style="font-size: 12px; color: #dc2626;" @click="deleteStakeholder('defendant', defendant.id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="info-row">
-                                <span class="label">主体类型</span>
-                                <span class="value">法人企业</span>
+                                <span class="label">{{ defendant.type === 'company' ? '公司名称' : '姓名' }}</span>
+                                <span class="value">{{ defendant.name }}</span>
                             </div>
-                            <div class="info-row">
+                            <div class="info-row" v-if="defendant.type === 'company' && defendant.legalRepresentative">
                                 <span class="label">法定代表人</span>
-                                <span class="value">李四</span>
+                                <span class="value">{{ defendant.legalRepresentative }}</span>
                             </div>
-                            <div class="info-row">
+                            <div class="info-row" v-if="defendant.type === 'company' && defendant.creditCode">
                                 <span class="label">统一信用代码</span>
-                                <span class="value">91110000MA01A2B3C4</span>
+                                <span class="value">{{ defendant.creditCode }}</span>
+                            </div>
+                            <div class="info-row" v-if="defendant.type === 'person' && defendant.idNumber">
+                                <span class="label">身份证号</span>
+                                <span class="value">{{ defendant.idNumber }}</span>
+                            </div>
+                            <div class="info-row" v-if="defendant.address">
+                                <span class="label">地址</span>
+                                <span class="value">{{ defendant.address }}</span>
+                            </div>
+                            <div class="info-row" v-if="defendant.lawyer">
+                                <span class="label">对方代理律师</span>
+                                <span class="value">{{ defendant.lawyer }}</span>
+                            </div>
+                        </div>
+                        <div v-if="stakeholders.defendants.length === 0" style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="fas fa-user-plus" style="font-size: 32px; margin-bottom: 12px; opacity: 0.3;"></i>
+                            <div>暂无被告信息，点击上方按钮添加</div>
+                        </div>
+                    </div>
+
+                    <!-- 第三人列表 -->
+                    <div class="modern-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-users" style="margin-right: 8px; color: #f59e0b;"></i>
+                                第三人
+                            </div>
+                            <button class="smart-btn-secondary" style="font-size: 13px; padding: 6px 16px;" @click="addStakeholder('thirdParty')">
+                                <i class="fas fa-plus"></i> 添加第三人
+                            </button>
+                        </div>
+                        <div v-for="(thirdParty, index) in stakeholders.thirdParties" :key="thirdParty.id"
+                             :style="{borderTop: index > 0 ? '1px solid #e5e5e5' : 'none', paddingTop: index > 0 ? '16px' : '0', marginTop: index > 0 ? '16px' : '0'}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;">
+                                    {{ thirdParty.type === 'person' ? '自然人' : '法人/组织' }} {{ index + 1 }}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="icon-btn" style="font-size: 12px;" @click="editStakeholder('thirdParty', thirdParty)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="icon-btn" style="font-size: 12px; color: #dc2626;" @click="deleteStakeholder('thirdParty', thirdParty.id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="info-row">
-                                <span class="label">对方代理律师</span>
-                                <span class="value">王律师（某律所）</span>
+                                <span class="label">姓名/名称</span>
+                                <span class="value">{{ thirdParty.name }}</span>
                             </div>
+                            <div class="info-row" v-if="thirdParty.type === 'person' && thirdParty.idNumber">
+                                <span class="label">身份证号</span>
+                                <span class="value">{{ thirdParty.idNumber }}</span>
+                            </div>
+                            <div class="info-row" v-if="thirdParty.type === 'company' && thirdParty.creditCode">
+                                <span class="label">统一信用代码</span>
+                                <span class="value">{{ thirdParty.creditCode }}</span>
+                            </div>
+                            <div class="info-row" v-if="thirdParty.address">
+                                <span class="label">地址</span>
+                                <span class="value">{{ thirdParty.address }}</span>
+                            </div>
+                        </div>
+                        <div v-if="stakeholders.thirdParties.length === 0" style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="fas fa-user-plus" style="font-size: 32px; margin-bottom: 12px; opacity: 0.3;"></i>
+                            <div>暂无第三人信息，点击上方按钮添加</div>
                         </div>
                     </div>
                 </div>
@@ -1047,6 +1247,67 @@ export default {
                     </div>
                 </div>
 
+                <!-- Tab: AI Assistant -->
+                <div v-if="activeTab === 'ai-assistant'" class="tab-pane" style="height: calc(100vh - 300px); display: flex; flex-direction: column;">
+                    <!-- Chat Messages -->
+                    <div style="flex: 1; overflow-y: auto; padding: 24px; background: #fafafa;">
+                        <div v-for="msg in aiAssistant.messages" :key="msg.id" 
+                             :style="{
+                                 display: 'flex',
+                                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                 marginBottom: '16px'
+                             }">
+                            <div :style="{
+                                maxWidth: '70%',
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                background: msg.role === 'user' ? '#1a1a1a' : '#ffffff',
+                                color: msg.role === 'user' ? '#ffffff' : '#1a1a1a',
+                                fontSize: '14px',
+                                lineHeight: '1.6',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                            }">
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Suggestions -->
+                    <div v-if="aiAssistant.messages.length === 1" style="padding: 0 24px 16px 24px; background: #fafafa;">
+                        <div style="font-size: 13px; color: #666; margin-bottom: 12px; font-weight: 500;">
+                            <i class="fas fa-lightbulb" style="margin-right: 6px;"></i>
+                            快捷建议
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                            <button v-for="(suggestion, index) in aiAssistant.suggestions" :key="index"
+                                    class="smart-suggestion-item"
+                                    @click="sendMessage(suggestion)">
+                                {{ suggestion }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div style="padding: 20px 24px; background: white; border-top: 1px solid #e5e5e5;">
+                        <div style="display: flex; gap: 12px; align-items: flex-end;">
+                            <textarea 
+                                v-model="aiAssistant.input"
+                                @keydown.enter.prevent="sendMessage()"
+                                placeholder="输入您的问题..."
+                                style="flex: 1; min-height: 44px; max-height: 120px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;"
+                            ></textarea>
+                            <button class="smart-btn-primary" @click="sendMessage()" style="height: 44px; padding: 0 24px;">
+                                <i class="fas fa-paper-plane"></i>
+                                发送
+                            </button>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                            <i class="fas fa-info-circle"></i>
+                            按 Enter 发送，Shift + Enter 换行
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab: AI Evidence Analysis -->
                 <div v-if="activeTab === 'ai-evidence'" class="tab-pane">
                     <!-- Action Buttons -->
@@ -1127,44 +1388,6 @@ export default {
                     </div>
                 </div>
 
-                <!-- Tab: AI Assistant -->
-                <div v-if="activeTab === 'ai-assistant'" class="tab-pane" style="height: 100%; display: flex; flex-direction: column;">
-                    <div class="chat-container" ref="chatContainer">
-                        <div v-for="msg in aiAssistant.messages" :key="msg.id" :class="['chat-message', msg.role]">
-                            <div class="chat-avatar">
-                                <i :class="msg.role === 'ai' ? 'fas fa-robot' : 'fas fa-user'"></i>
-                            </div>
-                            <div class="chat-bubble">
-                                {{ msg.content }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chat-input-area">
-                        <div class="suggestions" v-if="aiAssistant.messages.length < 3">
-                            <button 
-                                v-for="(sug, index) in aiAssistant.suggestions" 
-                                :key="index"
-                                class="suggestion-pill"
-                                @click="useSuggestion(sug)"
-                            >
-                                {{ sug }}
-                            </button>
-                        </div>
-                        <div class="input-box-wrapper">
-                            <input 
-                                type="text" 
-                                v-model="aiAssistant.input" 
-                                @keyup.enter="sendMessage"
-                                placeholder="输入您的问题，或让 AI 帮您起草文书..."
-                                class="chat-input"
-                            >
-                            <button class="send-btn" @click="sendMessage">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Tab: Relationship Insights -->
                 <div v-if="activeTab === 'relationship-graph'" class="tab-pane">
@@ -1390,6 +1613,76 @@ export default {
                 </div>
 
             </div>
+            <!-- Stakeholder Modal -->
+            <div v-if="showStakeholderModal" class="modal-overlay" @click.self="showStakeholderModal = false">
+                <div class="modal-container" style="width: 600px;">
+                    <div class="modal-header">
+                        <div class="modal-title">{{ currentStakeholder.id ? '编辑' : '添加' }}{{ currentStakeholder.role }}</div>
+                        <button class="modal-close" @click="showStakeholderModal = false">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="smart-form-group">
+                            <label class="smart-label">主体类型</label>
+                            <div style="display: flex; gap: 16px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="radio" v-model="currentStakeholder.type" value="person">
+                                    <span>自然人</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="radio" v-model="currentStakeholder.type" value="company">
+                                    <span>法人/组织</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="smart-form-group">
+                            <label class="smart-label required">{{ currentStakeholder.type === 'company' ? '公司名称' : '姓名' }}</label>
+                            <input type="text" class="smart-input" v-model="currentStakeholder.name" :placeholder="currentStakeholder.type === 'company' ? '请输入公司全称' : '请输入姓名'">
+                        </div>
+
+                        <!-- 自然人特有字段 -->
+                        <template v-if="currentStakeholder.type === 'person'">
+                            <div class="smart-form-group">
+                                <label class="smart-label">身份证号</label>
+                                <input type="text" class="smart-input" v-model="currentStakeholder.idNumber" placeholder="请输入身份证号">
+                            </div>
+                            <div class="smart-form-group">
+                                <label class="smart-label">联系电话</label>
+                                <input type="text" class="smart-input" v-model="currentStakeholder.phone" placeholder="请输入联系电话">
+                            </div>
+                        </template>
+
+                        <!-- 公司特有字段 -->
+                        <template v-if="currentStakeholder.type === 'company'">
+                            <div class="smart-form-group">
+                                <label class="smart-label">统一信用代码</label>
+                                <input type="text" class="smart-input" v-model="currentStakeholder.creditCode" placeholder="请输入统一社会信用代码">
+                            </div>
+                            <div class="smart-form-group">
+                                <label class="smart-label">法定代表人</label>
+                                <input type="text" class="smart-input" v-model="currentStakeholder.legalRepresentative" placeholder="请输入法定代表人姓名">
+                            </div>
+                        </template>
+
+                        <div class="smart-form-group">
+                            <label class="smart-label">地址</label>
+                            <input type="text" class="smart-input" v-model="currentStakeholder.address" placeholder="请输入联系地址">
+                        </div>
+
+                        <div class="smart-form-group" v-if="stakeholderType !== 'plaintiff'">
+                            <label class="smart-label">代理律师</label>
+                            <input type="text" class="smart-input" v-model="currentStakeholder.lawyer" placeholder="请输入对方代理律师信息">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="smart-btn-secondary" @click="showStakeholderModal = false">取消</button>
+                        <button class="smart-btn-primary" @click="saveStakeholder">保存</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Case Form Modal -->
             <CaseForm 
                 :visible="showEditModal" 

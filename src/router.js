@@ -4,6 +4,8 @@ const routes = {
     '/detail': 'CaseDetail',
     '/evidence-upload': 'EvidenceUpload',
     '/doc-generate': 'DocGenerate',
+    '/profile': 'UserProfile',
+    '/feedback': 'ProductFeedback',
     '/login': 'Login',
     '/register': 'Register'
 };
