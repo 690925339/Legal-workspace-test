@@ -60,7 +60,7 @@ export default {
             e.preventDefault();
             e.stopPropagation();
             this.isDragging = false;
-            
+
             const files = Array.from(e.dataTransfer.files);
             this.processFiles(files);
         },
@@ -88,7 +88,7 @@ export default {
                     confidence: null,
                     uploadTime: null
                 };
-                
+
                 this.uploadingFiles.push(uploadItem);
                 this.simulateUpload(uploadItem);
             });
@@ -154,13 +154,13 @@ export default {
 
                 item.progress = 100;
                 item.status = 'success';
-                
+
                 // 模拟 AI 自动分类
                 const categories = ['contract', 'payment', 'correspondence', 'identity', 'other'];
                 item.category = categories[Math.floor(Math.random() * categories.length)];
                 item.confidence = (0.75 + Math.random() * 0.24).toFixed(2);
                 item.uploadTime = new Date().toLocaleString('zh-CN');
-                
+
                 this.moveToCompleted(item);
             }, 1500 + Math.random() * 1000);
         },
@@ -187,7 +187,7 @@ export default {
             if (index !== -1) {
                 this.completedFiles.splice(index, 1);
             }
-            
+
             // 重置状态并重新上传
             item.status = 'uploading';
             item.progress = 0;
@@ -239,9 +239,6 @@ export default {
                 this.editingFile.category = this.selectedCategory;
             }
             this.closeCategoryModal();
-        },
-        clearCompleted() {
-            this.completedFiles = this.completedFiles.filter(f => f.status !== 'success');
         }
     },
     template: `
@@ -360,18 +357,16 @@ export default {
                 <!-- Completed Files -->
                 <div class="file-section" v-if="completedFiles.length > 0">
                     <div class="section-header">
-                        <h3><i class="fas fa-check-double"></i> 已完成 ({{ completedFiles.length }})</h3>
-                        <button class="clear-btn" @click="clearCompleted" v-if="successCount > 0">
-                            <i class="fas fa-broom"></i> 清除成功项
-                        </button>
+                        <h3><i class="fas fa-history"></i> 历史上传信息 ({{ completedFiles.length }})</h3>
                     </div>
                     <div class="completed-table-container">
                         <table class="completed-table">
                             <thead>
                                 <tr>
-                                    <th width="50%">文件名称</th>
-                                    <th width="15%">状态</th>
-                                    <th width="15%">分类</th>
+                                    <th width="35%">文件名称</th>
+                                    <th width="15%">上传时间</th>
+                                    <th width="10%">状态</th>
+                                    <th width="20%">分类/失败原因</th>
                                     <th width="20%">操作</th>
                                 </tr>
                             </thead>
@@ -383,6 +378,9 @@ export default {
                                             <span class="file-name-text">{{ file.name }}</span>
                                             <span class="file-size-text">({{ formatSize(file.size) }})</span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span class="upload-time">{{ file.uploadTime || '-' }}</span>
                                     </td>
                                     <td>
                                         <span class="status-tag success" v-if="file.status === 'success'">
@@ -400,7 +398,9 @@ export default {
                                         >
                                             {{ getCategoryInfo(file.category).name }}
                                         </span>
-                                        <span v-else class="error-hint">{{ file.error }}</span>
+                                        <span v-else class="error-hint">
+                                            <i class="fas fa-exclamation-circle"></i> {{ file.error }}
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="action-btns">
@@ -431,16 +431,7 @@ export default {
                 </div>
             </div>
 
-            <!-- Bottom Action Bar -->
-            <div class="action-bar" v-if="successCount > 0">
-                <div class="action-info">
-                    <i class="fas fa-info-circle"></i>
-                    已成功上传 {{ successCount }} 个文件，可返回案件详情查看
-                </div>
-                <button class="done-btn" @click="goBack">
-                    <i class="fas fa-check"></i> 完成上传
-                </button>
-            </div>
+
 
             <!-- Category Edit Modal -->
             <div class="modal-overlay" v-if="showCategoryModal" @click.self="closeCategoryModal">

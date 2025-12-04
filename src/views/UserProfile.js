@@ -157,7 +157,7 @@ export default {
                                         </div>
                                         <div class="smart-form-group" style="grid-column: span 2;">
                                             <label class="smart-label">个人简介</label>
-                                            <textarea class="smart-textarea" v-model="user.bio" :disabled="!isEditing" rows="4"></textarea>
+                                            <textarea class="smart-textarea" v-model="user.bio" :disabled="!isEditing" rows="4" style="border: 1px solid #ccc;"></textarea>
                                         </div>
                                     </div>
                                 </div>
