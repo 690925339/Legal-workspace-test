@@ -21,7 +21,9 @@ export default {
                 '收养未成年需要具备哪些条件',
                 '无因管理如何认定',
                 '劳动合同解除的法定条件'
-            ]
+            ],
+            showHistoryModal: false,
+            historyRecords: []
         };
     },
     computed: {
@@ -57,6 +59,30 @@ export default {
         },
         useSuggestion(text) {
             this.searchQuery = text;
+        },
+        openHistory() {
+            // 模拟历史记录数据
+            this.historyRecords = [
+                { id: 1, title: '劳动合同纠纷', date: '2025-12-08T09:30:00', type: '案例检索' },
+                { id: 2, title: '知识产权侵权', date: '2025-12-07T14:20:00', type: '法规检索' },
+                { id: 3, title: '房屋租赁合同', date: '2025-12-06T11:15:00', type: '案例检索' },
+                { id: 4, title: '离婚财产分割', date: '2025-12-05T16:45:00', type: '法规检索' },
+                { id: 5, title: '交通事故赔偿标准', date: '2025-12-04T10:00:00', type: '案例检索' },
+                { id: 6, title: '民间借贷利息上限', date: '2025-12-03T09:00:00', type: '法规检索' },
+                { id: 7, title: '公司股权转让流程', date: '2025-12-02T15:30:00', type: '案例检索' },
+                { id: 8, title: '网络购物退货规定', date: '2025-12-01T11:20:00', type: '法规检索' },
+                { id: 9, title: '医疗事故鉴定程序', date: '2025-11-30T14:00:00', type: '案例检索' },
+                { id: 10, title: '建设工程施工合同', date: '2025-11-29T10:10:00', type: '案例检索' }
+            ];
+            this.showHistoryModal = true;
+        },
+        handleHistorySelect(record) {
+            // 根据记录类型跳转到相应页面
+            if (record.type === '案例检索') {
+                router.push(`/case-search-results?q=${encodeURIComponent(record.title)}`);
+            } else {
+                router.push(`/regulation-search-results?q=${encodeURIComponent(record.title)}`);
+            }
         }
     },
     template: `
@@ -66,7 +92,7 @@ export default {
                 <div class="smart-header">
                     <div class="smart-header-title-row">
                         <div class="smart-header-actions">
-                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                            <button class="smart-btn-secondary" @click="openHistory">
                                 <i class="fas fa-history"></i> 历史记录
                             </button>
                         </div>
@@ -207,6 +233,15 @@ export default {
                     <span>检索结果基于最新法律法规数据库，仅供参考</span>
                 </div>
             </div>
+            
+            <!-- 历史记录模态框 -->
+            <HistoryModal
+                v-model:visible="showHistoryModal"
+                title="检索历史"
+                :records="historyRecords"
+                :tabs="['案例检索', '法规检索']"
+                @select="handleHistorySelect"
+            />
         </div>
     `
 };

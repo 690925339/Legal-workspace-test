@@ -23,11 +23,12 @@ export default {
                     desc: '建议增加付款时间节点和逾期利息条款'
                 },
                 {
-                    type: 'success',
                     title: '知识产权条款完善',
                     desc: '知识产权归属明确，符合法律规定'
                 }
-            ]
+            ],
+            showHistoryModal: false,
+            historyRecords: []
         };
     },
     methods: {
@@ -100,6 +101,24 @@ export default {
             this.uploadedFile = null;
             this.fileName = '';
             this.fileSize = '';
+        },
+        openHistory() {
+            // 模拟历史记录数据
+            this.historyRecords = [
+                { id: 1, title: '房屋租赁合同.docx', date: '2025-12-08T11:00:00', type: '合同审查' },
+                { id: 2, title: '劳动合同模板.pdf', date: '2025-12-07T16:20:00', type: '合同审查' },
+                { id: 3, title: '技术服务协议.doc', date: '2025-12-06T10:30:00', type: '合同审查' },
+                { id: 4, title: '股权转让协议.pdf', date: '2025-12-05T14:15:00', type: '合同审查' },
+                { id: 5, title: '采购合同范本.docx', date: '2025-12-04T09:30:00', type: '合同审查' },
+                { id: 6, title: '保密协议.pdf', date: '2025-12-03T15:45:00', type: '合同审查' },
+                { id: 7, title: '装修工程合同.doc', date: '2025-12-02T11:00:00', type: '合同审查' },
+                { id: 8, title: '软件开发合同.pdf', date: '2025-12-01T13:20:00', type: '合同审查' }
+            ];
+            this.showHistoryModal = true;
+        },
+        handleHistorySelect(record) {
+            // 跳转到审查结果页
+            router.push('/contract-review-result');
         }
     },
     template: `
@@ -109,7 +128,7 @@ export default {
                 <div class="smart-header">
                     <div class="smart-header-title-row">
                         <div class="smart-header-actions">
-                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                            <button class="smart-btn-secondary" @click="openHistory">
                                 <i class="fas fa-history"></i> 历史记录
                             </button>
                         </div>
@@ -210,6 +229,14 @@ export default {
                     </div>
                 <!-- </template> -->
             </div>
+            
+            <!-- 历史记录模态框 -->
+            <HistoryModal
+                v-model:visible="showHistoryModal"
+                title="审查历史"
+                :records="historyRecords"
+                @select="handleHistorySelect"
+            />
         </div>
     `
 };

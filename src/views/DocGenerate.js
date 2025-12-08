@@ -11,7 +11,9 @@ export default {
             ],
             inputText: '',
             isGenerating: false,
-            generatedDoc: null
+            generatedDoc: null,
+            showHistoryModal: false,
+            historyRecords: []
         };
     },
     methods: {
@@ -95,6 +97,31 @@ export default {
         },
         resetDocument() {
             this.generatedDoc = null;
+        },
+        openHistory() {
+            // 模拟历史记录数据
+            this.historyRecords = [
+                { id: 1, title: '民事起诉状 - 借款合同纠纷', date: '2025-12-08T10:15:00', type: '起诉状' },
+                { id: 2, title: '民事答辩状 - 房屋租赁纠纷', date: '2025-12-07T15:30:00', type: '答辩状' },
+                { id: 3, title: '民事起诉状 - 劳动争议', date: '2025-12-06T09:45:00', type: '起诉状' },
+                { id: 4, title: '民事答辩状 - 侵权责任纠纷', date: '2025-12-05T14:20:00', type: '答辩状' },
+                { id: 5, title: '民事起诉状 - 离婚纠纷', date: '2025-12-04T16:00:00', type: '起诉状' },
+                { id: 6, title: '民事答辩状 - 交通事故', date: '2025-12-03T11:10:00', type: '答辩状' },
+                { id: 7, title: '民事起诉状 - 物业服务合同', date: '2025-12-02T09:50:00', type: '起诉状' },
+                { id: 8, title: '民事答辩状 - 建设工程', date: '2025-12-01T14:30:00', type: '答辩状' }
+            ];
+            this.showHistoryModal = true;
+        },
+        handleHistorySelect(record) {
+            // 直接查看历史记录结果
+            this.activeType = record.type === '起诉状' ? 'complaint' : 'defense';
+            this.inputText = record.title + '的相关案情描述...';
+
+            // 直接生成文档内容，无需等待
+            this.generatedDoc = {
+                title: record.title,
+                content: this.getMockDocument(this.activeType)
+            };
         }
     },
     template: `
@@ -104,7 +131,7 @@ export default {
                 <div class="smart-header">
                     <div class="smart-header-title-row">
                         <div class="smart-header-actions">
-                            <button class="smart-btn-secondary" @click="alert('历史记录功能开发中')">
+                            <button class="smart-btn-secondary" @click="openHistory">
                                 <i class="fas fa-history"></i> 历史记录
                             </button>
                         </div>
@@ -176,6 +203,15 @@ export default {
                     <span>生成的文书仅供参考，请根据实际情况进行修改</span>
                 </div>
             </div>
+            
+            <!-- 历史记录模态框 -->
+            <HistoryModal
+                v-model:visible="showHistoryModal"
+                title="生成历史"
+                :records="historyRecords"
+                :tabs="['起诉状', '答辩状']"
+                @select="handleHistorySelect"
+            />
         </div>
     `
 };

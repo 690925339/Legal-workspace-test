@@ -18,6 +18,7 @@ import RegulationSearchResults from './views/RegulationSearchResults.js';
 import Settings from './views/Settings.js';
 import UserProfile from './views/UserProfile.js';
 import ProductFeedback from './views/ProductFeedback.js';
+import HistoryModal from './components/HistoryModal.js';
 
 const { createApp } = Vue;
 
@@ -152,6 +153,7 @@ app.component('RegulationSearchResults', RegulationSearchResults);
 app.component('EvidenceUpload', EvidenceUpload);
 app.component('DocGenerate', DocGenerate);
 app.component('Settings', Settings);
+app.component('HistoryModal', HistoryModal);
 
 // 挂载应用
 app.mount('#app');
