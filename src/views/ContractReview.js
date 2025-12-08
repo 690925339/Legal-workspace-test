@@ -118,7 +118,7 @@ export default {
                     <p>快速识别合同风险点，提供专业的法律审查建议</p>
                     
                     <!-- 标签切换 -->
-                    <div class="smart-tabs">
+                    <!-- <div class="smart-tabs">
                         <button 
                             :class="['smart-tab-btn', { active: activeTab === 'single' }]"
                             @click="switchTab('single')"
@@ -131,13 +131,13 @@ export default {
                         >
                             对比审查
                         </button>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- 单文件审查 -->
-                <template v-if="activeTab === 'single'">
+                <!-- <template v-if="activeTab === 'single'"> -->
                     <!-- 上传区域 -->
-                    <div class="smart-card" v-if="!analysisComplete">
+                    <div class="smart-card" v-if="!analysisComplete" style="flex: 1; display: flex; flex-direction: column;">
                         <div 
                             class="smart-upload-zone"
                             :class="{ dragging: isDragging }"
@@ -146,6 +146,7 @@ export default {
                             @dragover="handleDragOver"
                             @drop="handleDrop"
                             @click="triggerFileInput"
+                            style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; border: 2px dashed #e0e0e0; background: #fafafa;"
                         >
                             <input 
                                 type="file" 
@@ -155,11 +156,11 @@ export default {
                                 style="display: none;"
                             >
                             
-                            <div class="smart-upload-icon">
-                                <i class="fas fa-cloud-upload-alt"></i>
+                            <div class="smart-upload-icon" style="margin-bottom: 24px;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #999;"></i>
                             </div>
-                            <h3>点击或拖拽文件到此区域上传</h3>
-                            <p>支持格式：PDF、DOC、DOCX，单个文件不超过20MB</p>
+                            <h3 style="font-size: 18px; margin-bottom: 12px; color: #333;">点击或拖拽文件到此区域上传</h3>
+                            <p style="font-size: 14px; color: #666;">支持格式：PDF、DOC、DOCX，单个文件不超过20MB</p>
                         </div>
 
                         <!-- 已上传文件 -->
@@ -207,38 +208,7 @@ export default {
                             </div>
                         </div>
                     </div>
-                </template>
-
-                <!-- 对比审查 -->
-                <template v-if="activeTab === 'compare'">
-                    <div class="smart-card">
-                        <div class="smart-compare-grid">
-                            <div class="smart-compare-card">
-                                <h4>待审查文档</h4>
-                                <p>上传需要审查的合同文档</p>
-                                <button class="smart-btn-secondary">
-                                    <i class="fas fa-upload"></i> 上传文件
-                                </button>
-                            </div>
-                            <div class="smart-compare-card">
-                                <h4>标准文档</h4>
-                                <p>上传标准合同模板进行对比</p>
-                                <button class="smart-btn-secondary">
-                                    <i class="fas fa-upload"></i> 上传文件
-                                </button>
-                            </div>
-                        </div>
-                        <div class="smart-card-footer">
-                            <div class="smart-tips">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>对比审查可以快速发现合同与标准模板的差异</span>
-                            </div>
-                            <button class="smart-btn-primary" disabled>
-                                <i class="fas fa-exchange-alt"></i> 开始对比
-                            </button>
-                        </div>
-                    </div>
-                </template>
+                <!-- </template> -->
             </div>
         </div>
     `

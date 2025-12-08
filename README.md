@@ -116,6 +116,7 @@ legal-workspace-v3/
 │       ├── CaseDetailView.js     # 案例详情查看
 │       ├── RegulationSearchResults.js # 法规检索结果
 │       ├── ContractReview.js     # 合同审查
+│       ├── ContractReviewResult.js # 合同审查结果
 │       ├── DocGenerate.js        # 文书生成
 │       ├── UserProfile.js        # 个人资料
 │       ├── Settings.js           # 系统设置
@@ -232,6 +233,7 @@ legal-workspace-v3/
 | `/case-search-results?q=xxx` | CaseSearchResults | 案例检索结果页 |
 | `/regulation-search-results?q=xxx` | RegulationSearchResults | 法规检索结果页 |
 | `/contract-review` | ContractReview | 合同审查页 |
+| `/contract-review-result` | ContractReviewResult | 合同审查结果页 |
 | `/doc-generate` | DocGenerate | 文书生成页 |
 | `/settings` | Settings | 系统设置页 |
 | `/user-profile` | UserProfile | 个人资料页 |
