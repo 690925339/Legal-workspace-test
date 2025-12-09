@@ -1,4 +1,6 @@
 import { router } from '../router.js';
+import { authService, getSupabaseClient } from '../config/supabase.js';
+import { authStore } from '../store/authStore.js';
 
 export default {
     name: 'UserProfile',
@@ -8,13 +10,13 @@ export default {
         return {
             activeTab: 'basic',
             user: {
-                name: '李律师',
-                title: '高级合伙人',
-                email: 'li.lawyer@alpha-leader.com',
-                phone: '13800138000',
-                department: '诉讼部',
-                location: '上海办公室',
-                bio: '专注于商事诉讼与仲裁，拥有超过10年的执业经验。',
+                name: '',
+                title: '',
+                email: '',
+                phone: '',
+                department: '',
+                location: '',
+                bio: '',
                 avatar: null
             },
             security: {
@@ -29,39 +31,324 @@ export default {
                 language: 'zh-CN'
             },
             isEditing: false,
-            saveSuccess: false
+            saveSuccess: false,
+            isLoading: true,
+            authStore,
+            // 表单验证错误
+            errors: {
+                name: '',
+                email: '',
+                phone: '',
+                newPassword: '',
+                confirmPassword: ''
+            }
         };
     },
+    async mounted() {
+        await this.loadProfile();
+    },
     methods: {
-        saveProfile() {
-            // Simulate API call
-            this.saveSuccess = true;
-            setTimeout(() => {
-                this.saveSuccess = false;
-                this.isEditing = false;
-            }, 2000);
+        async loadProfile() {
+            this.isLoading = true;
+            try {
+                const supabase = getSupabaseClient();
+                const userId = authStore.user?.id;
+
+                if (!userId) {
+                    console.error('No user logged in');
+                    return;
+                }
+
+                // 从 profiles 表加载用户资料
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) {
+                    console.error('Error loading profile:', error);
+                    // 如果 profile 不存在，使用默认值
+                    this.user.email = authStore.user?.email || '';
+                    this.user.name = authStore.user?.user_metadata?.full_name || '';
+                    this.user.title = authStore.user?.user_metadata?.title || '律师';
+                } else if (profile) {
+                    this.user.name = profile.full_name || '';
+                    this.user.title = profile.title || '';
+                    this.user.email = authStore.user?.email || '';
+                    this.user.phone = profile.phone || '';
+                    this.user.department = profile.department || '';
+                    this.user.location = profile.location || '';
+                    this.user.bio = profile.bio || '';
+                    this.user.avatar = profile.avatar_url || null;
+
+                    // 加载偏好设置
+                    this.preferences.emailNotifications = profile.email_notifications ?? true;
+                    this.preferences.smsNotifications = profile.sms_notifications ?? false;
+                    this.preferences.theme = profile.theme || 'light';
+                    this.preferences.language = profile.language || 'zh-CN';
+                }
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+            } finally {
+                this.isLoading = false;
+            }
         },
-        changePassword() {
+
+        async saveProfile() {
+            // 验证表单
+            if (!this.validateForm()) {
+                return;
+            }
+
+            try {
+                const supabase = getSupabaseClient();
+                const userId = authStore.user?.id;
+
+                if (!userId) {
+                    alert('用户未登录');
+                    return;
+                }
+
+                // 更新 profiles 表
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: userId,
+                        full_name: this.user.name,
+                        title: this.user.title,
+                        phone: this.user.phone,
+                        department: this.user.department,
+                        location: this.user.location,
+                        bio: this.user.bio,
+                        email_notifications: this.preferences.emailNotifications,
+                        sms_notifications: this.preferences.smsNotifications,
+                        theme: this.preferences.theme,
+                        language: this.preferences.language
+                    });
+
+                if (profileError) {
+                    console.error('Error updating profile:', profileError);
+                    alert('保存失败，请重试');
+                    return;
+                }
+
+                // 同步更新 auth.users 的 user_metadata（用于侧边栏显示）
+                const { error: authError } = await authService.updateUser({
+                    data: {
+                        full_name: this.user.name,
+                        title: this.user.title
+                    }
+                });
+
+                if (authError) {
+                    console.error('Error updating user metadata:', authError);
+                }
+
+                // 更新本地 authStore
+                if (authStore.user) {
+                    authStore.user.user_metadata = {
+                        ...authStore.user.user_metadata,
+                        full_name: this.user.name,
+                        title: this.user.title
+                    };
+                }
+
+                this.saveSuccess = true;
+                setTimeout(() => {
+                    this.saveSuccess = false;
+                    this.isEditing = false;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to save profile:', err);
+                alert('保存失败，请重试');
+            }
+        },
+
+        async changePassword() {
             if (this.security.newPassword !== this.security.confirmPassword) {
                 alert('两次输入的密码不一致');
                 return;
             }
-            alert('密码修改成功');
-            this.security.currentPassword = '';
-            this.security.newPassword = '';
-            this.security.confirmPassword = '';
+
+            if (this.security.newPassword.length < 6) {
+                alert('密码长度至少为6位');
+                return;
+            }
+
+            try {
+                const { error } = await authService.updateUser({
+                    password: this.security.newPassword
+                });
+
+                if (error) {
+                    console.error('Error changing password:', error);
+                    alert('密码修改失败: ' + error.message);
+                    return;
+                }
+
+                alert('密码修改成功');
+                this.security.currentPassword = '';
+                this.security.newPassword = '';
+                this.security.confirmPassword = '';
+            } catch (err) {
+                console.error('Failed to change password:', err);
+                alert('密码修改失败，请重试');
+            }
         },
+
         triggerAvatarUpload() {
             this.$refs.avatarInput.click();
         },
-        handleAvatarChange(event) {
+
+        async handleAvatarChange(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.user.avatar = e.target.result;
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请上传图片文件');
+                return;
+            }
+
+            // 验证文件大小（最大 2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                alert('图片大小不能超过 2MB');
+                return;
+            }
+
+            try {
+                const supabase = getSupabaseClient();
+                const userId = authStore.user?.id;
+
+                if (!userId) {
+                    alert('用户未登录');
+                    return;
+                }
+
+                // 生成唯一文件名
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${userId}/avatar.${fileExt}`;
+
+                // 上传到 Supabase Storage
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: true  // 覆盖已存在的文件
+                    });
+
+                if (uploadError) {
+                    console.error('Error uploading avatar:', uploadError);
+                    alert('头像上传失败: ' + uploadError.message);
+                    return;
+                }
+
+                // 获取公开 URL
+                const { data: urlData } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+
+                const avatarUrl = urlData.publicUrl;
+
+                // 更新 profiles 表中的 avatar_url
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ avatar_url: avatarUrl })
+                    .eq('id', userId);
+
+                if (updateError) {
+                    console.error('Error updating avatar URL:', updateError);
+                    alert('头像保存失败');
+                    return;
+                }
+
+                // 更新本地显示
+                this.user.avatar = avatarUrl;
+                alert('头像上传成功');
+            } catch (err) {
+                console.error('Failed to upload avatar:', err);
+                alert('头像上传失败，请重试');
+            }
+        },
+
+        // ========== 表单验证方法 ==========
+        validateForm() {
+            // 清空之前的错误
+            this.errors = {
+                name: '',
+                email: '',
+                phone: '',
+                newPassword: '',
+                confirmPassword: ''
+            };
+
+            let isValid = true;
+
+            // 验证姓名
+            if (!this.user.name || this.user.name.trim() === '') {
+                this.errors.name = '姓名不能为空';
+                isValid = false;
+            } else if (this.user.name.length > 50) {
+                this.errors.name = '姓名长度不能超过50个字符';
+                isValid = false;
+            }
+
+            // 验证邮箱格式（如果填写了）
+            if (this.user.email && !this.isValidEmail(this.user.email)) {
+                this.errors.email = '请输入有效的邮箱地址';
+                isValid = false;
+            }
+
+            // 验证手机号格式（如果填写了）
+            if (this.user.phone && !this.isValidPhone(this.user.phone)) {
+                this.errors.phone = '请输入有效的手机号码（11位数字）';
+                isValid = false;
+            }
+
+            return isValid;
+        },
+
+        isValidEmail(email) {
+            // 邮箱正则表达式
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        },
+
+        isValidPhone(phone) {
+            // 中国手机号正则（1开头的11位数字）
+            const phoneRegex = /^1[3-9]\d{9}$/;
+            return phoneRegex.test(phone);
+        },
+
+        // 实时验证（输入时）
+        validateField(field) {
+            switch (field) {
+                case 'name':
+                    if (!this.user.name || this.user.name.trim() === '') {
+                        this.errors.name = '姓名不能为空';
+                    } else if (this.user.name.length > 50) {
+                        this.errors.name = '姓名长度不能超过50个字符';
+                    } else {
+                        this.errors.name = '';
+                    }
+                    break;
+
+                case 'email':
+                    if (this.user.email && !this.isValidEmail(this.user.email)) {
+                        this.errors.email = '请输入有效的邮箱地址';
+                    } else {
+                        this.errors.email = '';
+                    }
+                    break;
+
+                case 'phone':
+                    if (this.user.phone && !this.isValidPhone(this.user.phone)) {
+                        this.errors.phone = '请输入有效的手机号码（11位数字）';
+                    } else {
+                        this.errors.phone = '';
+                    }
+                    break;
             }
         }
     },
@@ -132,8 +419,18 @@ export default {
                                 <div class="card-body">
                                     <div class="smart-form-grid">
                                         <div class="smart-form-group">
-                                            <label class="smart-label">姓名</label>
-                                            <input type="text" class="smart-input" v-model="user.name" :disabled="!isEditing">
+                                            <label class="smart-label">姓名 <span style="color: #dc2626;">*</span></label>
+                                            <input 
+                                                type="text" 
+                                                class="smart-input" 
+                                                v-model="user.name" 
+                                                :disabled="!isEditing"
+                                                @blur="validateField('name')"
+                                                :style="errors.name ? 'border-color: #dc2626;' : ''"
+                                            >
+                                            <div v-if="errors.name" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                                                <i class="fas fa-exclamation-circle"></i> {{ errors.name }}
+                                            </div>
                                         </div>
                                         <div class="smart-form-group">
                                             <label class="smart-label">职位</label>
@@ -141,11 +438,32 @@ export default {
                                         </div>
                                         <div class="smart-form-group">
                                             <label class="smart-label">邮箱</label>
-                                            <input type="email" class="smart-input" v-model="user.email" :disabled="!isEditing">
+                                            <input 
+                                                type="email" 
+                                                class="smart-input" 
+                                                v-model="user.email" 
+                                                :disabled="!isEditing"
+                                                @blur="validateField('email')"
+                                                :style="errors.email ? 'border-color: #dc2626;' : ''"
+                                            >
+                                            <div v-if="errors.email" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                                                <i class="fas fa-exclamation-circle"></i> {{ errors.email }}
+                                            </div>
                                         </div>
                                         <div class="smart-form-group">
                                             <label class="smart-label">手机号码</label>
-                                            <input type="text" class="smart-input" v-model="user.phone" :disabled="!isEditing">
+                                            <input 
+                                                type="text" 
+                                                class="smart-input" 
+                                                v-model="user.phone" 
+                                                :disabled="!isEditing"
+                                                @blur="validateField('phone')"
+                                                :style="errors.phone ? 'border-color: #dc2626;' : ''"
+                                                placeholder="请输入11位手机号"
+                                            >
+                                            <div v-if="errors.phone" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                                                <i class="fas fa-exclamation-circle"></i> {{ errors.phone }}
+                                            </div>
                                         </div>
                                         <div class="smart-form-group">
                                             <label class="smart-label">所属部门</label>

@@ -1,6 +1,7 @@
 // Sidebar v2.0 - 包含文书生成功能
 import { router } from '../../router.js';
 import { authService } from '../../config/supabase.js';
+import { authStore } from '../../store/authStore.js';
 import ProductFeedback from '../../views/ProductFeedback.js';
 
 export default {
@@ -13,8 +14,26 @@ export default {
             currentPath: window.location.hash.slice(1) || '/',
             showUserMenu: false,
             isCollapsed: false,
-            showFeedbackModal: false
+            showFeedbackModal: false,
+            authStore  // 引用全局认证状态
         };
+    },
+    computed: {
+        userName() {
+            // 从 Supabase 用户信息中提取用户名
+            if (authStore.user?.user_metadata?.full_name) {
+                return authStore.user.user_metadata.full_name;
+            }
+            // 如果没有设置姓名，使用邮箱前缀
+            if (authStore.user?.email) {
+                return authStore.user.email.split('@')[0];
+            }
+            return '用户';
+        },
+        userRole() {
+            // 从用户元数据中获取角色，如果没有则显示默认值
+            return authStore.user?.user_metadata?.role || '律师';
+        }
     },
     mounted() {
         window.addEventListener('hashchange', () => {
@@ -170,8 +189,8 @@ export default {
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="user-info" v-show="!isCollapsed">
-                        <div class="user-name">李律师</div>
-                        <div class="user-role">高级合伙人</div>
+                        <div class="user-name">{{ userName }}</div>
+                        <div class="user-role">{{ userRole }}</div>
                     </div>
                 </a>
             </div>

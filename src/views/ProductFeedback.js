@@ -1,3 +1,6 @@
+import { getSupabaseClient } from '../config/supabase.js';
+import { authStore } from '../store/authStore.js';
+
 export default {
     name: 'ProductFeedback',
     props: {
@@ -10,14 +13,15 @@ export default {
     data() {
         return {
             feedback: {
-                type: 'suggestion', // suggestion, bug, other
+                type: 'feature', // feature, bug, improvement, other
                 title: '',
                 description: '',
                 email: '',
                 attachments: []
             },
             isSubmitting: false,
-            submitSuccess: false
+            submitSuccess: false,
+            authStore
         };
     },
     methods: {
@@ -34,24 +38,72 @@ export default {
         removeAttachment(index) {
             this.feedback.attachments.splice(index, 1);
         },
-        submitFeedback() {
-            if (!this.feedback.title || !this.feedback.description) {
-                alert('请填写标题和描述');
+        async submitFeedback() {
+            // 验证必填字段
+            if (!this.feedback.title || !this.feedback.title.trim()) {
+                alert('请填写标题');
+                return;
+            }
+
+            if (!this.feedback.description || !this.feedback.description.trim()) {
+                alert('请填写详细描述');
                 return;
             }
 
             this.isSubmitting = true;
 
-            // Simulate API call
-            setTimeout(() => {
+            try {
+                const supabase = getSupabaseClient();
+                const userId = authStore.user?.id;
+
+                if (!userId) {
+                    alert('请先登录');
+                    this.isSubmitting = false;
+                    return;
+                }
+
+                // 获取浏览器信息
+                const browserInfo = navigator.userAgent;
+                const pageUrl = window.location.href;
+
+                // 准备反馈数据
+                const feedbackData = {
+                    user_id: userId,
+                    type: this.feedback.type,
+                    title: this.feedback.title.trim(),
+                    description: this.feedback.description.trim(),
+                    user_email: this.feedback.email || authStore.user?.email || '',
+                    user_name: authStore.user?.user_metadata?.full_name || authStore.user?.email?.split('@')[0] || '匿名用户',
+                    browser_info: browserInfo,
+                    page_url: pageUrl,
+                    status: 'pending',
+                    priority: 'medium'
+                };
+
+                // 提交到 Supabase
+                const { data, error } = await supabase
+                    .from('product_feedback')
+                    .insert([feedbackData])
+                    .select();
+
+                if (error) {
+                    console.error('Error submitting feedback:', error);
+                    alert('提交失败，请重试：' + error.message);
+                    this.isSubmitting = false;
+                    return;
+                }
+
+                // TODO: 如果有附件，上传到 Supabase Storage
+                // 这里可以扩展附件上传功能
+
                 this.isSubmitting = false;
                 this.submitSuccess = true;
 
-                // Reset form after 2 seconds
+                // 重置表单并关闭
                 setTimeout(() => {
                     this.submitSuccess = false;
                     this.feedback = {
-                        type: 'suggestion',
+                        type: 'feature',
                         title: '',
                         description: '',
                         email: '',
@@ -59,7 +111,12 @@ export default {
                     };
                     this.close();
                 }, 2000);
-            }, 1500);
+
+            } catch (err) {
+                console.error('Failed to submit feedback:', err);
+                alert('提交失败，请重试');
+                this.isSubmitting = false;
+            }
         }
     },
     template: `
@@ -78,8 +135,9 @@ export default {
                             <label class="smart-label required">反馈类型</label>
                             <div class="smart-select-wrapper">
                                 <select v-model="feedback.type" class="smart-select">
-                                    <option value="suggestion">功能建议</option>
+                                    <option value="feature">功能建议</option>
                                     <option value="bug">问题反馈</option>
+                                    <option value="improvement">改进建议</option>
                                     <option value="other">其他</option>
                                 </select>
                             </div>
