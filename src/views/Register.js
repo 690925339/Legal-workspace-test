@@ -87,7 +87,7 @@ export default {
                 <div class="form-container">
                     <div class="form-header">
                         <div class="form-title">创建账号</div>
-                        <div class="form-subtitle">立即开始 14 天免费试用</div>
+                        <div class="form-subtitle">开始您的智能法律工作之旅</div>
                     </div>
 
                     <form @submit.prevent="handleRegister">

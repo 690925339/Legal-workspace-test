@@ -1,5 +1,6 @@
 import { router } from '../router.js';
 import { authService } from '../config/supabase.js';
+import { authStore } from '../store/authStore.js';
 
 export default {
     name: 'Login',
@@ -14,6 +15,7 @@ export default {
     },
     methods: {
         async handleLogin() {
+            console.log('[Login] handleLogin called');
             if (!this.email || !this.password) {
                 this.errorMessage = '请输入邮箱和密码';
                 return;
@@ -23,11 +25,12 @@ export default {
             this.errorMessage = '';
 
             try {
+                console.log('[Login] Calling authService.signIn...');
                 const { data, error } = await authService.signIn(this.email, this.password);
+                console.log('[Login] signIn response:', { data, error });
 
                 if (error) {
-                    console.error('Login error:', error);
-                    // 处理常见错误
+                    console.error('[Login] Error:', error);
                     if (error.message.includes('Invalid login credentials')) {
                         this.errorMessage = '邮箱或密码错误';
                     } else if (error.message.includes('Email not confirmed')) {
@@ -38,13 +41,20 @@ export default {
                     return;
                 }
 
-                if (data.user) {
-                    console.log('Login successful:', data.user);
-                    // 登录成功，跳转到首页
+                console.log('[Login] data.user:', data?.user);
+                console.log('[Login] data.session:', data?.session);
+
+                if (data.user && data.session) {
+                    console.log('[Login] Login successful! Updating authStore...');
+                    authStore.setAuth(data.session);
+                    console.log('[Login] authStore updated. Navigating to /...');
                     router.push('/');
+                    console.log('[Login] Navigation called.');
+                } else {
+                    console.log('[Login] Missing user or session in response');
                 }
             } catch (err) {
-                console.error('Unexpected error:', err);
+                console.error('[Login] Unexpected error:', err);
                 this.errorMessage = '登录失败，请检查网络连接';
             } finally {
                 this.isLoading = false;
@@ -117,7 +127,7 @@ export default {
                             <label class="remember-me">
                                 <input type="checkbox" v-model="rememberMe" :disabled="isLoading"> 记住我
                             </label>
-                            <a href="#" class="forgot-password">忘记密码？</a>
+                            <a @click.prevent="router.push('/forgot-password')" href="#" class="forgot-password" style="cursor: pointer;">忘记密码？</a>
                         </div>
 
                         <button type="submit" class="submit-btn" :disabled="isLoading">

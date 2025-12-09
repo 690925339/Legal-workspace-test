@@ -7,7 +7,8 @@ const routes = {
     '/profile': 'UserProfile',
     '/feedback': 'ProductFeedback',
     '/login': 'Login',
-    '/register': 'Register'
+    '/register': 'Register',
+    '/forgot-password': 'ForgotPassword'
 };
 
 const router = {
@@ -34,3 +35,4 @@ window.addEventListener('hashchange', () => {
 });
 
 export { router, routes };
+

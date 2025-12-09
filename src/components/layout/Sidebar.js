@@ -1,5 +1,6 @@
 // Sidebar v2.0 - 包含文书生成功能
 import { router } from '../../router.js';
+import { authService } from '../../config/supabase.js';
 import ProductFeedback from '../../views/ProductFeedback.js';
 
 export default {
@@ -41,6 +42,15 @@ export default {
         toggleCollapse() {
             this.isCollapsed = !this.isCollapsed;
             this.showUserMenu = false; // Close menu on toggle
+        },
+        async handleLogout() {
+            this.showUserMenu = false;
+            const { error } = await authService.signOut();
+            if (error) {
+                console.error('Logout error:', error);
+                alert('登出失败，请重试');
+            }
+            // onAuthStateChange in main.js will handle navigation to /login
         }
     },
     template: `
@@ -140,7 +150,7 @@ export default {
                         产品反馈
                     </a>
                     <div style="height: 1px; background: #e5e5e5; margin: 4px 0;"></div>
-                    <a @click.prevent="navigate('/login')" class="menu-item" style="
+                    <a @click.prevent="handleLogout" class="menu-item" style="
                         display: flex;
                         align-items: center;
                         padding: 10px 16px;
