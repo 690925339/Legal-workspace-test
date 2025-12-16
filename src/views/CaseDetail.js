@@ -1,7 +1,19 @@
 import { router } from '../router.js';
+import AIAnalysis from './refactor/AIAnalysis.js';
+import AIAssistant from './refactor/AIAssistant.js';
+import RelationshipGraph from './refactor/RelationshipGraph.js';
+import EvidenceTimeline from './refactor/EvidenceTimeline.js';
+import QuoteGenerator from './refactor/QuoteGenerator.js';
 
 export default {
     name: 'CaseDetail',
+    components: {
+        AIAnalysis,
+        AIAssistant,
+        RelationshipGraph,
+        EvidenceTimeline,
+        QuoteGenerator
+    },
     data() {
         return {
             activeTab: 'basic',
@@ -71,15 +83,17 @@ export default {
                     icon: 'fas fa-dollar-sign',
                     items: []
                 },
+
                 {
-                    id: 'advanced',
+                    id: 'refactor',
                     name: '高级功能',
-                    icon: 'fas fa-cogs',
+                    icon: 'fas fa-tools',
                     items: [
-                        { id: 'ai-analysis', name: 'AI分析' },
-                        { id: 'ai-assistant', name: 'AI对话助手' },
-                        { id: 'relationship-graph', name: '关系洞察' },
-                        { id: 'timeline', name: '证据时间轴' }
+                        { id: 'ai-analysis-refactor', name: 'AI分析' },
+                        { id: 'ai-assistant-refactor', name: 'AI对话助手' },
+                        { id: 'relationship-graph-refactor', name: '关系洞察' },
+                        { id: 'timeline-refactor', name: '证据时间轴' },
+                        { id: 'quote-generator-refactor', name: '生成报价书' }
                     ]
                 }
             ],
@@ -196,22 +210,7 @@ export default {
                 { id: 'correspondence', name: '往来函件', color: '#f3e8ff', textColor: '#7e22ce' },
                 { id: 'other', name: '其他证据', color: '#f3f4f6', textColor: '#4b5563' }
             ],
-            aiAssistant: {
-                input: '',
-                messages: [
-                    {
-                        id: 1,
-                        role: 'ai',
-                        content: '您好！我是您的 AI 法律助手。我已经阅读了本案的相关材料，您可以问我任何关于案件的问题，或者让我帮您起草文书。'
-                    }
-                ],
-                suggestions: [
-                    '分析本案的胜诉概率',
-                    '生成一份证据收集清单',
-                    '起草一份律师函',
-                    '查找类似的判决案例'
-                ]
-            },
+
             // 当事人信息数据
             stakeholders: {
                 plaintiffs: [
@@ -242,26 +241,7 @@ export default {
             showStakeholderModal: false,
             currentStakeholder: null,
             stakeholderType: 'plaintiff', // plaintiff, defendant, thirdParty
-            // 关系洞察数据
-            relationshipData: {
-                nodes: [
-                    { id: 'abc-company', name: 'ABC 公司', type: 'company', group: 1 },
-                    { id: 'xyz-company', name: 'XYZ 有限公司', type: 'company', group: 2 },
-                    { id: 'wang', name: '王经理', type: 'person', group: 1, role: '法定代表人' },
-                    { id: 'zhang', name: '张总', type: 'person', group: 2, role: '总经理' },
-                    { id: 'li', name: '李会计', type: 'person', group: 1, role: '财务负责人' },
-                    { id: 'bank', name: '工商银行', type: 'company', group: 3 }
-                ],
-                links: [
-                    { source: 'wang', target: 'abc-company', relation: '法定代表人', amount: null },
-                    { source: 'li', target: 'abc-company', relation: '财务负责人', amount: null },
-                    { source: 'zhang', target: 'xyz-company', relation: '总经理', amount: null },
-                    { source: 'abc-company', target: 'xyz-company', relation: '合同纠纷', amount: '500,000' },
-                    { source: 'abc-company', target: 'bank', relation: '转账', amount: '200,000' },
-                    { source: 'xyz-company', target: 'bank', relation: '收款', amount: '200,000' }
-                ],
-                selectedNode: null
-            },
+
             // Section-specific edit modals
             showBasicInfoModal: false,
             showCaseFactsModal: false,
@@ -275,7 +255,8 @@ export default {
                 phone: '138-0000-1234',
                 email: 'wang@abc.com',
                 address: '上海市浦东新区...'
-            }
+            },
+
         };
     },
     computed: {
@@ -369,52 +350,7 @@ export default {
         getStarRating(priority) {
             return '★'.repeat(priority) + '☆'.repeat(5 - priority);
         },
-        sendMessage(message) {
-            const content = message || this.aiAssistant.input.trim();
-            if (!content) return;
 
-            // 添加用户消息
-            this.aiAssistant.messages.push({
-                id: Date.now(),
-                role: 'user',
-                content: content
-            });
-
-            const userQuestion = content;
-            this.aiAssistant.input = '';
-
-            // 模拟 AI 回复
-            setTimeout(() => {
-                let reply = '这是一个很好的问题。基于目前的证据分析，我认为...';
-                if (userQuestion.includes('胜诉') || userQuestion.includes('概率') || userQuestion.includes('分析本案')) {
-                    reply = '根据目前的证据情况（完整度50%），胜诉概率约为 60%。如果能补充"往来函件"和"催告函"，胜诉概率可提升至 80% 以上。';
-                } else if (userQuestion.includes('起草') || userQuestion.includes('律师函')) {
-                    reply = '好的，正在为您起草相关文书。请稍候...';
-                } else if (userQuestion.includes('证据') || userQuestion.includes('清单')) {
-                    reply = '根据案件类型分析，建议收集以下证据：\n\n1. 合同原件及附件\n2. 支付凭证（转账记录、发票等）\n3. 往来邮件和函件\n4. 催告函及送达证明\n\n这些证据将有助于证明合同关系的成立和履行情况。';
-                } else if (userQuestion.includes('案例') || userQuestion.includes('判决')) {
-                    reply = '我为您找到了3个类似案例：\n\n1. (2022)沪01民初123号 - 软件开发合同纠纷，原告胜诉\n2. (2021)京03民终456号 - 技术服务合同纠纷，部分支持\n3. (2023)粤01民初789号 - 软件交付纠纷，调解结案\n\n这些案例的共同点是都涉及软件交付标准的认定问题。';
-                }
-
-                this.aiAssistant.messages.push({
-                    id: Date.now() + 1,
-                    role: 'ai',
-                    content: reply
-                });
-
-                // 滚动到底部
-                this.$nextTick(() => {
-                    const chatContainer = this.$refs.chatContainer;
-                    if (chatContainer) {
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }
-                });
-            }, 1000);
-        },
-        useSuggestion(text) {
-            this.aiAssistant.input = text;
-            this.sendMessage();
-        },
         toggleStatus(item) {
             if (item.status === 'collected') {
                 item.status = 'missing';
@@ -663,145 +599,7 @@ export default {
 
             this.showStakeholderModal = false;
         },
-        // 关系洞察方法
-        initRelationshipGraph() {
-            this.$nextTick(() => {
-                const container = this.$refs.relationshipGraph;
-                if (!container) return;
 
-                // 清除之前的SVG
-                d3.select(container).selectAll('*').remove();
-
-                const width = container.clientWidth;
-                const height = 600;
-
-                // 创建SVG
-                const svg = d3.select(container)
-                    .append('svg')
-                    .attr('width', width)
-                    .attr('height', height);
-
-                // 添加缩放功能
-                const g = svg.append('g');
-
-                svg.call(d3.zoom()
-                    .scaleExtent([0.5, 3])
-                    .on('zoom', (event) => {
-                        g.attr('transform', event.transform);
-                    }));
-
-                // 创建力导向图
-                const simulation = d3.forceSimulation(this.relationshipData.nodes)
-                    .force('link', d3.forceLink(this.relationshipData.links).id(d => d.id).distance(150))
-                    .force('charge', d3.forceManyBody().strength(-400))
-                    .force('center', d3.forceCenter(width / 2, height / 2))
-                    .force('collision', d3.forceCollide().radius(50));
-
-                // 绘制连线
-                const link = g.append('g')
-                    .selectAll('line')
-                    .data(this.relationshipData.links)
-                    .enter()
-                    .append('line')
-                    .attr('class', 'relationship-link')
-                    .attr('stroke', '#999')
-                    .attr('stroke-width', d => d.amount ? 3 : 1.5)
-                    .attr('stroke-opacity', 0.6);
-
-                // 绘制连线标签
-                const linkLabel = g.append('g')
-                    .selectAll('text')
-                    .data(this.relationshipData.links)
-                    .enter()
-                    .append('text')
-                    .attr('class', 'relationship-link-label')
-                    .attr('font-size', '11px')
-                    .attr('fill', '#666')
-                    .attr('text-anchor', 'middle')
-                    .text(d => d.amount ? `${d.relation} ¥${d.amount}` : d.relation);
-
-                // 绘制节点
-                const node = g.append('g')
-                    .selectAll('g')
-                    .data(this.relationshipData.nodes)
-                    .enter()
-                    .append('g')
-                    .attr('class', 'relationship-node')
-                    .call(d3.drag()
-                        .on('start', (event, d) => {
-                            if (!event.active) simulation.alphaTarget(0.3).restart();
-                            d.fx = d.x;
-                            d.fy = d.y;
-                        })
-                        .on('drag', (event, d) => {
-                            d.fx = event.x;
-                            d.fy = event.y;
-                        })
-                        .on('end', (event, d) => {
-                            if (!event.active) simulation.alphaTarget(0);
-                            d.fx = null;
-                            d.fy = null;
-                        }));
-
-                // 添加节点圆圈
-                node.append('circle')
-                    .attr('r', d => d.type === 'company' ? 30 : 25)
-                    .attr('fill', d => {
-                        if (d.type === 'company') return d.group === 1 ? '#4f46e5' : d.group === 2 ? '#dc2626' : '#059669';
-                        return '#f59e0b';
-                    })
-                    .attr('stroke', '#fff')
-                    .attr('stroke-width', 3)
-                    .style('cursor', 'pointer');
-
-                // 添加节点图标
-                node.append('text')
-                    .attr('class', 'fa')
-                    .attr('text-anchor', 'middle')
-                    .attr('dy', '0.35em')
-                    .attr('fill', '#fff')
-                    .attr('font-size', '16px')
-                    .attr('font-family', 'FontAwesome')
-                    .text(d => d.type === 'company' ? '\uf1ad' : '\uf007');
-
-                // 添加节点标签
-                node.append('text')
-                    .attr('class', 'relationship-node-label')
-                    .attr('text-anchor', 'middle')
-                    .attr('dy', '2.5em')
-                    .attr('font-size', '13px')
-                    .attr('font-weight', '600')
-                    .attr('fill', '#1a1a1a')
-                    .text(d => d.name);
-
-                // 节点点击事件
-                node.on('click', (event, d) => {
-                    this.relationshipData.selectedNode = d;
-                    // 高亮选中的节点
-                    node.selectAll('circle')
-                        .attr('stroke-width', n => n.id === d.id ? 5 : 3)
-                        .attr('stroke', n => n.id === d.id ? '#fbbf24' : '#fff');
-                });
-
-                // 更新位置
-                simulation.on('tick', () => {
-                    link
-                        .attr('x1', d => d.source.x)
-                        .attr('y1', d => d.source.y)
-                        .attr('x2', d => d.target.x)
-                        .attr('y2', d => d.target.y);
-
-                    linkLabel
-                        .attr('x', d => (d.source.x + d.target.x) / 2)
-                        .attr('y', d => (d.source.y + d.target.y) / 2);
-
-                    node.attr('transform', d => `translate(${d.x},${d.y})`);
-                });
-            });
-        },
-        selectNode(node) {
-            this.relationshipData.selectedNode = node;
-        },
         // Section-specific edit methods
         editBasicInfo() {
             this.editForm = {
@@ -866,19 +664,7 @@ export default {
             this.showFinancialsModal = false;
             alert('财务信息已更新');
         },
-        // 证据时间轴方法
-        refreshTimeline() {
-            alert('正在重新生成证据时间轴...');
-            // TODO: Call AI to regenerate timeline
-        },
-        editTimeline() {
-            alert('编辑功能开发中...');
-            // TODO: Open timeline editor modal
-        },
-        exportTimeline() {
-            alert('正在导出证据时间轴...');
-            // TODO: Export timeline as PDF or Word
-        }
+
     },
     template: `
         <div class="case-detail-page">
@@ -1273,118 +1059,7 @@ export default {
                     </div>
                 </div>
 
-                <!-- Tab: AI Analysis -->
-                <div v-if="activeTab === 'ai-analysis'" class="tab-pane">
-                    <div class="modern-card" style="position: relative;">
-                        <button class="smart-btn-secondary" style="position: absolute; top: 20px; right: 20px;" title="刷新分析">
-                            <i class="fas fa-sync-alt"></i> 刷新分析
-                        </button>
-                        <div class="info-row" style="display: block;">
-                            <span class="label">胜诉率预测</span>
-                            <div style="margin-top: 10px; display: flex; align-items: baseline;">
-                                <span class="value" style="color: #1a1a1a; font-weight: 700; font-size: 48px; line-height: 1;">75%</span>
-                                <span style="margin-left: 12px; color: #666; font-size: 14px;">(基于现有证据分析)</span>
-                            </div>
-                            <div style="margin-top: 12px; height: 12px; background: #e5e5e5; border-radius: 6px; overflow: hidden;">
-                                <div style="width: 75%; height: 100%; background: #1a1a1a;"></div>
-                            </div>
-                        </div>
-                        <div class="info-row" style="display: block; margin-top: 16px;">
-                            <span class="label">风险点提示</span>
-                            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #fef3c7; border-left: 3px solid #d97706; border-radius: 4px;">
-                                    <i class="fas fa-exclamation-triangle" style="color: #d97706; margin-top: 2px;"></i>
-                                    <span style="font-size: 13px; color: #92400e;">部分项目验收文件缺失，需补充邮件往来记录</span>
-                                </div>
-                                <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #f5f5f5; border-left: 3px solid #666; border-radius: 4px;">
-                                    <i class="fas fa-info-circle" style="color: #666; margin-top: 2px;"></i>
-                                    <span style="font-size: 13px; color: #1a1a1a;">合同中付款条件约定不够明确，建议重点举证</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="info-row" style="display: block; margin-top: 16px;">
-                            <span class="label">AI策略建议</span>
-                            <p style="margin: 8px 0 0 0; color: #1a1a1a; line-height: 1.8; font-size: 13px; background: #f5f5f5; padding: 12px; border-radius: 6px;">
-                                建议重点收集：1）项目交付确认的邮件记录；2）被告方的验收反馈意见；3）双方关于质量问题的沟通记录。同时准备技术专家鉴定，证明软件功能符合合同约定。
-                            </p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Tab: AI Assistant -->
-                <div v-if="activeTab === 'ai-assistant'" class="tab-pane" style="height: calc(100vh - 180px); display: flex; flex-direction: column;">
-                    <!-- Chat Messages -->
-                    <div style="flex: 1; overflow-y: auto; padding: 24px; background: #fafafa;" ref="chatContainer">
-                        <div v-for="msg in aiAssistant.messages" :key="msg.id" 
-                             :style="{
-                                 display: 'flex',
-                                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                 marginBottom: '20px',
-                                 alignItems: 'flex-start'
-                             }">
-                            <!-- AI Avatar -->
-                            <div v-if="msg.role === 'ai'" style="width: 36px; height: 36px; border-radius: 50%; background: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
-                                <i class="fas fa-robot"></i>
-                            </div>
-
-                            <!-- Message Bubble -->
-                            <div :style="{
-                                maxWidth: '70%',
-                                padding: '14px 18px',
-                                borderRadius: '12px',
-                                borderTopLeftRadius: msg.role === 'ai' ? '2px' : '12px',
-                                borderTopRightRadius: msg.role === 'user' ? '2px' : '12px',
-                                background: msg.role === 'user' ? '#1a1a1a' : '#ffffff',
-                                color: msg.role === 'user' ? '#ffffff' : '#1a1a1a',
-                                fontSize: '14px',
-                                lineHeight: '1.6',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                            }">
-                                {{ msg.content }}
-                            </div>
-
-                            <!-- User Avatar -->
-                            <div v-if="msg.role === 'user'" style="width: 36px; height: 36px; border-radius: 50%; background: #f3f4f6; color: #666; display: flex; align-items: center; justify-content: center; margin-left: 12px; flex-shrink: 0;">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Suggestions -->
-                    <div v-if="aiAssistant.messages.length === 1" style="padding: 0 24px 16px 24px; background: #fafafa;">
-                        <div style="font-size: 13px; color: #666; margin-bottom: 12px; font-weight: 500;">
-                            <i class="fas fa-lightbulb" style="margin-right: 6px;"></i>
-                            快捷建议
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                            <button v-for="(suggestion, index) in aiAssistant.suggestions" :key="index"
-                                    class="smart-suggestion-item"
-                                    @click="sendMessage(suggestion)">
-                                {{ suggestion }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Input Area -->
-                    <div style="padding: 20px 24px; background: white; border-top: 1px solid #e5e5e5;">
-                        <div style="display: flex; gap: 12px; align-items: flex-end;">
-                            <textarea 
-                                v-model="aiAssistant.input"
-                                @keydown.enter.prevent="sendMessage()"
-                                placeholder="输入您的问题..."
-                                style="flex: 1; min-height: 44px; max-height: 120px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;"
-                            ></textarea>
-                            <button class="smart-btn-primary" @click="sendMessage()" style="height: 44px; padding: 0 24px;">
-                                <i class="fas fa-paper-plane"></i>
-                                发送
-                            </button>
-                        </div>
-                        <div style="margin-top: 8px; font-size: 12px; color: #999;">
-                            <i class="fas fa-info-circle"></i>
-                            按 Enter 发送，Shift + Enter 换行
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Tab: AI Evidence Analysis -->
                 <div v-if="activeTab === 'ai-evidence'" class="tab-pane">
@@ -1467,120 +1142,7 @@ export default {
                 </div>
 
 
-                <!-- Tab: Relationship Insights -->
-                <div v-if="activeTab === 'relationship-graph'" class="tab-pane">
-                    <!-- Action Buttons -->
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                        <button class="smart-btn-secondary" @click="initRelationshipGraph">
-                            <i class="fas fa-sync-alt"></i> 刷新图谱
-                        </button>
-                    </div>
-                    
-                    <!-- Main Content -->
-                    <div>
-                        <!-- Graph Container (Full Width) -->
-                        <div class="modern-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-                            <div style="padding: 20px; border-bottom: 1px solid var(--border-medium);">
-                                <h3 style="margin: 0; font-size: 16px; font-weight: 600;">关系图谱</h3>
-                                <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-secondary);">
-                                    <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
-                                    点击节点查看详情 · 拖拽节点调整位置 · 滚轮缩放
-                                </p>
-                            </div>
-                            <div ref="relationshipGraph" class="relationship-graph-container" style="height: 600px;" @vue:mounted="initRelationshipGraph"></div>
-                        </div>
 
-                        <!-- Bottom Section: Entity Details, Legend and Statistics -->
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-                            <!-- Entity Details -->
-                            <div class="modern-card" v-if="relationshipData.selectedNode">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i :class="relationshipData.selectedNode.type === 'company' ? 'fas fa-building' : 'fas fa-user'" 
-                                           style="margin-right: 8px;"></i>
-                                        实体详情
-                                    </div>
-                                </div>
-                                <div style="padding: 16px 0;">
-                                    <div class="info-row">
-                                        <span class="label">名称</span>
-                                        <span class="value">{{ relationshipData.selectedNode.name }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="label">类型</span>
-                                        <span class="value">{{ relationshipData.selectedNode.type === 'company' ? '公司' : '个人' }}</span>
-                                    </div>
-                                    <div class="info-row" v-if="relationshipData.selectedNode.role">
-                                        <span class="label">角色</span>
-                                        <span class="value">{{ relationshipData.selectedNode.role }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Legend -->
-                            <div class="modern-card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-list" style="margin-right: 8px;"></i>
-                                        图例说明
-                                    </div>
-                                </div>
-                                <div style="padding: 16px 0;">
-                                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #4f46e5; margin-right: 12px;"></div>
-                                        <span style="font-size: 13px;">原告公司</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; margin-right: 12px;"></div>
-                                        <span style="font-size: 13px;">被告公司</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #f59e0b; margin-right: 12px;"></div>
-                                        <span style="font-size: 13px;">相关人员</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #059669; margin-right: 12px;"></div>
-                                        <span style="font-size: 13px;">第三方机构</span>
-                                    </div>
-                                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
-                                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                            <div style="width: 40px; height: 2px; background: #999; margin-right: 12px;"></div>
-                                            <span style="font-size: 13px;">关系连线</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center;">
-                                            <div style="width: 40px; height: 3px; background: #999; margin-right: 12px;"></div>
-                                            <span style="font-size: 13px;">资金往来</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Statistics -->
-                            <div class="modern-card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-chart-bar" style="margin-right: 8px;"></i>
-                                        统计信息
-                                    </div>
-                                </div>
-                                <div style="padding: 16px 0;">
-                                    <div class="info-row">
-                                        <span class="label">实体总数</span>
-                                        <span class="value">{{ relationshipData.nodes.length }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="label">关系总数</span>
-                                        <span class="value">{{ relationshipData.links.length }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="label">涉及金额</span>
-                                        <span class="value">¥900,000</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
 
 
@@ -1642,79 +1204,52 @@ export default {
                     </div>
                 </div>
 
-                <!-- Tab: Timeline -->
-                <div v-if="activeTab === 'timeline'" class="tab-pane">
-                    <!-- Action Buttons -->
-                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 20px;">
-                        <button class="smart-btn-secondary" @click="refreshTimeline">
-                            <i class="fas fa-sync-alt"></i> 刷新
-                        </button>
-                        <button class="smart-btn-secondary" @click="editTimeline">
-                            <i class="fas fa-edit"></i> 编辑
-                        </button>
-                        <button class="smart-btn-secondary" @click="exportTimeline">
-                            <i class="fas fa-download"></i> 导出
-                        </button>
-                    </div>
-                    
+
+
+
+
+
+
+                <!-- Tab: Refactor (New) -->
+                <div v-if="activeTab === 'refactor'" class="tab-pane">
                     <div class="modern-card">
                         <div class="card-header">
                             <div class="card-title">
-                                <i class="fas fa-stream" style="margin-right: 8px;"></i>
-                                证据时间轴
+                                <i class="fas fa-tools" style="margin-right: 8px;"></i>
+                                高级功能（重构）
                             </div>
                         </div>
-                        <div class="timeline" style="padding: 20px 0;">
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-09-15</div>
-                                    <div class="timeline-title">买卖合同签订</div>
-                                    <div class="timeline-desc">双方签订买卖合同，约定交易金额及交付时间</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-09-20</div>
-                                    <div class="timeline-title">首次付款</div>
-                                    <div class="timeline-desc">买方通过银行转账支付首期款项 50,000 元</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-10-05</div>
-                                    <div class="timeline-title">货物交付</div>
-                                    <div class="timeline-desc">卖方交付货物，买方签收确认</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-10-15</div>
-                                    <div class="timeline-title">质量异议提出</div>
-                                    <div class="timeline-desc">买方发现货物存在质量问题，通过邮件提出异议</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-10-25</div>
-                                    <div class="timeline-title">协商未果</div>
-                                    <div class="timeline-desc">双方多次沟通未能达成一致，买方拒绝支付尾款</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item active">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-date">2023-11-01</div>
-                                    <div class="timeline-title">律师函发送</div>
-                                    <div class="timeline-desc">卖方委托律师向买方发送律师函，要求支付尾款</div>
-                                </div>
+                        <div style="padding: 40px; text-align: center;">
+                            <div style="margin-bottom: 20px; color: #666;">
+                                请从上方标签页选择具体的高级功能进行操作
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Tab: AI Analysis (Refactor) -->
+                <div v-if="activeTab === 'ai-analysis-refactor'" class="tab-pane">
+                    <AIAnalysis :case-data="caseData" />
+                </div>
+
+                <!-- Tab: AI Assistant (Refactor) -->
+                <div v-if="activeTab === 'ai-assistant-refactor'" class="tab-pane">
+                    <AIAssistant :case-data="caseData" />
+                </div>
+
+                <!-- Tab: Relationship Graph (Refactor) -->
+                <div v-if="activeTab === 'relationship-graph-refactor'" class="tab-pane">
+                    <RelationshipGraph />
+                </div>
+
+                <!-- Tab: Evidence Timeline (Refactor) -->
+                <div v-if="activeTab === 'timeline-refactor'" class="tab-pane">
+                    <EvidenceTimeline />
+                </div>
+
+                <!-- Tab: Quote Generator (Refactor) -->
+                <div v-if="activeTab === 'quote-generator-refactor'" class="tab-pane">
+                    <QuoteGenerator :case-data="caseData" />
                 </div>
 
             </div>

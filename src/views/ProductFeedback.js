@@ -192,35 +192,6 @@ export default {
                 <i class="fas fa-check-circle"></i>
                 感谢您的反馈，我们会尽快处理！
             </div>
-
-            <style>
-                .radio-card {
-                    flex: 1;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 8px;
-                    padding: 12px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .radio-card:hover {
-                    border-color: #2563eb;
-                    background: #f0f9ff;
-                }
-                .radio-card.active {
-                    border-color: #2563eb;
-                    background: #eff6ff;
-                    box-shadow: 0 0 0 1px #2563eb;
-                }
-                .radio-content {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    color: #374151;
-                }
-            </style>
         </div>
     `
 };
