@@ -1,0 +1,43 @@
+// ========================================
+// SCSS Main Entry Point
+// ========================================
+
+// 1. Variables and Configuration
+@import 'variables';
+@import 'mixins';
+
+// 2. Base Styles
+@import 'base/reset';
+@import 'base/typography';
+@import 'base/layout';
+
+// 3. Component Styles
+@import 'components/buttons';
+@import 'components/forms';
+@import 'components/cards';
+
+// 4. Global Application Styles
+body {
+    min-height: 100vh;
+}
+
+#app {
+    min-height: 100vh;
+}
+
+// 5. Utility Classes
+.w-full {
+    width: 100%;
+}
+
+.h-full {
+    height: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.sr-only {
+    @include sr-only;
+}

@@ -1,0 +1,48 @@
+// ========================================
+// Card Styles
+// ========================================
+
+.card {
+    @include card;
+}
+
+// Card with hover effect
+.card-hover {
+    @include card;
+    @include card-hover;
+}
+
+// Card header
+.card-header {
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $border-color;
+    background-color: $bg-secondary;
+
+    .card-title {
+        margin: 0;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+    }
+}
+
+// Card body
+.card-body {
+    padding: $spacing-lg;
+}
+
+// Card footer
+.card-footer {
+    padding: $spacing-md $spacing-lg;
+    border-top: 1px solid $border-color;
+    background-color: $bg-secondary;
+}
+
+// Card variants
+.card-bordered {
+    border: 1px solid $border-color;
+    box-shadow: none;
+}
+
+.card-flat {
+    box-shadow: none;
+}
