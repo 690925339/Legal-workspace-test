@@ -212,7 +212,7 @@ export default {
 
             <!-- 胜诉率预测卡片 -->
             <div class="modern-card" style="margin-bottom: 20px;">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-chart-line" style="margin-right: 8px; color: #1a1a1a;"></i>
                         胜诉率预测
@@ -229,7 +229,7 @@ export default {
 
             <!-- 证据完整度评分卡片 -->
             <div class="modern-card" style="margin-bottom: 20px;">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #1a1a1a;"></i>
                         证据完整度评分
@@ -254,7 +254,7 @@ export default {
 
             <!-- 风险点提示卡片 -->
             <div class="modern-card" style="margin-bottom: 20px;">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #d97706;"></i>
                         风险点提示
@@ -274,7 +274,7 @@ export default {
 
             <!-- 类案裁判分析卡片 -->
             <div class="modern-card" style="margin-bottom: 20px;">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-balance-scale" style="margin-right: 8px; color: #1a1a1a;"></i>
                         类案裁判分析
@@ -337,7 +337,7 @@ export default {
 
             <!-- AI策略建议卡片 -->
             <div class="modern-card" style="margin-bottom: 20px;">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-lightbulb" style="margin-right: 8px; color: #f59e0b;"></i>
                         AI 策略建议
@@ -350,7 +350,7 @@ export default {
 
             <!-- 综合可行性结论卡片 -->
             <div class="modern-card" :style="{ borderLeft: '4px solid ' + (feasibilityAnalysis.conclusion.recommendation === 'proceed' ? '#22c55e' : feasibilityAnalysis.conclusion.recommendation === 'caution' ? '#f59e0b' : '#ef4444') }">
-                <div class="card-header">
+                <div class="card-header" style="background: transparent;">
                     <div class="card-title">
                         <i class="fas fa-gavel" style="margin-right: 8px; color: #1a1a1a;"></i>
                         综合可行性结论

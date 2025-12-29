@@ -421,7 +421,7 @@ export default {
                         <div style="flex: 1;">
                             <!-- Basic Info Tab -->
                             <div v-if="activeTab === 'basic'" class="modern-card">
-                                <div class="card-header">
+                                <div class="card-header" style="background: transparent;">
                                     <div class="card-title">基本信息</div>
                                     <button v-if="!isEditing" class="smart-btn-secondary" @click="isEditing = true">
                                         <i class="fas fa-edit"></i> 编辑
@@ -498,7 +498,7 @@ export default {
 
                             <!-- Security Tab -->
                             <div v-if="activeTab === 'security'" class="modern-card">
-                                <div class="card-header">
+                                <div class="card-header" style="background: transparent;">
                                     <div class="card-title">修改密码</div>
                                 </div>
                                 <div class="card-body">
@@ -522,7 +522,7 @@ export default {
 
                             <!-- Preferences Tab -->
                             <div v-if="activeTab === 'preferences'" class="modern-card">
-                                <div class="card-header">
+                                <div class="card-header" style="background: transparent;">
                                     <div class="card-title">通知设置</div>
                                 </div>
                                 <div class="card-body">
@@ -543,7 +543,7 @@ export default {
                                         </label>
                                     </div>
                                 </div>
-                                <div class="card-header" style="border-top: 1px solid #f3f4f6; margin-top: 0;">
+                                <div class="card-header" style="background: transparent;">
                                     <div class="card-title">系统设置</div>
                                 </div>
                                 <div class="card-body">

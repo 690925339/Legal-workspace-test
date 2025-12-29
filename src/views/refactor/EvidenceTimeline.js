@@ -28,7 +28,7 @@ export default {
     },
     template: `
         <div class="modern-card">
-            <div class="card-header">
+            <div class="card-header" style="background: transparent;">
                 <div class="card-title">
                     <i class="fas fa-stream" style="margin-right: 8px;"></i>
                     证据时间轴

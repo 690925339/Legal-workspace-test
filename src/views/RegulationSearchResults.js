@@ -1,4 +1,5 @@
 import { router } from '../router.js';
+import { faruiLawService } from '../services/faruiService.js';
 
 export default {
     name: 'RegulationSearchResults',
@@ -29,45 +30,20 @@ export default {
             selectedRegulation: null,
             collapsedChapters: {},
             activeChapter: null,
-            results: [
-                {
-                    id: 1,
-                    title: '中华人民共和国民法典',
-                    category: '法律',
-                    publisher: '全国人民代表大会',
-                    publisherCode: '中华人民共和国主席令第45号',
-                    publishDate: '2020年05月28日',
-                    effectiveDate: '2021年01月01日',
-                    status: '现行有效',
-                    content: '第九百七十九条 管理人没有法定的或者约定的义务，为避免他人利益受损失而管理他人事务的，可以请求受益人偿还因管理他人事务而支出的必要费用；管理人因管理事务受到损失的，可以请求受益人给予适当补偿。管理事务不符合受益人真实意思的，管理人不享有前款规定的权利；但是，受益人的真实意思违反法律或者违背公序良俗的除外。'
-                },
-                {
-                    id: 2,
-                    title: '中华人民共和国民法典',
-                    category: '法律',
-                    publisher: '全国人民代表大会',
-                    publisherCode: '中华人民共和国主席令第45号',
-                    publishDate: '2020年05月28日',
-                    effectiveDate: '2021年01月01日',
-                    status: '现行有效',
-                    content: '第一百二十一条 没有法定的或者约定的义务，为避免他人利益受损失而进行管理的人，有权请求受益人偿还由此支出的必要费用。'
-                },
-                {
-                    id: 3,
-                    title: '中华人民共和国物权法',
-                    category: '法律',
-                    publisher: '全国人民代表大会',
-                    publisherCode: '中华人民共和国主席令第62号',
-                    publishDate: '2007年03月16日',
-                    effectiveDate: '2007年10月01日',
-                    status: '已失效',
-                    content: '第三十条 因合法建造、拆除房屋等事实行为设立或者消灭物权的，自事实行为成就时发生效力。'
-                }
-            ],
-            totalResults: 156
+            results: [],
+            totalResults: 0,
+            isLoading: false,
+            loadError: null,
+            // 分步加载状态
+            loadingStep: 0, // 0=无, 1=关键词提取, 2=法规检索, 3=结果分析
+            loadingSteps: [
+                { id: 1, label: '分析中', description: '正在分析您的检索需求...' },
+                { id: 2, label: '检索法规', description: '正在检索相关法律法规...' },
+                { id: 3, label: '整理分析', description: '正在整理检索结果...' }
+            ]
         };
     },
-    mounted() {
+    async mounted() {
         const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
         this.searchQuery = urlParams.get('q') || '';
 
@@ -83,6 +59,8 @@ export default {
 
         if (this.searchQuery) {
             this.keywords = this.extractLegalKeywords(this.searchQuery);
+            // 调用真实 API
+            await this.performSearch();
         }
     },
     methods: {
@@ -113,6 +91,72 @@ export default {
         },
         newSearch() {
             router.push('/legal-research');
+        },
+        async performSearch() {
+            if (!this.searchQuery) return;
+
+            this.isLoading = true;
+            this.loadError = null;
+
+            try {
+                // 步骤1: LLM 关键词提取
+                this.loadingStep = 1;
+                const { llmService } = await import('../services/llmService.js');
+                const extracted = await llmService.extractLawKeywords(this.searchQuery);
+                console.log('Extracted law keywords:', extracted);
+
+                // 步骤2: 法规检索
+                this.loadingStep = 2;
+                // 构建筛选条件
+                const filterCondition = {};
+                if (this.filterConditions.effectiveLevel) {
+                    filterCondition.effectiveLevel = [this.filterConditions.effectiveLevel];
+                }
+                if (this.filterConditions.timeliness) {
+                    filterCondition.timeliness = [this.filterConditions.timeliness];
+                }
+
+                const result = await faruiLawService.searchLaws({
+                    query: this.searchQuery,
+                    pageNumber: 1,
+                    pageSize: 50,
+                    filterCondition,
+                    queryKeywords: extracted.keywords
+                });
+
+                // 步骤3: 结果分析
+                this.loadingStep = 3;
+                await new Promise(resolve => setTimeout(resolve, 300)); // 短暂延迟以显示步骤3
+
+                this.results = result.results.map(item => ({
+                    id: item.id,
+                    title: item.name || item.title,
+                    category: item.effectiveLevel || '法规',
+                    publisher: item.department || '',
+                    publisherCode: '',
+                    publishDate: item.releaseDate || '',
+                    effectiveDate: item.releaseDate || '',
+                    status: item.timeliness || '未知',
+                    content: item.content || '',
+                    htmlContent: item.htmlContent || ''
+                }));
+                this.totalResults = result.totalCount;
+
+                // 使用 LLM 提取的关键词
+                if (extracted.keywords && extracted.keywords.length > 0) {
+                    this.keywords = extracted.keywords;
+                } else if (result.queryKeywords && result.queryKeywords.length > 0) {
+                    this.keywords = result.queryKeywords;
+                }
+
+                console.log('Regulation search completed:', this.totalResults, 'results');
+            } catch (error) {
+                console.error('Regulation search failed:', error);
+                this.loadError = error.message || '法规检索失败';
+            } finally {
+                this.isLoading = false;
+                this.loadingStep = 0;
+            }
         },
         toggleSortDropdown() {
             this.showSortDropdown = !this.showSortDropdown;
@@ -202,7 +246,7 @@ export default {
     },
     template: `
         <div class="smart-page" style="background: #fff;">
-            <div class="smart-container" style="max-width: 1200px;">
+            <div class="smart-container" style="max-width: 1200px; position: relative;">
                 <!-- 顶部搜索栏 -->
                 <div style="display: flex; align-items: center; gap: 16px; padding: 20px 0; border-bottom: 1px solid #e5e5e5;">
                     <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
@@ -372,13 +416,82 @@ export default {
                     </div>
                 </div>
 
+                <!-- 分步加载指示器 (绝对定位浮层) -->
+                <div v-if="isLoading" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.95);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 100;
+                ">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <!-- 步骤指示器 -->
+                        <div style="display: flex; gap: 40px; margin-bottom: 32px;">
+                            <div v-for="step in loadingSteps" :key="step.id" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                <div :style="{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '50%',
+                                    background: loadingStep >= step.id ? '#1a73e8' : '#e5e5e5',
+                                    color: loadingStep >= step.id ? '#fff' : '#999',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    transition: 'all 0.3s'
+                                }">
+                                    <i v-if="loadingStep > step.id" class="fas fa-check"></i>
+                                    <span v-else>{{ step.id }}</span>
+                                </div>
+                                <div :style="{
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    color: loadingStep === step.id ? '#1a73e8' : '#666'
+                                }">{{ step.label }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 进度条 -->
+                        <div style="width: 400px; height: 4px; background: #e5e5e5; border-radius: 2px; overflow: hidden; margin-bottom: 16px;">
+                            <div :style="{
+                                width: (loadingStep / 3 * 100) + '%',
+                                height: '100%',
+                                background: '#1a73e8',
+                                transition: 'width 0.3s'
+                            }"></div>
+                        </div>
+                        
+                        <!-- 当前步骤描述 -->
+                        <div style="color: #666; font-size: 14px;">
+                            {{ loadingSteps[loadingStep - 1]?.description }}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 法规列表 -->
-                <div style="padding: 20px 0; max-height: calc(100vh - 300px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
-                    <style>
-                        div::-webkit-scrollbar {
-                            display: none;
-                        }
-                    </style>
+                <div style="padding: 20px 0; max-height: calc(100vh - 300px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;">
+                    <!-- 错误状态 -->
+                    <div v-if="loadError" style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #dc2626;"></i>
+                        <p style="margin-top: 16px; color: #dc2626;">{{ loadError }}</p>
+                        <button class="smart-btn-primary" @click="performSearch" style="margin-top: 16px;">重新检索</button>
+                    </div>
+
+                    <!-- 空结果状态 -->
+                    <div v-else-if="results.length === 0 && !isLoading" style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #ccc;"></i>
+                        <p style="margin-top: 16px; color: #666;">未找到相关法规</p>
+                    </div>
+
+                    <!-- 结果列表 -->
+                    <div v-else>
                     <div 
                         v-for="result in results" 
                         :key="result.id"
@@ -419,6 +532,7 @@ export default {
                         <p style="font-size: 14px; color: #1a1a1a; line-height: 1.6; margin: 0;">
                             {{ result.content }}
                         </p>
+                    </div>
                     </div>
                 </div>
 

@@ -2,6 +2,13 @@
 const routes = {
     '/': 'CaseList',
     '/detail': 'CaseDetail',
+    // 案件详情子模块路由
+    '/detail/:id/basic': 'CaseBasicInfo',
+    '/detail/:id/facts': 'CaseFacts',
+    '/detail/:id/stakeholders': 'CaseStakeholders',
+    '/detail/:id/financials': 'CaseFinancials',
+    '/detail/:id/evidence': 'CaseEvidence',
+    '/detail/:id/advanced': 'CaseAdvanced',
     '/evidence-upload': 'EvidenceUpload',
     '/doc-generate': 'DocGenerate',
     '/profile': 'UserProfile',

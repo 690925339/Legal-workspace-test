@@ -15,7 +15,6 @@ import { authStore } from './store/authStore.js';
 import AppLayout from './components/layout/AppLayout.js';
 import Sidebar from './components/layout/Sidebar.vue';
 import CaseList from './views/CaseList.vue';
-import CaseDetail from './views/CaseDetail.js';
 import EvidenceUpload from './views/EvidenceUpload.js';
 import DocGenerate from './views/DocGenerate.js';
 import Login from './views/Login.vue';
@@ -28,6 +27,14 @@ import LegalResearch from './views/LegalResearch.js';
 import CaseSearchResults from './views/CaseSearchResults.js';
 import CaseDetailView from './views/CaseDetailView.js';
 import RegulationSearchResults from './views/RegulationSearchResults.js';
+
+// 案件子模块
+import CaseBasicInfo from './views/case/CaseBasicInfo.js';
+import CaseFacts from './views/case/CaseFacts.js';
+import CaseStakeholders from './views/case/CaseStakeholders.js';
+import CaseFinancials from './views/case/CaseFinancials.js';
+import CaseEvidence from './views/case/CaseEvidence.js';
+import CaseAdvanced from './views/case/CaseAdvanced.js';
 
 import Settings from './views/Settings.js';
 import UserProfile from './views/UserProfile.js';
@@ -85,11 +92,14 @@ async function loadUserProfile(userId) {
                 loadUserProfile(session.user.id);
             }
 
-            // 使用 setTimeout 确保 Vue 响应式系统已处理状态变化
-            setTimeout(() => {
-                console.log('Navigating to / after auth update');
-                router.push('/');
-            }, 50);
+            // 只有在登录页面时才跳转到首页，避免切换标签页时意外跳转
+            const currentPath = window.location.hash.slice(1) || '/';
+            if (currentPath === '/login' || currentPath === '/register') {
+                setTimeout(() => {
+                    console.log('Navigating to / after login');
+                    router.push('/');
+                }, 50);
+            }
         } else if (event === 'SIGNED_OUT') {
             authStore.clearAuth();
             // 登出，导航到登录页
@@ -162,8 +172,35 @@ const App = {
             if (path === '/feedback') {
                 return 'ProductFeedback';
             }
-            if (path.startsWith('/detail')) {
-                return 'CaseDetail';
+            // 案件详情子模块路由匹配
+            if (path.match(/\/detail\/[^/]+\/basic/)) {
+                return 'CaseBasicInfo';
+            }
+            if (path.match(/\/detail\/[^/]+\/facts/)) {
+                return 'CaseFacts';
+            }
+            if (path.match(/\/detail\/[^/]+\/stakeholders/)) {
+                return 'CaseStakeholders';
+            }
+            if (path.match(/\/detail\/[^/]+\/financials/)) {
+                return 'CaseFinancials';
+            }
+            if (path.match(/\/detail\/[^/]+\/evidence/)) {
+                return 'CaseEvidence';
+            }
+            if (path.match(/\/detail\/[^/]+\/advanced/)) {
+                return 'CaseAdvanced';
+            }
+            // 入口页重定向到基础信息模块
+            if (path.match(/^\/detail\/[^/]+$/)) {
+                // 提取案件ID并重定向到基础信息
+                const match = path.match(/^\/detail\/([^/]+)$/);
+                if (match) {
+                    setTimeout(() => {
+                        window.location.hash = `/detail/${match[1]}/basic`;
+                    }, 0);
+                }
+                return 'CaseBasicInfo'; // 临时显示，等待重定向
             }
             if (path === '/create' || path.startsWith('/edit')) {
                 return 'CaseForm';
@@ -204,7 +241,6 @@ const App = {
         AppLayout,
         Sidebar,
         CaseList,
-        CaseDetail,
         EvidenceUpload,
         DocGenerate,
         Login,
@@ -219,7 +255,14 @@ const App = {
         RegulationSearchResults,
         Settings,
         UserProfile,
-        ProductFeedback
+        ProductFeedback,
+        // 案件子模块
+        CaseBasicInfo,
+        CaseFacts,
+        CaseStakeholders,
+        CaseFinancials,
+        CaseEvidence,
+        CaseAdvanced
     },
     template: `
         <div id="app">
@@ -253,7 +296,6 @@ const app = createApp(App);
 // 注册全局组件
 app.component('Sidebar', Sidebar);
 app.component('CaseList', CaseList);
-app.component('CaseDetail', CaseDetail);
 app.component('Login', Login);
 app.component('Register', Register);
 app.component('ForgotPassword', ForgotPassword);
@@ -268,6 +310,14 @@ app.component('EvidenceUpload', EvidenceUpload);
 app.component('DocGenerate', DocGenerate);
 app.component('Settings', Settings);
 app.component('HistoryModal', HistoryModal);
+
+// 案件子模块组件
+app.component('CaseBasicInfo', CaseBasicInfo);
+app.component('CaseFacts', CaseFacts);
+app.component('CaseStakeholders', CaseStakeholders);
+app.component('CaseFinancials', CaseFinancials);
+app.component('CaseEvidence', CaseEvidence);
+app.component('CaseAdvanced', CaseAdvanced);
 
 // 挂载应用
 app.mount('#app');

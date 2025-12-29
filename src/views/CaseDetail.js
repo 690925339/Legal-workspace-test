@@ -54,24 +54,28 @@ export default {
                     id: 'basic',
                     name: '基础信息',
                     icon: 'fas fa-file-alt',
+                    route: 'basic',
                     items: []
                 },
                 {
                     id: 'case-facts',
                     name: '案情描述',
                     icon: 'fas fa-file-text',
+                    route: 'facts',
                     items: []
                 },
                 {
                     id: 'stakeholders',
                     name: '当事人信息',
                     icon: 'fas fa-users',
+                    route: 'stakeholders',
                     items: []
                 },
                 {
                     id: 'evidence',
                     name: '证据管理',
                     icon: 'fas fa-folder-open',
+                    route: 'evidence',
                     items: [
                         { id: 'evidence-list', name: '证据清单' },
                         { id: 'ai-evidence', name: '证据分析规划' }
@@ -81,6 +85,7 @@ export default {
                     id: 'financials',
                     name: '财务信息',
                     icon: 'fas fa-dollar-sign',
+                    route: 'financials',
                     items: []
                 },
 
@@ -88,6 +93,7 @@ export default {
                     id: 'refactor',
                     name: '高级功能',
                     icon: 'fas fa-tools',
+                    route: 'advanced',
                     items: [
                         { id: 'ai-analysis-refactor', name: 'AI分析' },
                         { id: 'ai-assistant-refactor', name: 'AI对话助手' },
@@ -309,17 +315,22 @@ export default {
         },
         switchCategory(categoryId) {
             console.log('Switching to category:', categoryId);
-            this.activeCategory = categoryId;
             const category = this.tabStructure.find(c => c.id === categoryId);
-            console.log('Found category:', category);
-            if (category && category.items.length > 0) {
-                // 有子标签时，切换到第一个子标签
-                this.activeTab = category.items[0].id;
+            if (category && category.route) {
+                // 跳转到独立的模块路由
+                const hash = window.location.hash;
+                const match = hash.match(/\/detail\/([^/]+)/);
+                const caseId = match ? match[1] : '1';
+                router.push(`/detail/${caseId}/${category.route}`);
             } else {
-                // 没有子标签时，直接使用分类ID作为activeTab
-                this.activeTab = categoryId;
+                // 回退逻辑：页面内切换
+                this.activeCategory = categoryId;
+                if (category && category.items.length > 0) {
+                    this.activeTab = category.items[0].id;
+                } else {
+                    this.activeTab = categoryId;
+                }
             }
-            console.log('Set activeTab to:', this.activeTab);
         },
         switchTab(tabId) {
             this.activeTab = tabId;
@@ -673,8 +684,6 @@ export default {
                 <div class="breadcrumbs">
                     <span @click="goBack" style="cursor: pointer; color: var(--text-secondary);">案件</span>
                     <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
-                    <span>详情</span>
-                    <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
                     <span class="current">{{ caseData.id }}</span>
                 </div>
                 <div class="top-actions">
@@ -746,7 +755,7 @@ export default {
                     <div class="dashboard-grid">
                         <!-- 基本信息卡片 -->
                         <div class="modern-card">
-                            <div class="card-header">
+                            <div class="card-header" style="background: transparent;">
                                 <div class="card-title">基础信息</div>
                                 <button class="icon-btn" style="font-size: 14px;" @click="editBasicInfo">
                                     <i class="fas fa-pen"></i>
@@ -826,7 +835,7 @@ export default {
                 <!-- Tab: Case Facts -->
                 <div v-if="activeTab === 'case-facts'" class="tab-pane">
                     <div class="modern-card">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">案情描述</div>
                             <button class="icon-btn" style="font-size: 14px;" @click="editCaseFacts">
                                 <i class="fas fa-pen"></i>
@@ -863,7 +872,7 @@ export default {
                 <div v-if="activeTab === 'stakeholders'" class="tab-pane">
                     <!-- 原告列表 -->
                     <div class="modern-card" style="margin-bottom: 20px;">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">
                                 <i class="fas fa-user" style="margin-right: 8px; color: #4f46e5;"></i>
                                 原告（我方客户）
@@ -916,7 +925,7 @@ export default {
 
                     <!-- 被告列表 -->
                     <div class="modern-card" style="margin-bottom: 20px;">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">
                                 <i class="fas fa-building" style="margin-right: 8px; color: #dc2626;"></i>
                                 被告
@@ -973,7 +982,7 @@ export default {
 
                     <!-- 第三人列表 -->
                     <div class="modern-card">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">
                                 <i class="fas fa-users" style="margin-right: 8px; color: #f59e0b;"></i>
                                 第三人
@@ -1024,7 +1033,7 @@ export default {
                 <!-- Tab: Financials -->
                 <div v-if="activeTab === 'financials'" class="tab-pane">
                     <div class="modern-card">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">财务信息</div>
                             <button class="icon-btn" style="font-size: 14px;" @click="editFinancials">
                                 <i class="fas fa-pen"></i>
@@ -1063,21 +1072,20 @@ export default {
 
                 <!-- Tab: AI Evidence Analysis -->
                 <div v-if="activeTab === 'ai-evidence'" class="tab-pane">
-                    <!-- Action Buttons -->
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
-                        <button class="smart-btn-secondary" @click="exportEvidenceList">
-                            <i class="fas fa-download"></i> 导出清单
-                        </button>
-                        <button class="smart-btn-secondary">
-                            <i class="fas fa-sync-alt"></i> 重新分析
-                        </button>
-                    </div>
-                    
-                    
-                    <!-- Evidence Table -->
-                    <h3 style="color: var(--text-primary); margin-bottom: 16px; font-size: 18px;">
-                        <i class="fas fa-list-check" style="margin-right: 8px;"></i> 证据收集清单
-                    </h3>
+                    <div class="modern-card">
+                        <div class="card-header" style="background: transparent;">
+                            <div class="card-title">
+                                <i class="fas fa-list-check" style="margin-right: 8px;"></i>证据收集清单
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="smart-btn-secondary" @click="exportEvidenceList" style="padding: 6px 12px; font-size: 13px;">
+                                    <i class="fas fa-download"></i> 导出
+                                </button>
+                                <button class="smart-btn-secondary" style="padding: 6px 12px; font-size: 13px;">
+                                    <i class="fas fa-sync-alt"></i> 重新分析
+                                </button>
+                            </div>
+                        </div>
 
                     <div class="table-container">
                         <table class="modern-table">
@@ -1139,6 +1147,7 @@ export default {
                             <li>当前证据完整度为 50%，建议至少达到 70% 以上再提起诉讼</li>
                         </ul>
                     </div>
+                    </div>
                 </div>
 
 
@@ -1149,15 +1158,17 @@ export default {
                 <!-- Evidence List Tab -->
                 <div v-if="activeTab === 'evidence-list'" class="tab-pane">
                     <!-- Evidence List -->
-                    <div class="evidence-list-section">
-                        <div class="section-header">
-                            <h4 class="section-title">证据列表 ({{ evidenceFiles.length }})</h4>
-                            <div class="list-actions">
-                                <button class="primary-btn" @click="navigateToEvidenceUpload">
-                                    <i class="fas fa-upload"></i> 上传证据
+                    <div class="modern-card">
+                        <div class="card-header" style="background: transparent;">
+                            <div class="card-title">
+                                <i class="fas fa-list" style="margin-right: 8px;"></i>证据列表 ({{ evidenceFiles.length }})
+                            </div>
+                            <div class="list-actions" style="display: flex; gap: 8px;">
+                                <button class="primary-btn" @click="navigateToEvidenceUpload" style="padding: 6px 16px; font-size: 13px;">
+                                    <i class="fas fa-upload"></i> 上传
                                 </button>
-                                <button class="filter-btn"><i class="fas fa-filter"></i> 筛选</button>
-                                <button class="filter-btn"><i class="fas fa-sort"></i> 排序</button>
+                                <button class="filter-btn" style="padding: 6px 12px; font-size: 13px;"><i class="fas fa-filter"></i> 筛选</button>
+                                <button class="filter-btn" style="padding: 6px 12px; font-size: 13px;"><i class="fas fa-sort"></i> 排序</button>
                             </div>
                         </div>
                         
@@ -1213,7 +1224,7 @@ export default {
                 <!-- Tab: Refactor (New) -->
                 <div v-if="activeTab === 'refactor'" class="tab-pane">
                     <div class="modern-card">
-                        <div class="card-header">
+                        <div class="card-header" style="background: transparent;">
                             <div class="card-title">
                                 <i class="fas fa-tools" style="margin-right: 8px;"></i>
                                 高级功能（重构）

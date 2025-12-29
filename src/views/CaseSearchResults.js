@@ -904,19 +904,9 @@ ${caseData.date}
                         </div>
                     </div>
                 </div>
-                <style>
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
-                </style>
 
                 <!-- 案例列表 -->
-                <div style="padding: 20px 0; max-height: calc(100vh - 300px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
-                    <style>
-                        div::-webkit-scrollbar {
-                            display: none;
-                        }
-                    </style>
+                <div style="padding: 20px 0; max-height: calc(100vh - 300px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;">
                     <div 
                         v-for="result in results" 
                         :key="result.id"

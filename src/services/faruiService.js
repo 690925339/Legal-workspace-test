@@ -659,4 +659,152 @@ export const faruiCaseService = {
     }
 };
 
+/**
+ * 法规检索服务
+ */
+import { lawCache } from './lawCache.js';
+
+export const faruiLawService = {
+    /**
+     * 搜索法规
+     * @param {Object} params - 搜索参数
+     * @param {string} params.query - 搜索问题
+     * @param {number} params.pageNumber - 页码（从1开始）
+     * @param {number} params.pageSize - 每页数量
+     * @param {Object} params.filterCondition - 筛选条件
+     * @returns {Promise<Object>} 搜索结果
+     */
+    async searchLaws(params) {
+        const {
+            query,
+            pageNumber = 1,
+            pageSize = 50,
+            filterCondition = {}
+        } = params;
+
+        // 生成缓存Key
+        const queryHash = lawCache.generateQueryHash({
+            query,
+            filterCondition,
+            pageNumber,
+            pageSize
+        });
+
+        // 尝试从缓存获取
+        const cached = await lawCache.getFromCache(queryHash);
+        if (cached) {
+            console.log('Law cache hit:', queryHash);
+            return {
+                ...cached,
+                results: this.formatLawResults({ list: cached.results.map(l => l.raw_data || l) }).results
+            };
+        }
+
+        console.log('Law cache miss, calling API...');
+
+        // 准备 API 请求
+        const supabase = getSupabaseClient();
+
+        const requestBody = {
+            workspaceId: FARUI_CONFIG.workspaceId,
+            appId: FARUI_CONFIG.appId,
+            query: query,
+            pageParam: {
+                pageNo: pageNumber,
+                pageSize: pageSize
+            }
+        };
+
+        // 添加筛选条件
+        if (Object.keys(filterCondition).length > 0) {
+            requestBody.filterCondition = {};
+
+            if (filterCondition.effectiveLevel && filterCondition.effectiveLevel.length > 0) {
+                requestBody.filterCondition.effectiveLevel = Array.isArray(filterCondition.effectiveLevel)
+                    ? filterCondition.effectiveLevel
+                    : [filterCondition.effectiveLevel];
+            }
+
+            if (filterCondition.timeliness && filterCondition.timeliness.length > 0) {
+                requestBody.filterCondition.timeliness = Array.isArray(filterCondition.timeliness)
+                    ? filterCondition.timeliness
+                    : [filterCondition.timeliness];
+            }
+
+            if (filterCondition.promulgationDepartment) {
+                requestBody.filterCondition.promulgationDepartment = filterCondition.promulgationDepartment;
+            }
+        }
+
+        // 调用 Edge Function
+        const { data, error } = await supabase.functions.invoke('farui-law-search', {
+            body: requestBody
+        });
+
+        if (error) {
+            console.error('Farui Law API Error:', error);
+            throw new Error(error.message || '法规检索失败');
+        }
+
+        // 调试日志 - 查看 API 返回的数据结构
+        console.log('Farui Law API Response:', JSON.stringify(data, null, 2));
+
+        if (!data.success && data.message) {
+            throw new Error(data.message);
+        }
+
+        // 格式化响应数据 - 尝试多种数据路径
+        const responseData = data.data || data;
+        const result = this.formatLawResults(responseData);
+
+        console.log('Formatted law results:', result.results.length, 'laws');
+
+        // 保存到缓存
+        await lawCache.saveToCache(queryHash, params, result);
+
+        return result;
+    },
+
+    /**
+     * 格式化法规结果
+     */
+    formatLawResults(data) {
+        // API 返回的是 lawResult 而不是 list
+        const lawList = data?.lawResult || data?.list || [];
+
+        if (!lawList || lawList.length === 0) {
+            return {
+                results: [],
+                totalCount: 0,
+                queryKeywords: data?.queryKeywords || []
+            };
+        }
+
+        const results = lawList.map(item => ({
+            id: item.docId || item.lawId,
+            name: item.lawName,
+            title: item.lawName,
+            content: item.content || item.lawSourceContent || '',
+            htmlContent: item.htmlContent || '',
+            // 字段可能在顶层或在 lawResultAttributeVo 中
+            effectiveLevel: item.potencyLevel || item.lawResultAttributeVo?.effectiveLevel || '',
+            timeliness: item.timeliness || item.lawResultAttributeVo?.timeliness || '',
+            department: item.lawDomain?.level1Name || item.lawResultAttributeVo?.promulgationDepartment || '',
+            releaseDate: item.implementYearMonthDate || item.lawResultAttributeVo?.releaseDate || '',
+            similarity: item.similarity,
+            highlightMap: item.highlightMap || {},
+            // 保留原始数据用于缓存
+            _raw: item
+        }));
+
+        return {
+            results,
+            totalCount: data.totalCount || results.length,
+            queryKeywords: data.queryKeywords || [],
+            pageSize: data.pageSize,
+            pageTotalCount: data.pageTotalCount
+        };
+    }
+};
+
 export default faruiCaseService;

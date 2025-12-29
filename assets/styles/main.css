@@ -4513,6 +4513,7 @@ label.required::after {
         transform: translateY(0);
     }
 }
+
 /* Legal Research Styles */
 .legal-research-page {
     padding: 32px 48px;
@@ -4525,7 +4526,7 @@ label.required::after {
     padding: 24px;
     border-radius: 8px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .search-header {
@@ -4645,7 +4646,7 @@ label.required::after {
     background: white;
     padding: 20px 24px;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid #f0f0f0;
 }
 
@@ -4795,15 +4796,18 @@ label.required::after {
     cursor: pointer;
     transition: all 0.2s;
 }
+
 .radio-card:hover {
     border-color: #2563eb;
     background: #f0f9ff;
 }
+
 .radio-card.active {
     border-color: #2563eb;
     background: #eff6ff;
     box-shadow: 0 0 0 1px #2563eb;
 }
+
 .radio-content {
     display: flex;
     flex-direction: column;
