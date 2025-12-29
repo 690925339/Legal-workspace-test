@@ -1,19 +1,37 @@
 <template>
   <div class="auth-page">
     <div class="brand-section">
-      <div class="brand-pattern"></div>
+      <div class="brand-pattern" />
       <div class="brand-content">
         <div class="brand-logo">
-          <div v-if="brand.logoUrl" class="logo-img">
-            <img :src="brand.logoUrl" alt="Logo" style="max-height: 48px;">
+          <div
+            v-if="brand.logoUrl"
+            class="logo-img"
+          >
+            <img
+              :src="brand.logoUrl"
+              alt="Logo"
+              style="max-height: 48px;"
+            >
           </div>
-          <div v-else class="logo-box">{{ brand.logoText }}</div>
+          <div
+            v-else
+            class="logo-box"
+          >
+            {{ brand.logoText }}
+          </div>
           <div class="brand-text">
-            <div class="brand-name">{{ brand.name }}</div>
-            <div class="brand-subtitle">{{ brand.subtitle }}</div>
+            <div class="brand-name">
+              {{ brand.name }}
+            </div>
+            <div class="brand-subtitle">
+              {{ brand.subtitle }}
+            </div>
           </div>
         </div>
-        <div class="brand-quote">{{ brand.quote }}</div>
+        <div class="brand-quote">
+          {{ brand.quote }}
+        </div>
         <div class="brand-desc">
           {{ brand.description }}
         </div>
@@ -23,25 +41,32 @@
     <div class="form-section">
       <div class="form-container">
         <div class="form-header">
-          <div class="form-title">欢迎回来</div>
-          <div class="form-subtitle">请输入您的账号信息以登录</div>
+          <div class="form-title">
+            欢迎回来
+          </div>
+          <div class="form-subtitle">
+            请输入您的账号信息以登录
+          </div>
         </div>
 
         <form @submit.prevent="handleLogin">
           <!-- 错误提示 -->
-          <div v-if="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+          <div
+            v-if="errorMessage"
+            class="error-message"
+          >
+            <i class="fas fa-exclamation-circle" /> {{ errorMessage }}
           </div>
 
           <div class="form-group">
             <label class="form-label">邮箱地址</label>
             <div class="input-wrapper">
-              <i class="far fa-envelope input-icon"></i>
+              <i class="far fa-envelope input-icon" />
               <input 
+                v-model="email" 
                 type="email" 
-                class="form-input" 
+                class="form-input"
                 placeholder="name@company.com"
-                v-model="email"
                 :disabled="isLoading"
                 required
               >
@@ -51,12 +76,12 @@
           <div class="form-group">
             <label class="form-label">密码</label>
             <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
+              <i class="fas fa-lock input-icon" />
               <input 
+                v-model="password" 
                 type="password" 
-                class="form-input" 
+                class="form-input"
                 placeholder="请输入密码"
-                v-model="password"
                 :disabled="isLoading"
                 required
               >
@@ -65,19 +90,34 @@
 
           <div class="form-actions">
             <label class="remember-me">
-              <input type="checkbox" v-model="rememberMe" :disabled="isLoading"> 记住我
+              <input
+                v-model="rememberMe"
+                type="checkbox"
+                :disabled="isLoading"
+              > 记住我
             </label>
-            <a @click.prevent="goToForgotPassword" href="#" class="forgot-password">忘记密码？</a>
+            <a
+              href="#"
+              class="forgot-password"
+              @click.prevent="goToForgotPassword"
+            >忘记密码？</a>
           </div>
 
-          <button type="submit" class="submit-btn" :disabled="isLoading">
+          <button
+            type="submit"
+            class="submit-btn"
+            :disabled="isLoading"
+          >
             <span v-if="!isLoading">登录</span>
-            <span v-else><i class="fas fa-spinner fa-spin"></i> 登录中...</span>
+            <span v-else><i class="fas fa-spinner fa-spin" /> 登录中...</span>
           </button>
         </form>
 
         <div class="form-footer">
-          还没有账号？ <a @click.prevent="goToRegister" href="#">立即注册</a>
+          还没有账号？ <a
+            href="#"
+            @click.prevent="goToRegister"
+          >立即注册</a>
         </div>
       </div>
     </div>

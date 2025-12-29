@@ -24,7 +24,7 @@ export default {
             caseData: {},
             activeSubTab: 'ai-analysis',
             subTabs: [
-                { id: 'ai-analysis', name: 'AI分析' },
+                { id: 'ai-analysis', name: 'AI可行性报告' },
                 { id: 'ai-assistant', name: 'AI对话助手' },
                 { id: 'relationship-graph', name: '关系洞察' },
                 { id: 'timeline', name: '证据时间轴' },

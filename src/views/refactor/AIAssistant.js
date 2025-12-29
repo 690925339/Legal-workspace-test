@@ -70,8 +70,8 @@ export default {
         }
     },
     template: `
-        <div class="ai-assistant-component" style="height: calc(100vh - 280px); display: flex; flex-direction: column;">
-            <!-- Chat Messages -->
+        <div class="modern-card" style="height: calc(100vh - 140px); display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid #e5e5e5; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <!-- Chat Messages (Scrollable) -->
             <div style="flex: 1; overflow-y: auto; padding: 24px; background: #fafafa;" ref="chatContainer">
                 <div v-for="msg in aiAssistant.messages" :key="msg.id" 
                         :style="{
@@ -106,40 +106,41 @@ export default {
                         <i class="fas fa-user"></i>
                     </div>
                 </div>
+                
+                <!-- Quick Suggestions (Inside scrollable area at bottom) -->
+                <div v-if="aiAssistant.messages.length === 1" style="margin-top: 40px;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px; font-weight: 500;">
+                        <i class="fas fa-lightbulb" style="margin-right: 6px;"></i>
+                        您可能想问：
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <button v-for="(suggestion, index) in aiAssistant.suggestions" :key="index"
+                                class="smart-suggestion-item"
+                                style="text-align: left; padding: 12px; background: white; border: 1px solid #e5e5e5; border-radius: 6px; cursor: pointer; transition: all 0.2s; color: #334155; font-size: 13px;"
+                                @mouseenter="$event.target.style.borderColor = '#1a1a1a'; $event.target.style.color = '#1a1a1a';"
+                                @mouseleave="$event.target.style.borderColor = '#e5e5e5'; $event.target.style.color = '#334155';"
+                                @click="sendMessage(suggestion)">
+                            {{ suggestion }}
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- Quick Suggestions -->
-            <div v-if="aiAssistant.messages.length === 1" style="padding: 0 24px 16px 24px; background: #fafafa;">
-                <div style="font-size: 13px; color: #666; margin-bottom: 12px; font-weight: 500;">
-                    <i class="fas fa-lightbulb" style="margin-right: 6px;"></i>
-                    快捷建议
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                    <button v-for="(suggestion, index) in aiAssistant.suggestions" :key="index"
-                            class="smart-suggestion-item"
-                            @click="sendMessage(suggestion)">
-                        {{ suggestion }}
-                    </button>
-                </div>
-            </div>
-
-            <!-- Input Area -->
-            <div style="padding: 20px 24px; background: white; border-top: 1px solid #e5e5e5;">
+            <!-- Input Area (Fixed at bottom) -->
+            <div style="padding: 20px 24px; background: white; border-top: 1px solid #e5e5e5; flex-shrink: 0; position: relative; z-index: 10;">
                 <div style="display: flex; gap: 12px; align-items: flex-end;">
                     <textarea 
                         v-model="aiAssistant.input"
                         @keydown.enter.prevent="sendMessage()"
-                        placeholder="输入您的问题..."
-                        style="flex: 1; min-height: 44px; max-height: 120px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;"
+                        placeholder="输入您的问题，Shift + Enter 换行..."
+                        style="flex: 1; min-height: 48px; max-height: 120px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;"
+                        @focus="$event.target.style.borderColor = '#1a1a1a'"
+                        @blur="$event.target.style.borderColor = '#e2e8f0'"
                     ></textarea>
-                    <button class="smart-btn-primary" @click="sendMessage()" style="height: 44px; padding: 0 24px;">
-                        <i class="fas fa-paper-plane"></i>
+                    <button class="smart-btn-primary" @click="sendMessage()" style="height: 48px; padding: 0 24px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-paper-plane" style="margin-right: 8px;"></i>
                         发送
                     </button>
-                </div>
-                <div style="margin-top: 8px; font-size: 12px; color: #999;">
-                    <i class="fas fa-info-circle"></i>
-                    按 Enter 发送，Shift + Enter 换行
                 </div>
             </div>
         </div>

@@ -1,19 +1,37 @@
 <template>
   <div class="auth-page">
     <div class="brand-section">
-      <div class="brand-pattern"></div>
+      <div class="brand-pattern" />
       <div class="brand-content">
         <div class="brand-logo">
-          <div v-if="brand.logoUrl" class="logo-img">
-            <img :src="brand.logoUrl" alt="Logo" style="max-height: 48px;">
+          <div
+            v-if="brand.logoUrl"
+            class="logo-img"
+          >
+            <img
+              :src="brand.logoUrl"
+              alt="Logo"
+              style="max-height: 48px;"
+            >
           </div>
-          <div v-else class="logo-box">{{ brand.logoText }}</div>
+          <div
+            v-else
+            class="logo-box"
+          >
+            {{ brand.logoText }}
+          </div>
           <div class="brand-text">
-            <div class="brand-name">{{ brand.name }}</div>
-            <div class="brand-subtitle">{{ brand.subtitle }}</div>
+            <div class="brand-name">
+              {{ brand.name }}
+            </div>
+            <div class="brand-subtitle">
+              {{ brand.subtitle }}
+            </div>
           </div>
         </div>
-        <div class="brand-quote">{{ brand.quote }}</div>
+        <div class="brand-quote">
+          {{ brand.quote }}
+        </div>
         <div class="brand-desc">
           {{ brand.description }}
         </div>
@@ -23,30 +41,40 @@
     <div class="form-section">
       <div class="form-container">
         <div class="form-header">
-          <div class="form-title">创建账号</div>
-          <div class="form-subtitle">开始您的智能法律工作之旅</div>
+          <div class="form-title">
+            创建账号
+          </div>
+          <div class="form-subtitle">
+            开始您的智能法律工作之旅
+          </div>
         </div>
 
         <form @submit.prevent="handleRegister">
           <!-- 错误提示 -->
-          <div v-if="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+          <div
+            v-if="errorMessage"
+            class="error-message"
+          >
+            <i class="fas fa-exclamation-circle" /> {{ errorMessage }}
           </div>
 
           <!-- 成功提示 -->
-          <div v-if="successMessage" class="success-message">
-            <i class="fas fa-check-circle"></i> {{ successMessage }}
+          <div
+            v-if="successMessage"
+            class="success-message"
+          >
+            <i class="fas fa-check-circle" /> {{ successMessage }}
           </div>
 
           <div class="form-group">
             <label class="form-label">姓名</label>
             <div class="input-wrapper">
-              <i class="far fa-user input-icon"></i>
+              <i class="far fa-user input-icon" />
               <input 
+                v-model="name" 
                 type="text" 
-                class="form-input" 
+                class="form-input"
                 placeholder="请输入您的姓名"
-                v-model="name"
                 :disabled="isLoading"
                 required
               >
@@ -56,12 +84,12 @@
           <div class="form-group">
             <label class="form-label">邮箱地址</label>
             <div class="input-wrapper">
-              <i class="far fa-envelope input-icon"></i>
+              <i class="far fa-envelope input-icon" />
               <input 
+                v-model="email" 
                 type="email" 
-                class="form-input" 
+                class="form-input"
                 placeholder="name@company.com"
-                v-model="email"
                 :disabled="isLoading"
                 required
               >
@@ -71,26 +99,33 @@
           <div class="form-group">
             <label class="form-label">密码</label>
             <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
+              <i class="fas fa-lock input-icon" />
               <input 
+                v-model="password" 
                 type="password" 
-                class="form-input" 
+                class="form-input"
                 placeholder="请创建密码（至少6位）"
-                v-model="password"
                 :disabled="isLoading"
                 required
               >
             </div>
           </div>
 
-          <button type="submit" class="submit-btn" :disabled="isLoading">
+          <button
+            type="submit"
+            class="submit-btn"
+            :disabled="isLoading"
+          >
             <span v-if="!isLoading">创建账号</span>
-            <span v-else><i class="fas fa-spinner fa-spin"></i> 注册中...</span>
+            <span v-else><i class="fas fa-spinner fa-spin" /> 注册中...</span>
           </button>
         </form>
 
         <div class="form-footer">
-          已有账号？ <a @click.prevent="goToLogin" href="#">立即登录</a>
+          已有账号？ <a
+            href="#"
+            @click.prevent="goToLogin"
+          >立即登录</a>
         </div>
       </div>
     </div>

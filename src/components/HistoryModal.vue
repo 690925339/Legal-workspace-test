@@ -1,41 +1,63 @@
 <template>
-  <div v-if="visible" class="modal-overlay" @click.self="close">
+  <div
+    v-if="visible"
+    class="modal-overlay"
+    @click.self="close"
+  >
     <div class="modal-container">
       <div class="modal-header">
-        <div class="modal-title">{{ title }}</div>
-        <button class="modal-close" @click="close">
-          <i class="fas fa-times"></i>
+        <div class="modal-title">
+          {{ title }}
+        </div>
+        <button
+          class="modal-close"
+          @click="close"
+        >
+          <i class="fas fa-times" />
         </button>
       </div>
       
       <!-- Tabs -->
-      <div v-if="tabs.length > 0" class="tabs-container">
+      <div
+        v-if="tabs.length > 0"
+        class="tabs-container"
+      >
         <button 
           v-for="tab in tabs" 
           :key="tab"
-          @click="switchTab(tab)"
           :class="['tab-button', { active: activeTab === tab }]"
-        >{{ tab }}</button>
+          @click="switchTab(tab)"
+        >
+          {{ tab }}
+        </button>
       </div>
       
       <div class="modal-body">
-        <div v-if="filteredRecords.length === 0" class="empty-state">
+        <div
+          v-if="filteredRecords.length === 0"
+          class="empty-state"
+        >
           <p>暂无历史记录</p>
         </div>
-        <div v-else class="history-list">
+        <div
+          v-else
+          class="history-list"
+        >
           <div 
             v-for="record in filteredRecords" 
             :key="record.id" 
             class="history-item"
             @click="selectRecord($event, record)"
           >
-            <div class="record-title">{{ record.title }}</div>
+            <div class="record-title">
+              {{ record.title }}
+            </div>
             <button 
               class="delete-btn" 
-              @click.stop.prevent="deleteRecord($event, record)"
               title="删除此记录"
+              @click.stop.prevent="deleteRecord($event, record)"
             >
-              <i class="fas fa-trash-alt"></i>
+              <i class="fas fa-trash-alt" />
             </button>
           </div>
         </div>

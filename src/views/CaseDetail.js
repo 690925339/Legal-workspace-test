@@ -31,7 +31,8 @@ export default {
                 amount: '500,000.00 CNY',
                 description: '因被告未按合同约定支付广告费用引发的纠纷。',
                 lastUpdate: '2小时前',
-                assignee: '张三'
+                assignee: '张三',
+                stage: '一审'
             },
             showEditModal: false,
             showStatusDropdown: false,
@@ -95,7 +96,7 @@ export default {
                     icon: 'fas fa-tools',
                     route: 'advanced',
                     items: [
-                        { id: 'ai-analysis-refactor', name: 'AI分析' },
+                        { id: 'ai-analysis-refactor', name: 'AI可行性报告' },
                         { id: 'ai-assistant-refactor', name: 'AI对话助手' },
                         { id: 'relationship-graph-refactor', name: '关系洞察' },
                         { id: 'timeline-refactor', name: '证据时间轴' },
@@ -291,7 +292,7 @@ export default {
         }
     },
     methods: {
-        loadCaseData(id) {
+        loadCaseData() {
             // 模拟根据ID加载数据
             // 默认加载案件1的数据
             // 默认案件数据 (ID 1)

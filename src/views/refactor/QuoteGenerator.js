@@ -113,6 +113,19 @@ export default {
                 a.click();
                 URL.revokeObjectURL(url);
             }
+        },
+        addServiceItem() {
+            this.quoteForm.serviceItems.push({
+                id: Date.now(),
+                name: '',
+                price: 1000,
+                unit: '项',
+                selected: true,
+                isCustom: true
+            });
+        },
+        removeServiceItem(index) {
+            this.quoteForm.serviceItems.splice(index, 1);
         }
     },
     template: `
@@ -163,20 +176,29 @@ export default {
                 <div class="smart-form-group" style="margin-top: 20px;">
                     <label class="smart-label">服务项目</label>
                     <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fafafa;">
-                        <div v-for="item in quoteForm.serviceItems" :key="item.id" 
+                        <div v-for="(item, index) in quoteForm.serviceItems" :key="item.id" 
                                 style="display: flex; align-items: center; padding: 12px; background: white; border-radius: 6px; margin-bottom: 12px; border: 1px solid #e5e5e5;">
                             <input type="checkbox" v-model="item.selected" style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500; color: #1a1a1a;">{{ item.name }}</div>
+                            <div style="flex: 1; margin-right: 12px;">
+                                <input v-if="item.isCustom" type="text" v-model="item.name" class="smart-input" placeholder="请输入项目名称" style="width: 100%;">
+                                <div v-else style="font-weight: 500; color: #1a1a1a;">{{ item.name }}</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="color: #666;">¥</span>
                                 <input type="number" v-model.number="item.price" 
                                         style="width: 120px; padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 4px; text-align: right;"
                                         :disabled="!item.selected">
-                                <span style="color: #666; min-width: 40px;">元/{{ item.unit }}</span>
+                                <span style="color: #666;">元/</span>
+                                <input v-if="item.isCustom" type="text" v-model="item.unit" style="width: 50px; padding: 6px; border: 1px solid #e5e5e5; border-radius: 4px; text-align: center;" placeholder="单位">
+                                <span v-else style="color: #666; min-width: 30px;">{{ item.unit }}</span>
                             </div>
+                            <button class="icon-btn" style="color: #94a3b8; margin-left: 12px;" @click="removeServiceItem(index)" title="删除此项">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
+                        <button class="smart-btn-secondary" style="width: 100%; border-style: dashed;" @click="addServiceItem">
+                            <i class="fas fa-plus"></i> 添加自定义服务项目
+                        </button>
                     </div>
                 </div>
                 

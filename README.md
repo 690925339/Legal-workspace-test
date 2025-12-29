@@ -166,6 +166,13 @@ legal-workspace-vue/
 │   ├── router.js                 # 路由配置
 │   ├── config/
 │   │   └── supabase.js           # Supabase 配置
+│   ├── mixins/                   # Vue Mixins
+│   │   └── searchFilterMixin.js  # 搜索过滤逻辑
+│   ├── services/                 # 业务服务层
+│   │   ├── faruiService.js       # 通义法睿API集成
+│   │   ├── llmService.js         # LLM服务
+│   │   ├── caseCache.js          # 案件缓存
+│   │   └── lawCache.js           # 法规缓存
 │   ├── store/                    # 状态管理
 │   │   └── authStore.js          # 认证状态管理
 │   ├── styles/                   # SCSS 样式
@@ -262,7 +269,14 @@ legal-workspace-vue/
 
 ## 🔄 版本历史
 
-### v3.6 (2025-12-29) - 当前版本 ✨
+### v3.7 (2025-12-29) - 当前版本 ✨
+**AI 可行性报告增强**:
+- ✅ **7维度分析模型**：新增案情、证据、法律、风险、执行、策略、ROI全方位分析
+- ✅ **智能决策树**：基于证据覆盖率和偿债能力自动推荐诉讼/和解/放弃策略
+- ✅ **法规检索优化**：支持法律依据的分页展示，优化法条元数据显示（效力/发布日期）
+- ✅ **数据互通**：实现报告与基础信息、证据模块的数据联动
+
+### v3.6 (2025-12-29)
 **界面布局优化**:
 - ✅ 案件头部布局优化，移除冗余头部，释放垂直空间
 - ✅ 面包屑导航增强，集成案件名称显示
@@ -346,6 +360,7 @@ legal-workspace-vue/
 - [ ] 忘记密码功能
 - [ ] 文件预览功能
 - [ ] 证据时间轴编辑器
+- [ ] AI 案情梳理 (AI Case Facts Generation) ✨
 
 ### 中期计划 (v4.0)
 - [ ] 团队协作功能
@@ -412,7 +427,7 @@ legal-workspace-vue/
 
 **开发团队**: Alpha&Leader Legal Tech  
 **最后更新**: 2025-12-29  
-**版本**: v3.6
+**版本**: v3.7
 
 ---
 

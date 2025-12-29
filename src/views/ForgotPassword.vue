@@ -1,19 +1,37 @@
 <template>
   <div class="auth-page">
     <div class="brand-section">
-      <div class="brand-pattern"></div>
+      <div class="brand-pattern" />
       <div class="brand-content">
         <div class="brand-logo">
-          <div v-if="brand.logoUrl" class="logo-img">
-            <img :src="brand.logoUrl" alt="Logo" style="max-height: 48px;">
+          <div
+            v-if="brand.logoUrl"
+            class="logo-img"
+          >
+            <img
+              :src="brand.logoUrl"
+              alt="Logo"
+              style="max-height: 48px;"
+            >
           </div>
-          <div v-else class="logo-box">{{ brand.logoText }}</div>
+          <div
+            v-else
+            class="logo-box"
+          >
+            {{ brand.logoText }}
+          </div>
           <div class="brand-text">
-            <div class="brand-name">{{ brand.name }}</div>
-            <div class="brand-subtitle">{{ brand.subtitle }}</div>
+            <div class="brand-name">
+              {{ brand.name }}
+            </div>
+            <div class="brand-subtitle">
+              {{ brand.subtitle }}
+            </div>
           </div>
         </div>
-        <div class="brand-quote">{{ brand.quote }}</div>
+        <div class="brand-quote">
+          {{ brand.quote }}
+        </div>
         <div class="brand-desc">
           {{ brand.description }}
         </div>
@@ -23,45 +41,62 @@
     <div class="form-section">
       <div class="form-container">
         <div class="form-header">
-          <div class="form-title">忘记密码</div>
-          <div class="form-subtitle">输入您的邮箱以重置密码</div>
+          <div class="form-title">
+            忘记密码
+          </div>
+          <div class="form-subtitle">
+            输入您的邮箱以重置密码
+          </div>
         </div>
 
         <form @submit.prevent="handleResetPassword">
           <!-- 错误提示 -->
-          <div v-if="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+          <div
+            v-if="errorMessage"
+            class="error-message"
+          >
+            <i class="fas fa-exclamation-circle" /> {{ errorMessage }}
           </div>
 
           <!-- 成功提示 -->
-          <div v-if="successMessage" class="success-message">
-            <i class="fas fa-check-circle"></i> {{ successMessage }}
+          <div
+            v-if="successMessage"
+            class="success-message"
+          >
+            <i class="fas fa-check-circle" /> {{ successMessage }}
           </div>
 
           <div class="form-group">
             <label class="form-label">邮箱地址</label>
             <div class="input-wrapper">
-              <i class="far fa-envelope input-icon"></i>
+              <i class="far fa-envelope input-icon" />
               <input 
+                v-model="email" 
                 type="email" 
-                class="form-input" 
+                class="form-input"
                 placeholder="name@company.com"
-                v-model="email"
                 :disabled="isLoading"
                 required
               >
             </div>
           </div>
 
-          <button type="submit" class="submit-btn" :disabled="isLoading">
+          <button
+            type="submit"
+            class="submit-btn"
+            :disabled="isLoading"
+          >
             <span v-if="!isLoading">发送重置链接</span>
-            <span v-else><i class="fas fa-spinner fa-spin"></i> 发送中...</span>
+            <span v-else><i class="fas fa-spinner fa-spin" /> 发送中...</span>
           </button>
         </form>
 
         <div class="form-footer">
-          <a @click.prevent="goToLogin" href="#">
-            <i class="fas fa-arrow-left"></i> 返回登录
+          <a
+            href="#"
+            @click.prevent="goToLogin"
+          >
+            <i class="fas fa-arrow-left" /> 返回登录
           </a>
         </div>
       </div>
