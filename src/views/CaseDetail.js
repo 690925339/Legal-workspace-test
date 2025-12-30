@@ -38,8 +38,8 @@ export default {
             showStatusDropdown: false,
             statusOptions: [
                 { code: 'draft', text: '草稿', color: '#f3f4f6', textColor: '#4b5563' },
-                { code: 'active', text: '进行中', color: '#dbeafe', textColor: '#1e40af' },
-                { code: 'closed', text: '已结案', color: '#d1fae5', textColor: '#065f46' }
+                { code: 'active', text: '进行中', color: '#dcfce7', textColor: '#15803d' },
+                { code: 'closed', text: '已结案', color: '#fee2e2', textColor: '#b91c1c' }
             ],
             stageOptions: [
                 '咨询',

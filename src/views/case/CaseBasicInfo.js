@@ -14,6 +14,11 @@ export default {
             caseData: {},
             // 基础信息配置
             stageOptions: ['咨询', '立案', '一审', '二审', '再审', '执行', '结案'],
+            statusOptions: [
+                { code: 'draft', text: '草稿', color: '#f3f4f6', textColor: '#4b5563' },
+                { code: 'active', text: '进行中', color: '#dcfce7', textColor: '#15803d' },
+                { code: 'closed', text: '已结案', color: '#fee2e2', textColor: '#b91c1c' }
+            ],
 
             // 案情描述数据 (Mock)
             factsData: {
@@ -21,6 +26,11 @@ export default {
                 disputeFocus: ['软件是否已实际交付', '质量验收是否合格', '违约损失金额'],
                 objective: '支付剩余款项50万元 + 违约金8万元 + 利息'
             },
+            // 预设争议焦点选项
+            commonFocusOptions: [
+                '合同效力', '违约责任', '赔偿金额', '交付标准', '工期延误', '质量异议', '付款条件', '解除合同'
+            ],
+            newFocusInput: '',
 
             // 当事人数据 (Mock)
             stakeholders: {
@@ -110,16 +120,32 @@ export default {
         editCaseFacts() {
             this.editForm = {
                 description: this.factsData.description,
-                disputeFocus: this.factsData.disputeFocus.join(', '),
+                disputeFocus: JSON.parse(JSON.stringify(this.factsData.disputeFocus)), // Deep copy array
                 objective: this.factsData.objective
             };
+            this.newFocusInput = ''; // Reset input
             this.showCaseFactsModal = true;
         },
         saveCaseFacts() {
             this.factsData.description = this.editForm.description;
-            this.factsData.disputeFocus = this.editForm.disputeFocus.split(',').map(s => s.trim());
+            this.factsData.disputeFocus = this.editForm.disputeFocus; // Array assignment
             this.factsData.objective = this.editForm.objective;
             this.showCaseFactsModal = false;
+        },
+        addFocusTag() {
+            const val = this.newFocusInput.trim();
+            if (val && !this.editForm.disputeFocus.includes(val)) {
+                this.editForm.disputeFocus.push(val);
+            }
+            this.newFocusInput = '';
+        },
+        removeFocusTag(index) {
+            this.editForm.disputeFocus.splice(index, 1);
+        },
+        addCommonFocus(focus) {
+            if (!this.editForm.disputeFocus.includes(focus)) {
+                this.editForm.disputeFocus.push(focus);
+            }
         },
 
         // --- 当事人逻辑 ---
@@ -175,6 +201,17 @@ export default {
             if (s.legalRepresentative) parts.push(`法定代表人: ${s.legalRepresentative}`);
             if (s.phone) parts.push(`电话: ${s.phone}`);
             return parts.join(' | ');
+        },
+
+        getStatusStyle(code) {
+            const option = this.statusOptions.find(o => o.code === (code || 'active'));
+            if (option) {
+                return {
+                    backgroundColor: option.color,
+                    color: option.textColor
+                };
+            }
+            return {};
         }
     },
     template: `
@@ -205,7 +242,13 @@ export default {
                             <div class="info-row">
                                 <span class="label">案件状态</span>
                                 <span class="value">
-                                    <span :class="['tag', 'status-' + (caseData.statusCode || 'active')]" style="margin: 0;">{{ caseData.status }}</span>
+                                    <span 
+                                        class="tag" 
+                                        :style="getStatusStyle(caseData.statusCode)"
+                                        style="margin: 0;"
+                                    >
+                                        {{ caseData.status }}
+                                    </span>
                                 </span>
                             </div>
                             
@@ -431,9 +474,47 @@ export default {
                         <button class="modal-close" @click="showCaseFactsModal = false"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="modal-body">
-                        <div class="smart-form-group"><label class="smart-label">案情摘要</label><textarea class="smart-textarea" v-model="editForm.description" rows="6"></textarea></div>
-                        <div class="smart-form-group"><label class="smart-label">争议焦点</label><textarea class="smart-textarea" v-model="editForm.disputeFocus" rows="4"></textarea></div>
-                        <div class="smart-form-group"><label class="smart-label">客户诉求</label><textarea class="smart-textarea" v-model="editForm.objective" rows="3"></textarea></div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">案情摘要</label>
+                            <textarea class="smart-textarea" v-model="editForm.description" rows="6" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;"></textarea>
+                        </div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">争议焦点 (回车添加)</label>
+                            
+                            <!-- 标签输入区域 -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; background: #fff; align-items: center;">
+                                <!-- 已选标签 -->
+                                <span v-for="(focus, index) in editForm.disputeFocus" :key="index" 
+                                      class="tag" style="background: #e0e7ff; color: #4f46e5; margin: 0; padding: 4px 10px; border-radius: 16px; display: flex; align-items: center; gap: 6px;">
+                                    {{ focus }}
+                                    <i class="fas fa-times" style="cursor: pointer; opacity: 0.6;" @click="removeFocusTag(index)"></i>
+                                </span>
+                                
+                                <!-- 输入框 -->
+                                <input 
+                                    type="text" 
+                                    v-model="newFocusInput" 
+                                    placeholder="输入焦点并回车..." 
+                                    style="border: none; outline: none; flex: 1; padding: 4px; font-size: 14px; min-width: 120px;"
+                                    @keydown.enter.prevent="addFocusTag"
+                                    @blur="addFocusTag"
+                                >
+                            </div>
+                            
+                            <!-- 常用选项 -->
+                            <div style="margin-top: 8px; font-size: 12px; color: #64748b;">
+                                推荐标签：
+                                <span v-for="opt in commonFocusOptions" :key="opt" 
+                                      style="cursor: pointer; margin-right: 8px; display: inline-block; padding: 2px 8px; background: #f1f5f9; border-radius: 12px; margin-bottom: 4px;"
+                                      @click="addCommonFocus(opt)">
+                                    + {{ opt }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="smart-form-group">
+                            <label class="smart-label">客户诉求</label>
+                            <textarea class="smart-textarea" v-model="editForm.objective" rows="3" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;"></textarea>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="smart-btn-secondary" @click="showCaseFactsModal = false">取消</button>

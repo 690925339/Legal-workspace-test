@@ -1,4 +1,5 @@
 import CaseModuleLayout from '../../components/case/CaseModuleLayout.js';
+import InterestCalculator from '../../components/case/InterestCalculator.js';
 
 /**
  * 财务信息模块
@@ -6,7 +7,8 @@ import CaseModuleLayout from '../../components/case/CaseModuleLayout.js';
 export default {
     name: 'CaseFinancials',
     components: {
-        CaseModuleLayout
+        CaseModuleLayout,
+        InterestCalculator
     },
     data() {
         return {
@@ -26,7 +28,9 @@ export default {
             showFinancialsModal: false,
             editForm: {
                 claimItems: []
-            }
+            },
+            // 利息计算器显示状态
+            showCalculatorModal: false
         };
     },
     computed: {
@@ -71,15 +75,7 @@ export default {
                 if (!newVal) return;
                 // Check if '律师费' exists to keep checkbox synced
                 const hasFee = newVal.some(i => i.name === '律师费');
-                // Only update if state doesn't match to avoid infinite loop (though toggle logic handles it, defensive is good)
                 if (this.editForm.isAttorneyFeeIncluded !== hasFee) {
-                    // Note: We need to set it without triggering the 'remove' logic if it was just removed.
-                    // But wait, if hasFee is false, and we set Included=false, the watcher triggers.
-                    // Watcher sees false, checks if exists (it doesn't), does nothing. Safe.
-
-                    // If hasFee is true, and we set Included=true, watcher triggers.
-                    // Watcher sees true, checks if exists (it does), does nothing. Safe.
-
                     this.editForm.isAttorneyFeeIncluded = hasFee;
                 }
             },
@@ -122,6 +118,19 @@ export default {
             }
             this.financialsData = JSON.parse(JSON.stringify(this.editForm));
             this.showFinancialsModal = false;
+        },
+        openCalculator() {
+            this.showCalculatorModal = true;
+        },
+        handleInterestApplied(amount) {
+            const name = '利息/违约金';
+            const existingIndex = this.financialsData.claimItems.findIndex(i => i.name === name);
+            if (existingIndex !== -1) {
+                this.financialsData.claimItems[existingIndex].amount = amount;
+            } else {
+                this.financialsData.claimItems.push({ name: name, amount: amount });
+            }
+            this.showCalculatorModal = false;
         }
     },
     template: `
@@ -169,6 +178,18 @@ export default {
                         <span class="label">计费时长</span>
                         <span class="value">{{ financialsData.billableHours }} 小时</span>
                     </div>
+
+                    <!-- 利息计算器入口 -->
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e2e8f0;">
+                        <button 
+                            class="smart-btn-secondary" 
+                            style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;"
+                            @click="openCalculator"
+                        >
+                            <i class="fas fa-calculator"></i>
+                            利息/违约金/占用费计算器
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -185,41 +206,71 @@ export default {
                         
                         <!-- 标的组成编辑 -->
                         <div class="smart-form-group">
-                            <label class="smart-label">
-                                标的组成 
-                                <span style="float: right; color: #64748b; font-weight: normal;">总额: {{ formatCurrency(editTotalAmount) }}</span>
-                            </label>
-                            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                <div v-for="(item, index) in editForm.claimItems" :key="index" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
-                                    <input type="text" class="smart-input" v-model="item.name" placeholder="项目名称 (如: 本金)" style="flex: 1;">
-                                    <input type="number" class="smart-input" v-model.number="item.amount" placeholder="金额" style="width: 120px;">
-                                    <button class="icon-btn" style="color: #ef4444;" @click="removeClaimItem(index)"><i class="fas fa-trash-alt"></i></button>
+                            <label class="smart-label" style="margin-bottom: 8px;">标的组成 (Claim Items)</label>
+                            
+                            <div v-if="editForm.claimItems.length === 0" style="text-align: center; padding: 24px; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; margin-bottom: 12px;">
+                                <i class="fas fa-clipboard-list" style="font-size: 24px; margin-bottom: 8px; color: #cbd5e1;"></i>
+                                <div style="font-size: 13px;">暂无标的项，请添加</div>
+                            </div>
+
+                            <div v-else style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                                <div v-for="(item, index) in editForm.claimItems" :key="index" 
+                                     style="display: flex; gap: 12px; align-items: center; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; transition: all 0.2s;">
+                                    
+                                    <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
+                                        <label style="font-size: 11px; color: #64748b;">名称</label>
+                                        <input type="text" class="smart-input" v-model="item.name" placeholder="如: 欠款本金" 
+                                               style="border: 1px solid #e2e8f0; font-size: 13px; height: 32px;">
+                                    </div>
+                                    
+                                    <div style="flex: 1.5; display: flex; flex-direction: column; gap: 4px;">
+                                        <label style="font-size: 11px; color: #64748b;">金额 (元)</label>
+                                        <input type="number" class="smart-input" v-model="item.amount" placeholder="0" 
+                                               style="border: 1px solid #e2e8f0; font-size: 13px; height: 32px;">
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: flex-end; padding-bottom: 4px;">
+                                        <button class="icon-btn" style="color: #94a3b8; transition: color 0.2s; padding: 8px;" 
+                                                @click="removeClaimItem(index)"
+                                                title="删除">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <button class="smart-btn-secondary" style="width: 100%; font-size: 12px; border-style: dashed;" @click="addClaimItem">
-                                    <i class="fas fa-plus"></i> 添加标的项
-                                </button>
+                            </div>
+
+                            <button @click="addClaimItem" 
+                                    style="width: 100%; border: 1px dashed #cbd5e1; color: #64748b; padding: 10px; border-radius: 8px; background: #f8fafc; transition: all 0.2s; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fas fa-plus-circle"></i> 添加标的组成项
+                            </button>
+
+                            <div style="text-align: right; font-size: 14px; font-weight: 600; color: #334155; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                                合计: <span style="color: #059669;">{{ formatCurrency(editTotalAmount) }}</span>
                             </div>
                         </div>
 
                         <div class="smart-form-group">
                             <label class="smart-label">律师费报价</label>
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <input type="number" class="smart-input" v-model.number="editForm.attorneyFee" placeholder="请输入律师费报价" style="flex: 1;">
-                                <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #334155; cursor: pointer; user-select: none;" title="勾选后将自动添加到标的列表中">
+                            <input type="number" class="smart-input" v-model="editForm.attorneyFee">
+                            <div style="margin-top: 8px;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; cursor: pointer;">
                                     <input type="checkbox" v-model="editForm.isAttorneyFeeIncluded">
-                                    包含在标的中
+                                    律师费已包含在诉讼标的中
                                 </label>
                             </div>
                         </div>
-                        
-                        <div class="smart-form-group">
-                            <label class="smart-label">预估诉讼费</label>
-                            <input type="number" class="smart-input" v-model.number="editForm.courtCost" placeholder="请输入预估诉讼费">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="smart-form-group">
+                                <label class="smart-label">预估诉讼费</label>
+                                <input type="number" class="smart-input" v-model="editForm.courtCost">
+                            </div>
+                            <div class="smart-form-group">
+                                <label class="smart-label">计费时长 (小时)</label>
+                                <input type="number" class="smart-input" v-model="editForm.billableHours">
+                            </div>
                         </div>
-                        <div class="smart-form-group">
-                            <label class="smart-label">计费时长（小时）</label>
-                            <input type="number" step="0.5" class="smart-input" v-model.number="editForm.billableHours" placeholder="请输入计费时长">
-                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button class="smart-btn-secondary" @click="showFinancialsModal = false">取消</button>
@@ -227,6 +278,15 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <!-- 利息计算器组件 -->
+            <InterestCalculator 
+                :visible="showCalculatorModal" 
+                :initial-principal="totalClaimAmount" 
+                @update:visible="showCalculatorModal = $event" 
+                @apply="handleInterestApplied" 
+            />
+
         </CaseModuleLayout>
     `
 };
