@@ -1,9 +1,9 @@
 <template>
   <CaseModuleLayout :case-id="caseId" active-module="advanced" @case-loaded="onCaseLoaded">
     <!-- Sub Tabs -->
-    <div class="tabs-container" style="margin-top: -24px; margin-bottom: 16px;">
+    <div class="tabs-container" style="margin-top: -24px; margin-bottom: 16px">
       <div class="smart-tabs">
-        <div 
+        <div
           v-for="tab in subTabs"
           :key="tab.id"
           :class="['tab-pill', { active: activeSubTab === tab.id }]"
@@ -42,16 +42,18 @@
 </template>
 
 <script>
+import { ref } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import AIAnalysis from '@/views/refactor/AIAnalysis.js'
 import AIAssistant from '@/views/refactor/AIAssistant.js'
 import RelationshipGraph from '@/views/refactor/RelationshipGraph.js'
 import EvidenceTimeline from '@/views/refactor/EvidenceTimeline.js'
 import QuoteGenerator from '@/views/refactor/QuoteGenerator.js'
+import { useCaseData } from '@/features/case/composables'
 
 export default {
   name: 'CaseAdvanced',
-  
+
   components: {
     CaseModuleLayout,
     AIAnalysis,
@@ -60,35 +62,30 @@ export default {
     EvidenceTimeline,
     QuoteGenerator
   },
-  
-  data() {
-    return {
-      caseId: '',
-      caseData: {},
-      activeSubTab: 'ai-analysis',
-      subTabs: [
-        { id: 'ai-analysis', name: 'AI可行性报告' },
-        { id: 'ai-assistant', name: 'AI对话助手' },
-        { id: 'relationship-graph', name: '关系洞察' },
-        { id: 'timeline', name: '证据时间轴' },
-        { id: 'quote-generator', name: '生成报价书' }
-      ]
+
+  setup() {
+    const { caseId, caseData, onCaseLoaded } = useCaseData()
+
+    const activeSubTab = ref('ai-analysis')
+    const subTabs = [
+      { id: 'ai-analysis', name: 'AI可行性报告' },
+      { id: 'ai-assistant', name: 'AI对话助手' },
+      { id: 'relationship-graph', name: '关系洞察' },
+      { id: 'timeline', name: '证据时间轴' },
+      { id: 'quote-generator', name: '生成报价书' }
+    ]
+
+    const switchSubTab = tabId => {
+      activeSubTab.value = tabId
     }
-  },
-  
-  created() {
-    const hash = window.location.hash
-    const match = hash.match(/\/detail\/([^/]+)/)
-    this.caseId = match ? match[1] : '1'
-  },
-  
-  methods: {
-    onCaseLoaded(data) {
-      this.caseData = data
-    },
-    
-    switchSubTab(tabId) {
-      this.activeSubTab = tabId
+
+    return {
+      caseId,
+      caseData,
+      onCaseLoaded,
+      activeSubTab,
+      subTabs,
+      switchSubTab
     }
   }
 }
