@@ -1,5 +1,5 @@
 import CaseModuleLayout from '../../components/case/CaseModuleLayout.js';
-import { router } from '../../router.js';
+import router from '@/router/index.js'
 
 /**
  * 证据管理模块

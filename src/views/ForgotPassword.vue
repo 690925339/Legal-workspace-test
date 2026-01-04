@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import { router } from '../router.js'
+// 使用 this.$router 进行路由导航
 import { authService, brandService } from '../config/supabase.js'
 
 export default {
@@ -168,7 +168,7 @@ export default {
       }
     },
     goToLogin() {
-      router.push('/login')
+      this.$router.push('/login')
     }
   }
 }

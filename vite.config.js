@@ -9,6 +9,11 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
+            '@features': fileURLToPath(new URL('./src/features', import.meta.url)),
+            '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
+            '@layouts': fileURLToPath(new URL('./src/layouts', import.meta.url)),
+            '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
+            '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
             // 使用包含运行时编译器的 Vue 版本，支持 template 字符串
             'vue': 'vue/dist/vue.esm-bundler.js'
         }

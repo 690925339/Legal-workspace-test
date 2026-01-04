@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../config/supabase.js';
-import { authStore } from '../store/authStore.js';
+import { authStore } from '@/stores/auth.js'
 
 export default {
     name: 'ProductFeedback',
@@ -54,7 +54,7 @@ export default {
 
             try {
                 const supabase = getSupabaseClient();
-                const userId = authStore.user?.id;
+                const userId = authStore.state.user?.id;
 
                 if (!userId) {
                     alert('请先登录');
@@ -72,8 +72,8 @@ export default {
                     type: this.feedback.type,
                     title: this.feedback.title.trim(),
                     description: this.feedback.description.trim(),
-                    user_email: this.feedback.email || authStore.user?.email || '',
-                    user_name: authStore.user?.user_metadata?.full_name || authStore.user?.email?.split('@')[0] || '匿名用户',
+                    user_email: this.feedback.email || authStore.state.user?.email || '',
+                    user_name: authStore.state.user?.user_metadata?.full_name || authStore.state.user?.email?.split('@')[0] || '匿名用户',
                     browser_info: browserInfo,
                     page_url: pageUrl,
                     status: 'pending',

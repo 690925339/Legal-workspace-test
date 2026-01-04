@@ -1,4 +1,4 @@
-import { router } from '../router.js'
+import router from '@/router/index.js'
 import AIAnalysis from './refactor/AIAnalysis.js'
 import AIAssistant from './refactor/AIAssistant.js'
 import RelationshipGraph from './refactor/RelationshipGraph.js'

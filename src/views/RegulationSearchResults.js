@@ -1,4 +1,4 @@
-import { router } from '../router.js';
+import router from '@/router/index.js'
 import { faruiLawService } from '../services/faruiService.js';
 
 export default {

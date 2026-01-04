@@ -125,9 +125,8 @@
 </template>
 
 <script>
-import { router } from '../router.js'
 import { authService, brandService } from '../config/supabase.js'
-import { authStore } from '../store/authStore.js'
+import { authStore } from '@/stores/auth.js'
 
 export default {
   name: 'Login',
@@ -200,7 +199,7 @@ export default {
           console.log('[Login] Login successful! Updating authStore...')
           authStore.setAuth(data.session)
           console.log('[Login] authStore updated. Navigating to /...')
-          router.push('/')
+          this.$router.push('/')
           console.log('[Login] Navigation called.')
         } else {
           console.log('[Login] Missing user or session in response')
@@ -213,10 +212,10 @@ export default {
       }
     },
     goToForgotPassword() {
-      router.push('/forgot-password')
+      this.$router.push('/forgot-password')
     },
     goToRegister() {
-      router.push('/register')
+      this.$router.push('/register')
     }
   }
 }

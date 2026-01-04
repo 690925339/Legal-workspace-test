@@ -77,10 +77,7 @@
 
         <a
           class="menu-item"
-          @click.prevent="
-            showFeedbackModal = true
-            showUserMenu = false
-          "
+          @click.prevent="openFeedback"
         >
           <i class="fas fa-comment-alt" />
           产品反馈
@@ -112,10 +109,9 @@
 </template>
 
 <script>
-import { router } from '../../router.js'
-import { authService, brandService } from '../../config/supabase.js'
-import { authStore } from '../../store/authStore.js'
-import ProductFeedback from '../../views/ProductFeedback.js'
+import { authService, brandService } from '@/config/supabase.js'
+import { authStore } from '@/stores/auth.js'
+import ProductFeedback from '@/features/system/views/ProductFeedback.vue'
 
 export default {
   name: 'Sidebar',
@@ -124,7 +120,6 @@ export default {
   },
   data() {
     return {
-      currentPath: window.location.hash.slice(1) || '/',
       showUserMenu: false,
       isCollapsed: false,
       showFeedbackModal: false,
@@ -138,27 +133,27 @@ export default {
     }
   },
   computed: {
+    currentPath() {
+      return this.$route?.path || '/'
+    },
     userName() {
-      if (authStore.user?.user_metadata?.full_name) {
-        return authStore.user.user_metadata.full_name
+      if (authStore.state?.user?.user_metadata?.full_name) {
+        return authStore.state.user.user_metadata.full_name
       }
-      if (authStore.user?.email) {
-        return authStore.user.email.split('@')[0]
+      if (authStore.state?.user?.email) {
+        return authStore.state.user.email.split('@')[0]
       }
       return '用户'
     },
     userRole() {
-      return authStore.title || authStore.user?.user_metadata?.title || '律师'
+      return authStore.state?.title || authStore.state?.user?.user_metadata?.title || '律师'
     },
     userAvatar() {
-      return authStore.avatarUrl || null
+      return authStore.state?.avatarUrl || null
     }
   },
   async mounted() {
     await this.loadBrandSettings()
-    window.addEventListener('hashchange', () => {
-      this.currentPath = window.location.hash.slice(1) || '/'
-    })
     // Close user menu when clicking outside
     document.addEventListener('click', e => {
       const footer = this.$el.querySelector('.sidebar-footer')
@@ -178,17 +173,24 @@ export default {
       }
     },
     navigate(path) {
-      router.push(path)
+      this.$router.push(path)
       this.showUserMenu = false
     },
     isActive(path) {
-      return this.currentPath === path
+      if (path === '/') {
+        return this.currentPath === '/'
+      }
+      return this.currentPath.startsWith(path)
     },
     toggleUserMenu() {
       this.showUserMenu = !this.showUserMenu
     },
     toggleCollapse() {
       this.isCollapsed = !this.isCollapsed
+      this.showUserMenu = false
+    },
+    openFeedback() {
+      this.showFeedbackModal = true
       this.showUserMenu = false
     },
     async handleLogout() {
@@ -203,13 +205,13 @@ export default {
         }
 
         authStore.clearAuth()
-        window.location.hash = '/login'
+        this.$router.push('/login')
 
         console.log('Logout successful')
       } catch (err) {
         console.error('Logout failed:', err)
         authStore.clearAuth()
-        window.location.hash = '/login'
+        this.$router.push('/login')
       }
     }
   }

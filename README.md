@@ -175,7 +175,7 @@ npm run help:build   # 构建帮助中心
 legal-workspace-vue/
 ├── index.html                    # 入口文件
 ├── package.json                  # npm 依赖配置
-├── vite.config.js                # Vite 构建配置
+├── vite.config.js                # Vite 构建配置 (含路径别名)
 ├── vitest.config.js              # Vitest 测试配置
 ├── .eslintrc.cjs                 # ESLint 配置
 ├── .prettierrc                   # Prettier 配置
@@ -187,55 +187,74 @@ legal-workspace-vue/
 │       └── evidence.css          # 证据相关样式
 ├── src/
 │   ├── main.js                   # 应用入口
-│   ├── router.js                 # 路由配置
 │   ├── config/
 │   │   └── supabase.js           # Supabase 配置
+│   ├── router/                   # 路由系统 ✨NEW
+│   │   ├── index.js              # 主路由配置
+│   │   ├── guards.js             # 路由守卫
+│   │   └── modules/              # 模块化路由
+│   │       ├── auth.js           # 认证路由
+│   │       ├── case.js           # 案件路由
+│   │       ├── legal-research.js # 法律检索路由
+│   │       └── system.js         # 系统路由
+│   ├── stores/                   # 状态管理 ✨NEW
+│   │   └── auth.js               # 认证状态 (响应式 Store)
+│   ├── layouts/                  # 布局组件 ✨NEW
+│   │   ├── AppLayout.vue         # 主应用布局
+│   │   └── AuthLayout.vue        # 认证页布局
+│   ├── features/                 # Feature-Based 模块 ✨NEW
+│   │   ├── auth/views/           # 认证模块
+│   │   │   ├── Login.vue         # 登录页 (SFC)
+│   │   │   ├── Register.vue      # 注册页 (SFC)
+│   │   │   └── ForgotPassword.vue # 忘记密码 (SFC)
+│   │   ├── case/                 # 案件模块
+│   │   │   ├── views/            # 案件视图
+│   │   │   │   ├── CaseList.vue  # 案件列表 (SFC)
+│   │   │   │   ├── CaseForm.vue  # 案件表单 (SFC)
+│   │   │   │   └── EvidenceUpload.js # 证据上传
+│   │   │   └── modules/          # 案件子模块 (全部 SFC ✨)
+│   │   │       ├── CaseBasicInfo.vue # 基础信息
+│   │   │       ├── CaseFacts.vue     # 案情描述
+│   │   │       ├── CaseStakeholders.vue # 当事人信息
+│   │   │       ├── CaseFinancials.vue # 财务信息
+│   │   │       ├── CaseEvidence.vue   # 证据管理
+│   │   │       └── CaseAdvanced.vue   # 高级功能
+│   │   ├── legal-research/views/ # 法律检索模块
+│   │   │   ├── LegalResearch.vue # 法律检索 (SFC ✨)
+│   │   │   ├── CaseSearchResults.js # 案例结果
+│   │   │   └── RegulationSearchResults.js # 法规结果
+│   │   ├── contract/views/       # 合同模块
+│   │   │   ├── ContractReview.js # 合同审查
+│   │   │   └── ContractReviewResult.js # 审查结果
+│   │   ├── document/views/       # 文书模块
+│   │   │   └── DocGenerate.js    # 文书生成
+│   │   └── system/views/         # 系统模块 (全部 SFC ✨)
+│   │       ├── Settings.vue      # 系统设置
+│   │       ├── ProductFeedback.vue # 产品反馈
+│   │       └── UserProfile.vue   # 个人资料
 │   ├── mixins/                   # Vue Mixins
 │   │   └── searchFilterMixin.js  # 搜索过滤逻辑
 │   ├── services/                 # 业务服务层
 │   │   ├── faruiService.js       # 通义法睿API集成
 │   │   ├── llmService.js         # LLM服务
-│   │   ├── lprService.js         # LPR利率服务 ✨NEW
+│   │   ├── lprService.js         # LPR利率服务
 │   │   ├── caseCache.js          # 案件缓存
 │   │   └── lawCache.js           # 法规缓存
-│   ├── store/                    # 状态管理
-│   │   └── authStore.js          # 认证状态管理
 │   ├── styles/                   # SCSS 样式
 │   │   ├── _variables.scss       # 设计系统变量
 │   │   ├── _mixins.scss          # Mixins 工具
 │   │   ├── main.scss             # 主入口
 │   │   ├── base/                 # 基础样式
 │   │   └── components/           # 组件样式
-│   ├── components/               # 组件
+│   ├── components/               # 共享组件
 │   │   ├── layout/
-│   │   │   ├── AppLayout.js      # 主布局
 │   │   │   └── Sidebar.vue       # 侧边栏导航 (SFC)
-│   │   ├── case/                 # 案件模块组件 ✨NEW
+│   │   ├── case/                 # 案件模块组件
 │   │   │   ├── CaseModuleLayout.js # 案件模块共享布局
-│   │   │   └── InterestCalculator.js # 利息计算器组件 ✨NEW
+│   │   │   └── InterestCalculator.js # 利息计算器组件
 │   │   └── HistoryModal.vue      # 历史记录模态框 (SFC)
-│   └── views/                    # 页面视图
-│       ├── Login.vue             # 登录页 (SFC)
-│       ├── Register.vue          # 注册页 (SFC)
-│       ├── ForgotPassword.vue    # 忘记密码 (SFC)
-│       ├── CaseList.vue          # 案件列表 (SFC)
-│       ├── CaseForm.vue          # 案件表单 (SFC)
-│       ├── CaseDetail.js         # 案件详情入口（路由导航 + 高级功能）
-│       ├── EvidenceUpload.js     # 证据上传
-│       ├── LegalResearch.js      # 法律检索
-│       ├── ContractReview.js     # 合同审查
-│       ├── DocGenerate.js        # 文书生成
-│       ├── UserProfile.js        # 个人资料
-│       ├── Settings.js           # 系统设置
-│       ├── __tests__/            # 测试文件
-│       │   └── Login.test.js     # 登录组件测试
-│       ├── case/                 # 案件子模块页面 ✨NEW
-│       │   ├── CaseBasicInfo.js  # 基础信息模块
-│       │   ├── CaseFacts.js      # 案情描述模块
-│       │   ├── CaseStakeholders.js # 当事人信息模块
-│       │   ├── CaseFinancials.js # 财务信息模块
-│       │   ├── CaseEvidence.js   # 证据管理模块
-│       │   └── CaseAdvanced.js   # 高级功能模块
+│   └── views/                    # 遗留视图 (待迁移)
+│       ├── CaseDetail.js         # 案件详情入口
 │       └── refactor/             # 高级功能组件
 │           ├── AIAnalysis.js     # AI智能分析
 │           ├── AIAssistant.js    # AI对话助手
@@ -244,23 +263,15 @@ legal-workspace-vue/
 │           └── QuoteGenerator.js    # 报价书生成
 ├── docs/                         # 技术文档
 │   ├── PRD.md                    # 产品需求文档
-│   ├── 架构设计文档.md        # 架构设计
-│   ├── 脚手架迁移方案.md        # Vite 迁移方案
-│   ├── sfc-migration-plan.md     # SFC 组件化计划
+│   ├── 架构设计文档.md           # 架构设计
+│   ├── 架构重构实施文档.md       # 重构进度跟踪 ✨NEW
 │   └── sql/                      # 数据库脚本
-├── help/                         # 用户帮助中心 ✨NEW
+├── help/                         # 用户帮助中心
 │   ├── .vitepress/
 │   │   └── config.mjs            # VitePress 配置
 │   ├── index.md                  # 帮助中心首页
 │   ├── getting-started.md        # 快速入门
-│   ├── login.md                  # 登录与注册
-│   ├── interface.md              # 界面介绍
-│   ├── faq.md                    # 常见问题
 │   └── features/                 # 功能指南
-│       ├── case-management.md    # 案件管理
-│       ├── legal-research.md     # 法律检索
-│       ├── contract-review.md    # 合同审查
-│       └── doc-generation.md     # 文书生成
 └── README.md
 ```
 
@@ -313,7 +324,32 @@ legal-workspace-vue/
 
 ## 🔄 版本历史
 
-### v3.10 (2026-01-04) - 当前版本 ✨
+### v3.11 (2026-01-04) - 当前版本 ✨
+
+**架构重构 - Feature-Based + SFC 化**:
+
+- ✅ **目录结构迁移**：全面采用 Feature-Based 架构，按功能模块组织代码
+  - `src/features/auth/` - 认证模块
+  - `src/features/case/` - 案件模块（views + modules）
+  - `src/features/legal-research/` - 法律检索模块
+  - `src/features/contract/` - 合同模块
+  - `src/features/document/` - 文书模块
+  - `src/features/system/` - 系统模块
+- ✅ **路由系统重构**：模块化路由配置 (`router/modules/`)
+- ✅ **布局系统**：新增 `AppLayout.vue` 和 `AuthLayout.vue`
+- ✅ **状态管理**：响应式 Auth Store (`stores/auth.js`)
+- ✅ **SFC 转换** (10 个组件)：
+  - System: Settings.vue, ProductFeedback.vue, UserProfile.vue
+  - Legal Research: LegalResearch.vue
+  - Case Modules: CaseBasicInfo.vue, CaseFacts.vue, CaseStakeholders.vue, CaseFinancials.vue, CaseEvidence.vue, CaseAdvanced.vue
+- ✅ **逻辑复用 (Composables)**：抽取 4 个核心业务逻辑 hook
+  - `useCaseData`: 案件数据管理
+  - `useModal`: 模态框管理
+  - `useStakeholders`: 当事人管理
+  - `useTags`: 标签管理
+  - *CaseFacts.vue 已完成重构试点*
+
+### v3.10 (2026-01-04)
 
 **代码优化与重构**:
 
@@ -517,8 +553,8 @@ legal-workspace-vue/
 ---
 
 **开发团队**: Alpha&Leader Legal Tech  
-**最后更新**: 2026-01-04  
-**版本**: v3.10
+**最后更新**: 2026-01-04 17:19  
+**版本**: v3.11
 
 ---
 

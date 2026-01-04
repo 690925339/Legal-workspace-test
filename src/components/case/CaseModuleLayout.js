@@ -1,4 +1,4 @@
-import { router } from '../../router.js';
+import router from '@/router/index.js'
 
 /**
  * 案件模块共享布局组件

@@ -133,7 +133,7 @@
 </template>
 
 <script>
-import { router } from '../router.js'
+// 使用 this.$router 进行路由导航
 import { authService, brandService } from '../config/supabase.js'
 
 export default {
@@ -207,7 +207,7 @@ export default {
           console.log('Registration successful:', data.user)
           this.successMessage = '注册成功！正在跳转到登录页...'
           setTimeout(() => {
-            router.push('/login')
+            this.$router.push('/login')
           }, 2000)
         }
       } catch (err) {
@@ -218,7 +218,7 @@ export default {
       }
     },
     goToLogin() {
-      router.push('/login')
+      this.$router.push('/login')
     }
   }
 }
