@@ -19,7 +19,7 @@
             </div>
             <div class="info-row">
               <span class="label">案件编号</span>
-              <span class="value">{{ caseData.id }}</span>
+              <span class="value">{{ caseData.caseNumber || '-' }}</span>
             </div>
             <div class="info-row">
               <span class="label">案件状态</span>
