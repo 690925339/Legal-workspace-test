@@ -791,7 +791,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import { useCaseData, useModal, useStakeholders } from '@/features/case/composables'
 
@@ -826,53 +826,30 @@ export default {
       set: val => (val ? openModal('stakeholder') : closeModal('stakeholder'))
     })
 
-    // 3. 当事人管理
-    // 初始数据 (Hardcoded for demo)
-    const initialStakeholders = {
-      plaintiffs: [
-        {
-          id: 1,
-          name: '张三',
-          type: 'person',
-          idNumber: '110101198001011234',
-          phone: '13800138000',
-          address: '北京市朝阳区某某街道123号',
-          role: '原告',
-          contactName: '王经理',
-          contactRole: '主要联络人',
-          contactPhone: '138-0000-1234',
-          contactEmail: 'wang@abc.com'
-        }
-      ],
-      defendants: [
-        {
-          id: 1,
-          name: '某科技有限公司',
-          type: 'company',
-          legalRepresentative: '李四',
-          creditCode: '91110000MA01A2B3C4',
-          address: '北京市海淀区某某大厦10层',
-          lawyer: '王律师（某律所）',
-          role: '被告',
-          contactName: '',
-          contactRole: '',
-          contactPhone: '',
-          contactEmail: ''
-        }
-      ],
-      thirdParties: []
-    }
-
+    // 3. 当事人管理（不传初始数据，从数据库加载）
     const {
       stakeholders,
       currentStakeholder,
       stakeholderType,
+      loading: stakeholdersLoading,
+      loadStakeholders,
       addStakeholder: _addStakeholder,
       editStakeholder: _editStakeholder,
       deleteStakeholder: _deleteStakeholder,
       saveStakeholder: _saveStakeholder,
       getStakeholderSummary
-    } = useStakeholders(initialStakeholders)
+    } = useStakeholders()
+
+    // 监听 caseId 变化，加载真实当事人数据
+    watch(
+      () => caseId.value,
+      newCaseId => {
+        if (newCaseId) {
+          loadStakeholders(newCaseId)
+        }
+      },
+      { immediate: true }
+    )
 
     // 包装方法以处理模态框和交互
     const addStakeholder = type => {
@@ -885,28 +862,31 @@ export default {
       openModal('stakeholder')
     }
 
-    const deleteStakeholder = (type, id) => {
+    const deleteStakeholder = async (type, id) => {
       if (confirm('确定要删除该当事人吗？')) {
-        _deleteStakeholder(type, id)
+        try {
+          await _deleteStakeholder(type, id, caseId.value)
+        } catch (e) {
+          alert('删除失败: ' + e.message)
+        }
       }
     }
 
-    const saveStakeholder = () => {
+    const saveStakeholder = async () => {
       try {
-        _saveStakeholder()
+        await _saveStakeholder(caseId.value)
         closeModal('stakeholder')
       } catch (e) {
         alert(e.message)
       }
     }
 
-    // 4. 案情描述与标签
-    const factsData = ref({
-      description:
-        '2023年3月，原告张某与被告某科技有限公司签订软件开发合同，约定开发费用100万元。项目于2023年9月完成并交付，被告已支付50万元，剩余50万元尾款迟迟未支付。多次催款无果后，原告诉至法院。',
-      disputeFocus: ['软件是否已实际交付', '质量验收是否合格', '违约损失金额'],
-      objective: '支付剩余款项50万元 + 违约金8万元 + 利息'
-    })
+    // 4. 案情描述（从 caseData 获取，如无数据则显示占位符）
+    const factsData = computed(() => ({
+      description: caseData.value.description || '暂无案情描述，请点击编辑添加。',
+      disputeFocus: caseData.value.disputeFocus || [],
+      objective: caseData.value.objective || '暂无客户诉求'
+    }))
 
     const commonFocusOptions = [
       '合同效力',
@@ -985,6 +965,7 @@ export default {
       commonFocusOptions,
       newFocusInput,
       stakeholders,
+      stakeholdersLoading,
       currentStakeholder,
       stakeholderType,
       editForm,
