@@ -50,13 +50,19 @@ export function useStakeholders(initialData = {}) {
   const mapFromDb = dbItem => ({
     id: dbItem.id,
     name: dbItem.name,
-    type: dbItem.id_number?.length === 18 ? 'person' : 'company',
+    type: dbItem.entity_type || (dbItem.id_number?.length === 18 ? 'person' : 'company'),
     idNumber: dbItem.id_number,
     creditCode: dbItem.id_number, // 复用字段
     phone: dbItem.contact,
     address: dbItem.address,
     isPrimary: dbItem.is_primary,
-    role: dbItem.type === 'plaintiff' ? '原告' : dbItem.type === 'defendant' ? '被告' : '第三人'
+    role: dbItem.type === 'plaintiff' ? '原告' : dbItem.type === 'defendant' ? '被告' : '第三人',
+    // 新增字段
+    legalRepresentative: dbItem.legal_representative || '',
+    contactName: dbItem.contact_name || '',
+    contactRole: dbItem.contact_role || '',
+    contactPhone: dbItem.contact_phone || '',
+    contactEmail: dbItem.contact_email || ''
   })
 
   /**
@@ -64,11 +70,18 @@ export function useStakeholders(initialData = {}) {
    */
   const mapToDb = (item, type) => ({
     type: type === 'plaintiff' ? 'plaintiff' : type === 'defendant' ? 'defendant' : 'third_party',
+    entity_type: item.type, // person 或 company
     name: item.name,
     id_number: item.type === 'person' ? item.idNumber : item.creditCode,
     contact: item.phone,
     address: item.address,
-    is_primary: item.isPrimary || false
+    is_primary: item.isPrimary || false,
+    // 新增字段
+    legal_representative: item.legalRepresentative || null,
+    contact_name: item.contactName || null,
+    contact_role: item.contactRole || null,
+    contact_phone: item.contactPhone || null,
+    contact_email: item.contactEmail || null
   })
 
   /**

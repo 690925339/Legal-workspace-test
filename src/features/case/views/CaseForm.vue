@@ -30,23 +30,34 @@
                     />
                   </div>
                   <div class="smart-form-group">
-                    <label class="smart-label">案件编号</label>
+                    <label class="smart-label">案件ID</label>
                     <input
                       v-model="form.caseId"
                       type="text"
-                      placeholder="系统自动生成"
                       class="smart-input"
-                      :disabled="isEdit"
+                      disabled
+                      style="background: #f1f5f9; cursor: not-allowed; font-family: monospace; font-size: 12px"
                     />
+                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">系统自动生成</span>
+                  </div>
+                  <div class="smart-form-group">
+                    <label class="smart-label">案号</label>
+                    <input
+                      v-model="form.courtCaseNumber"
+                      type="text"
+                      placeholder="如 (2025)京0105民初67890号"
+                      class="smart-input"
+                    />
+                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">法院正式案号，立案后填写</span>
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label required">案由 (一级)</label>
                     <select v-model="form.type" class="smart-select">
                       <option value="">请选择...</option>
-                      <option value="civil">民事</option>
-                      <option value="criminal">刑事</option>
-                      <option value="administrative">行政</option>
-                      <option value="ip">知识产权</option>
+                      <option value="民事">民事</option>
+                      <option value="刑事">刑事</option>
+                      <option value="行政">行政</option>
+                      <option value="知识产权">知识产权</option>
                     </select>
                   </div>
                   <div class="smart-form-group">
@@ -106,111 +117,29 @@
                 <div class="card-title"><i class="fas fa-users" />当事人信息</div>
               </div>
               <div class="smart-card-content">
-                <div class="parties-grid">
-                  <!-- Client Side -->
-                  <div>
-                    <div class="party-header">
-                      <h4>我方客户</h4>
-                      <button type="button" class="add-party-btn" @click="addClient">
+                <div class="stakeholders-section">
+                  <!-- 原告 -->
+                  <div class="stakeholder-group">
+                    <div class="group-header">
+                      <h4>
+                        <span class="indicator" style="background: #4f46e5" />原告
+                        <span class="count">({{ form.plaintiffs.length }})</span>
+                      </h4>
+                      <button type="button" class="add-party-btn" @click="addPlaintiff">
                         <i class="fas fa-plus-circle" /> 添加
                       </button>
                     </div>
 
                     <div
-                      v-for="(client, index) in form.clients"
-                      :key="'client-' + index"
+                      v-for="(party, index) in form.plaintiffs"
+                      :key="'plaintiff-' + index"
                       class="party-item"
                     >
                       <button
-                        v-if="form.clients.length > 1"
+                        v-if="form.plaintiffs.length > 1"
                         type="button"
                         class="remove-btn"
-                        @click="removeClient(index)"
-                      >
-                        <i class="fas fa-trash-alt" />
-                      </button>
-
-                      <div class="smart-form-group">
-                        <label class="smart-label required">名称/姓名</label>
-                        <input v-model="client.name" type="text" class="smart-input" />
-                      </div>
-                      <div class="smart-form-group">
-                        <label class="smart-label">主体类型</label>
-                        <select v-model="client.type" class="smart-select">
-                          <option value="individual">自然人</option>
-                          <option value="company">法人企业</option>
-                          <option value="org">非法人组织</option>
-                        </select>
-                      </div>
-                      <div class="smart-form-group" style="margin-bottom: 0">
-                        <label class="smart-label">证件号码/信用代码</label>
-                        <input v-model="client.id" type="text" class="smart-input" />
-                      </div>
-
-                      <!-- Contact Info for Client -->
-                      <div class="party-contact-section">
-                        <div class="contact-divider">联络人信息</div>
-                        <div class="smart-form-group">
-                          <label class="smart-label">姓名</label>
-                          <div style="display: flex; gap: 8px">
-                            <input
-                              v-model="client.contactName"
-                              type="text"
-                              placeholder="姓名"
-                              class="smart-input"
-                              style="flex: 1"
-                            />
-                            <input
-                              v-model="client.contactRole"
-                              type="text"
-                              placeholder="职位"
-                              class="smart-input"
-                              style="width: 80px"
-                            />
-                          </div>
-                        </div>
-                        <div class="smart-form-group" style="margin-bottom: 0">
-                          <label class="smart-label">联系方式</label>
-                          <div style="display: flex; gap: 8px">
-                            <input
-                              v-model="client.contactPhone"
-                              type="text"
-                              placeholder="电话"
-                              class="smart-input"
-                              style="flex: 1"
-                            />
-                            <input
-                              v-model="client.contactEmail"
-                              type="text"
-                              placeholder="邮箱"
-                              class="smart-input"
-                              style="flex: 1"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Opposing Side -->
-                  <div>
-                    <div class="party-header">
-                      <h4>对方当事人</h4>
-                      <button type="button" class="add-party-btn" @click="addOpposingParty">
-                        <i class="fas fa-plus-circle" /> 添加
-                      </button>
-                    </div>
-
-                    <div
-                      v-for="(party, index) in form.opposingParties"
-                      :key="'opposing-' + index"
-                      class="party-item"
-                    >
-                      <button
-                        v-if="form.opposingParties.length > 1"
-                        type="button"
-                        class="remove-btn"
-                        @click="removeOpposingParty(index)"
+                        @click="removePlaintiff(index)"
                       >
                         <i class="fas fa-trash-alt" />
                       </button>
@@ -221,22 +150,22 @@
                       </div>
                       <div class="smart-form-group">
                         <label class="smart-label">主体类型</label>
-                        <select v-model="party.type" class="smart-select">
-                          <option value="individual">自然人</option>
+                        <select v-model="party.entityType" class="smart-select">
+                          <option value="person">自然人</option>
                           <option value="company">法人企业</option>
                           <option value="org">非法人组织</option>
                         </select>
                       </div>
                       <div class="smart-form-group">
-                        <label class="smart-label">法定代表人</label>
-                        <input v-model="party.rep" type="text" class="smart-input" />
+                        <label class="smart-label">证件号码/信用代码</label>
+                        <input v-model="party.idNumber" type="text" class="smart-input" />
                       </div>
                       <div class="smart-form-group" style="margin-bottom: 0">
-                        <label class="smart-label">对方代理律师</label>
-                        <input v-model="party.counsel" type="text" class="smart-input" />
+                        <label class="smart-label">法定代表人</label>
+                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
                       </div>
 
-                      <!-- Contact Info for Opposing Party -->
+                      <!-- Contact Info -->
                       <div class="party-contact-section">
                         <div class="contact-divider">联络人信息</div>
                         <div class="smart-form-group">
@@ -278,6 +207,198 @@
                           </div>
                         </div>
                       </div>
+                    </div>
+                    <div v-if="form.plaintiffs.length === 0" class="empty-placeholder">
+                      暂无原告信息，点击"添加"按钮添加
+                    </div>
+                  </div>
+
+                  <!-- 被告 -->
+                  <div class="stakeholder-group">
+                    <div class="group-header">
+                      <h4>
+                        <span class="indicator" style="background: #dc2626" />被告
+                        <span class="count">({{ form.defendants.length }})</span>
+                      </h4>
+                      <button type="button" class="add-party-btn" @click="addDefendant">
+                        <i class="fas fa-plus-circle" /> 添加
+                      </button>
+                    </div>
+
+                    <div
+                      v-for="(party, index) in form.defendants"
+                      :key="'defendant-' + index"
+                      class="party-item"
+                    >
+                      <button
+                        v-if="form.defendants.length > 1"
+                        type="button"
+                        class="remove-btn"
+                        @click="removeDefendant(index)"
+                      >
+                        <i class="fas fa-trash-alt" />
+                      </button>
+
+                      <div class="smart-form-group">
+                        <label class="smart-label required">名称/姓名</label>
+                        <input v-model="party.name" type="text" class="smart-input" />
+                      </div>
+                      <div class="smart-form-group">
+                        <label class="smart-label">主体类型</label>
+                        <select v-model="party.entityType" class="smart-select">
+                          <option value="person">自然人</option>
+                          <option value="company">法人企业</option>
+                          <option value="org">非法人组织</option>
+                        </select>
+                      </div>
+                      <div class="smart-form-group">
+                        <label class="smart-label">证件号码/信用代码</label>
+                        <input v-model="party.idNumber" type="text" class="smart-input" />
+                      </div>
+                      <div class="smart-form-group" style="margin-bottom: 0">
+                        <label class="smart-label">法定代表人</label>
+                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
+                      </div>
+
+                      <!-- Contact Info -->
+                      <div class="party-contact-section">
+                        <div class="contact-divider">联络人信息</div>
+                        <div class="smart-form-group">
+                          <label class="smart-label">姓名</label>
+                          <div style="display: flex; gap: 8px">
+                            <input
+                              v-model="party.contactName"
+                              type="text"
+                              placeholder="姓名"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                            <input
+                              v-model="party.contactRole"
+                              type="text"
+                              placeholder="职位"
+                              class="smart-input"
+                              style="width: 80px"
+                            />
+                          </div>
+                        </div>
+                        <div class="smart-form-group" style="margin-bottom: 0">
+                          <label class="smart-label">联系方式</label>
+                          <div style="display: flex; gap: 8px">
+                            <input
+                              v-model="party.contactPhone"
+                              type="text"
+                              placeholder="电话"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                            <input
+                              v-model="party.contactEmail"
+                              type="text"
+                              placeholder="邮箱"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="form.defendants.length === 0" class="empty-placeholder">
+                      暂无被告信息，点击"添加"按钮添加
+                    </div>
+                  </div>
+
+                  <!-- 第三人 -->
+                  <div class="stakeholder-group">
+                    <div class="group-header">
+                      <h4>
+                        <span class="indicator" style="background: #16a34a" />第三人
+                        <span class="count">({{ form.thirdParties.length }})</span>
+                      </h4>
+                      <button type="button" class="add-party-btn" @click="addThirdParty">
+                        <i class="fas fa-plus-circle" /> 添加
+                      </button>
+                    </div>
+
+                    <div
+                      v-for="(party, index) in form.thirdParties"
+                      :key="'thirdParty-' + index"
+                      class="party-item"
+                    >
+                      <button
+                        type="button"
+                        class="remove-btn"
+                        @click="removeThirdParty(index)"
+                      >
+                        <i class="fas fa-trash-alt" />
+                      </button>
+
+                      <div class="smart-form-group">
+                        <label class="smart-label required">名称/姓名</label>
+                        <input v-model="party.name" type="text" class="smart-input" />
+                      </div>
+                      <div class="smart-form-group">
+                        <label class="smart-label">主体类型</label>
+                        <select v-model="party.entityType" class="smart-select">
+                          <option value="person">自然人</option>
+                          <option value="company">法人企业</option>
+                          <option value="org">非法人组织</option>
+                        </select>
+                      </div>
+                      <div class="smart-form-group">
+                        <label class="smart-label">证件号码/信用代码</label>
+                        <input v-model="party.idNumber" type="text" class="smart-input" />
+                      </div>
+                      <div class="smart-form-group" style="margin-bottom: 0">
+                        <label class="smart-label">法定代表人</label>
+                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
+                      </div>
+
+                      <!-- Contact Info -->
+                      <div class="party-contact-section">
+                        <div class="contact-divider">联络人信息</div>
+                        <div class="smart-form-group">
+                          <label class="smart-label">姓名</label>
+                          <div style="display: flex; gap: 8px">
+                            <input
+                              v-model="party.contactName"
+                              type="text"
+                              placeholder="姓名"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                            <input
+                              v-model="party.contactRole"
+                              type="text"
+                              placeholder="职位"
+                              class="smart-input"
+                              style="width: 80px"
+                            />
+                          </div>
+                        </div>
+                        <div class="smart-form-group" style="margin-bottom: 0">
+                          <label class="smart-label">联系方式</label>
+                          <div style="display: flex; gap: 8px">
+                            <input
+                              v-model="party.contactPhone"
+                              type="text"
+                              placeholder="电话"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                            <input
+                              v-model="party.contactEmail"
+                              type="text"
+                              placeholder="邮箱"
+                              class="smart-input"
+                              style="flex: 1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="form.thirdParties.length === 0" class="empty-placeholder">
+                      暂无第三人信息，点击"添加"按钮添加
                     </div>
                   </div>
                 </div>
@@ -470,11 +591,18 @@
         </button>
       </div>
     </div>
+
+    <!-- Toast Component -->
+    <div v-if="toast.show" class="toast-notification" :class="toast.type">
+      <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+      {{ toast.message }}
+    </div>
   </div>
 </template>
 
 <script>
-import { caseService } from '@/features/case/services'
+import { caseService, financialService, stakeholderService } from '@/features/case/services'
+import { ref } from 'vue'
 
 export default {
   name: 'CaseForm',
@@ -494,6 +622,7 @@ export default {
       form: {
         name: '',
         caseId: '',
+        courtCaseNumber: '',
         type: '',
         legalCause: '',
         caseStage: '',
@@ -502,8 +631,9 @@ export default {
         filingDate: '',
         deadline: '',
         status: 'active',
-        clients: [{ name: '', type: 'individual', id: '' }],
-        opposingParties: [{ name: '', type: 'company', rep: '', counsel: '' }],
+        plaintiffs: [],
+        defendants: [],
+        thirdParties: [],
         description: '',
         disputeFocus: '',
         objective: '',
@@ -514,7 +644,12 @@ export default {
         courtCost: '',
         billableHours: ''
       },
-      saving: false // 添加保存状态
+      saving: false,
+      toast: {
+        show: false,
+        message: '',
+        type: 'error'
+      }
     }
   },
   computed: {
@@ -576,10 +711,22 @@ export default {
     }
   },
   methods: {
-    resetForm() {
+    async resetForm() {
+      const emptyStakeholder = () => ({
+        name: '',
+        entityType: 'person',
+        idNumber: '',
+        legalRepresentative: '',
+        contactName: '',
+        contactRole: '',
+        contactPhone: '',
+        contactEmail: ''
+      })
+
       this.form = {
         name: '',
-        caseId: '',
+        caseId: '生成中...',
+        courtCaseNumber: '',
         type: '',
         legalCause: '',
         caseStage: '',
@@ -588,8 +735,9 @@ export default {
         filingDate: '',
         deadline: '',
         status: 'active',
-        clients: [{ name: '', type: 'individual', id: '' }],
-        opposingParties: [{ name: '', type: 'company', rep: '', counsel: '' }],
+        plaintiffs: [emptyStakeholder()],
+        defendants: [emptyStakeholder()],
+        thirdParties: [],
         description: '',
         disputeFocus: '',
         objective: '',
@@ -600,80 +748,163 @@ export default {
         courtCost: '',
         billableHours: ''
       }
+
+      try {
+        this.form.caseId = await caseService.generateCaseNumber()
+      } catch (e) {
+        console.error('生成案件ID失败:', e)
+        this.form.caseId = `CASE-${Date.now()}`
+      }
     },
     async loadCaseData(id) {
       console.log('Loading case data for:', id)
       try {
         const data = await caseService.getById(id)
+        
+        // 类型映射：兼容英文旧数据
+        const typeMap = { civil: '民事', criminal: '刑事', administrative: '行政', ip: '知识产权' }
+        let type = typeMap[data.case_type] || data.case_type || '民事'
 
-        // 简单的类型映射逻辑
-        let type = 'civil' // 默认为民事
-        if (['criminal', 'administrative', 'ip'].includes(data.case_type)) {
-          type = data.case_type
+        // 加载财务信息
+        let financials = {
+            claim_items: [],
+            attorney_fee: '',
+            attorney_fee_included: false,
+            court_cost: '',
+            billable_hours: ''
+        };
+        try {
+            financials = await financialService.get(id) || financials;
+        } catch (err) {
+            console.warn('Failed to load financials:', err);
         }
+
+        // 加载当事人信息
+        let plaintiffs = [];
+        let defendants = [];
+        let thirdParties = [];
+        try {
+            const stakeholders = await stakeholderService.getList(id) || [];
+            // 根据 type 字段分类
+            stakeholders.forEach(s => {
+                const item = {
+                    id: s.id,
+                    name: s.name,
+                    entityType: s.entity_type || 'person',
+                    idNumber: s.id_number || '',
+                    legalRepresentative: s.legal_representative || '',
+                    contactName: s.contact_name || '',
+                    contactRole: s.contact_role || '',
+                    contactPhone: s.contact_phone || '',
+                    contactEmail: s.contact_email || ''
+                };
+                if (s.type === 'plaintiff') {
+                    plaintiffs.push(item);
+                } else if (s.type === 'defendant') {
+                    defendants.push(item);
+                } else if (s.type === 'third_party') {
+                    thirdParties.push(item);
+                }
+            });
+        } catch (err) {
+            console.warn('Failed to load stakeholders:', err);
+        }
+        
+        // 定义空当事人模板
+        const emptyStakeholder = () => ({
+          name: '',
+          entityType: 'person',
+          idNumber: '',
+          legalRepresentative: '',
+          contactName: '',
+          contactRole: '',
+          contactPhone: '',
+          contactEmail: ''
+        })
+        
+        // 保证原告和被告至少有一行
+        if (plaintiffs.length === 0) plaintiffs.push(emptyStakeholder());
+        if (defendants.length === 0) defendants.push(emptyStakeholder());
 
         this.form = {
           name: data.case_title || '',
           caseId: data.case_number || '',
-          type: type,
-          legalCause: data.legal_cause || data.case_type || '', // 如果 case_type 是中文，存入具体案由
+          courtCaseNumber: data.court_case_number || '',
+          type: type, 
+          legalCause: data.legal_cause || data.case_type || '',
           caseStage: data.stage || '',
           court: data.court || '',
-          judge: data.judge || '',
+          judge: data.judge || data.assignee || '',
           filingDate: data.filing_date || '',
           deadline: data.deadline || '',
           status: data.status || 'active',
-          clients: [{ name: data.client_name || '', type: 'individual', id: '' }],
-          opposingParties: [{ name: '', type: 'company', rep: '', counsel: '' }],
+          plaintiffs: plaintiffs,
+          defendants: defendants,
+          thirdParties: thirdParties,
           description: data.description || '',
           disputeFocus: Array.isArray(data.dispute_focus) ? data.dispute_focus.join(', ') : '',
           objective: data.objective || '',
           amount: 0,
-          claimItems: [],
-          attorneyFee: '',
-          isAttorneyFeeIncluded: false,
-          courtCost: '',
-          billableHours: ''
+          claimItems: financials.claim_items || [],
+          attorneyFee: financials.attorney_fee || '',
+          isAttorneyFeeIncluded: financials.attorney_fee_included || false,
+          courtCost: financials.court_cost || '',
+          billableHours: financials.billable_hours || ''
         }
       } catch (e) {
         console.error('加载案件数据失败:', e)
         alert('加载案件数据失败')
       }
     },
-    addClient() {
-      this.form.clients.push({
+    showToast(message, type = 'error') {
+      this.toast.message = message
+      this.toast.type = type
+      this.toast.show = true
+      setTimeout(() => {
+        this.toast.show = false
+      }, 3000)
+    },
+    createEmptyStakeholder() {
+      return {
         name: '',
-        type: 'individual',
-        id: '',
+        entityType: 'person',
+        idNumber: '',
+        legalRepresentative: '',
         contactName: '',
         contactRole: '',
         contactPhone: '',
         contactEmail: ''
-      })
-    },
-    removeClient(index) {
-      if (this.form.clients.length > 1) {
-        this.form.clients.splice(index, 1)
       }
     },
-    addOpposingParty() {
-      this.form.opposingParties.push({
-        name: '',
-        type: 'company',
-        rep: '',
-        counsel: '',
-        contactName: '',
-        contactRole: '',
-        contactPhone: '',
-        contactEmail: ''
-      })
+    addPlaintiff() {
+      this.form.plaintiffs.push(this.createEmptyStakeholder())
     },
-    removeOpposingParty(index) {
-      if (this.form.opposingParties.length > 1) {
-        this.form.opposingParties.splice(index, 1)
+    removePlaintiff(index) {
+      if (this.form.plaintiffs.length > 1) {
+        this.form.plaintiffs.splice(index, 1)
       }
+    },
+    addDefendant() {
+      this.form.defendants.push(this.createEmptyStakeholder())
+    },
+    removeDefendant(index) {
+      if (this.form.defendants.length > 1) {
+        this.form.defendants.splice(index, 1)
+      }
+    },
+    addThirdParty() {
+      this.form.thirdParties.push(this.createEmptyStakeholder())
+    },
+    removeThirdParty(index) {
+      this.form.thirdParties.splice(index, 1)
     },
     async saveCase(status) {
+      // 防止重复提交
+      if (this.saving) {
+        console.log('正在保存中，请勿重复提交')
+        return
+      }
+
       if (!this.validateForm()) {
         // 添加显式的错误提示，让用户知道为什么没反应
         return
@@ -689,32 +920,78 @@ export default {
         const dbData = {
           case_title: this.form.name,
           case_number: this.form.caseId || null,
+          court_case_number: this.form.courtCaseNumber || null,
           case_type: this.form.type,
           status: this.form.status,
           stage: this.form.caseStage,
           court: this.form.court,
-          assignee: this.form.judge,
+          judge: this.form.judge,
           filing_date: this.form.filingDate || null,
           deadline: this.form.deadline || null,
           description: this.form.description,
           dispute_focus: this.form.disputeFocus
             ? this.form.disputeFocus.split(',').map(s => s.trim())
             : [],
-          objective: this.form.objective,
-          client_name: this.form.clients[0]?.name || ''
+          objective: this.form.objective
         }
+        
+        let savedCaseId = this.editId
 
         if (this.isEdit) {
           await caseService.update(this.editId, dbData)
         } else {
-          await caseService.create(dbData)
+          const newCase = await caseService.create(dbData)
+          savedCaseId = newCase.id
+        }
+
+        // 保存财务信息
+        if (savedCaseId) {
+            const financialData = {
+                claim_items: this.form.claimItems,
+                attorney_fee: this.form.attorneyFee ? Number(this.form.attorneyFee) : null,
+                attorney_fee_included: this.form.isAttorneyFeeIncluded,
+                court_cost: this.form.courtCost ? Number(this.form.courtCost) : null,
+                billable_hours: this.form.billableHours ? Number(this.form.billableHours) : null
+            }
+            await financialService.upsert(savedCaseId, financialData)
+            
+            // 保存当事人信息的辅助函数
+            const saveStakeholders = async (list, type) => {
+                for (const party of list) {
+                    if (!party.name) continue;
+                    const payload = {
+                        name: party.name,
+                        type: type,
+                        entity_type: party.entityType || 'person',
+                        id_number: party.idNumber || null,
+                        legal_representative: party.legalRepresentative || null,
+                        contact_name: party.contactName || null,
+                        contact_role: party.contactRole || null,
+                        contact_phone: party.contactPhone || null,
+                        contact_email: party.contactEmail || null
+                    };
+                    if (party.id) {
+                        await stakeholderService.update(party.id, payload);
+                    } else {
+                        await stakeholderService.create(savedCaseId, payload);
+                    }
+                }
+            }
+            
+            // 保存原告
+            await saveStakeholders(this.form.plaintiffs, 'plaintiff')
+            // 保存被告
+            await saveStakeholders(this.form.defendants, 'defendant')
+            // 保存第三人
+            await saveStakeholders(this.form.thirdParties, 'third_party')
         }
 
         this.$emit('saved', this.form)
         this.close()
       } catch (e) {
         console.error('保存案件失败:', e)
-        alert('保存失败: ' + e.message)
+        console.error('保存案件失败:', e)
+        this.showToast('保存失败: ' + e.message, 'error')
       } finally {
         this.saving = false // 结束保存
       }
@@ -724,27 +1001,34 @@ export default {
     },
     validateForm() {
       if (!this.form.name) {
-        alert('请输入案件名称')
+        this.showToast('请输入案件名称', 'error')
         return false
       }
       if (!this.form.type) {
-        alert('请选择案件类型')
+        this.showToast('请选择案件类型', 'error')
         return false
       }
-      // 案件阶段通常不是必填，但如果原来逻辑里有校验，在这里加上提示
-      // 看起来上面的 validateForm 没有校验 caseStage，所以应该不是 stage 为空导致保存失败
-      // 但用户提到“点击保存无反应”，说明进了 validateForm 失败分支的可能性很大
 
-      for (let i = 0; i < this.form.clients.length; i++) {
-        if (!this.form.clients[i].name) {
-          alert(`请输入第 ${i + 1} 个客户的名称`)
+      // 校验原告
+      for (let i = 0; i < this.form.plaintiffs.length; i++) {
+        if (!this.form.plaintiffs[i].name) {
+          this.showToast(`请输入第 ${i + 1} 个原告的名称/姓名`, 'error')
           return false
         }
       }
 
-      for (let i = 0; i < this.form.opposingParties.length; i++) {
-        if (!this.form.opposingParties[i].name) {
-          alert(`请输入第 ${i + 1} 个对方当事人的名称`)
+      // 校验被告
+      for (let i = 0; i < this.form.defendants.length; i++) {
+        if (!this.form.defendants[i].name) {
+          this.showToast(`请输入第 ${i + 1} 个被告的名称/姓名`, 'error')
+          return false
+        }
+      }
+
+      // 校验第三人
+      for (let i = 0; i < this.form.thirdParties.length; i++) {
+        if (!this.form.thirdParties[i].name) {
+          this.showToast(`请输入第 ${i + 1} 个第三人的名称/姓名`, 'error')
           return false
         }
       }
@@ -810,23 +1094,50 @@ export default {
   color: #1a1a1a;
 }
 
-.parties-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
+/* 当事人信息区域 */
+.stakeholders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.party-header {
+.stakeholder-group {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.group-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.party-header h4 {
+.group-header h4 {
   margin: 0;
   font-size: 14px;
-  color: #666;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-header h4 .indicator {
+  display: inline-block;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.group-header h4 .count {
+  font-weight: normal;
+  color: #94a3b8;
+  font-size: 13px;
 }
 
 .add-party-btn {
@@ -840,12 +1151,17 @@ export default {
   gap: 4px;
 }
 
+.add-party-btn:hover {
+  color: #1d4ed8;
+}
+
 .party-item {
-  background: #f9fafb;
+  background: #fff;
   padding: 16px;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   position: relative;
+  border: 1px solid #e2e8f0;
 }
 
 .remove-btn {
@@ -858,6 +1174,10 @@ export default {
   cursor: pointer;
 }
 
+.remove-btn:hover {
+  color: #dc2626;
+}
+
 .bordered-textarea {
   border: 1px solid #ccc;
 }
@@ -867,10 +1187,59 @@ export default {
   padding-top: 12px;
   border-top: 1px dashed #e5e5e5;
 }
+
 .contact-divider {
   font-size: 12px;
   font-weight: 600;
   color: #94a3b8;
   margin-bottom: 8px;
+}
+
+.empty-placeholder {
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.toast-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.toast-notification.success {
+  background: #10b981;
+  color: white;
+}
+
+.toast-notification.error {
+  background: #ef4444;
+  color: white;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 </style>

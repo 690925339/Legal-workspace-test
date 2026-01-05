@@ -22,6 +22,7 @@ export default {
       caseData: {
         id: '',
         caseNumber: '',
+        courtCaseNumber: '', // 新增: 法院正式案号
         name: '',
         status: '',
         statusCode: '',
@@ -59,7 +60,8 @@ export default {
         const statusMap = { draft: '草稿', active: '进行中', closed: '已结案' }
         this.caseData = {
           id: data.id,
-          caseNumber: data.case_number || `CASE-${data.id.slice(0, 8).toUpperCase()}`,
+          caseNumber: data.case_number || `case-${Date.now()}`,
+          courtCaseNumber: data.court_case_number || '', // 新增: 法院正式案号
           name: data.case_title,
           status: statusMap[data.status] || data.status,
           statusCode: data.status || 'draft',

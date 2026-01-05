@@ -2,7 +2,7 @@
   <CaseModuleLayout :case-id="caseId" active-module="basic" @case-loaded="onCaseLoaded">
     <div class="tab-pane">
       <!-- 顶部双栏容器 (基础信息 + 案情描述) -->
-      <div style="display: grid; grid-template-columns: 450px 1fr; gap: 24px; margin-bottom: 24px">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px">
         <!-- 1. 左侧：基础信息 (2列布局) -->
         <div class="modern-card" style="height: 100%">
           <div class="card-header" style="background: transparent">
@@ -18,8 +18,12 @@
               <span class="value">{{ caseData.name }}</span>
             </div>
             <div class="info-row">
-              <span class="label">案件编号</span>
-              <span class="value">{{ caseData.caseNumber || '-' }}</span>
+              <span class="label">案件ID</span>
+              <span class="value" style="font-family: monospace; font-size: 12px">{{ caseData.caseNumber || '-' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">案号</span>
+              <span class="value">{{ caseData.courtCaseNumber || '-' }}</span>
             </div>
             <div class="info-row">
               <span class="label">案件状态</span>
@@ -42,10 +46,7 @@
               <span class="label">管辖法院</span>
               <span class="value">{{ caseData.court || '-' }}</span>
             </div>
-            <div class="info-row">
-              <span class="label">负责人</span>
-              <span class="value">{{ caseData.assignee }}</span>
-            </div>
+
             <div class="info-row">
               <span class="label">立案日期</span>
               <span class="value">{{ caseData.filingDate || '-' }}</span>
@@ -527,8 +528,25 @@
             ><input v-model="editForm.name" type="text" class="smart-input" />
           </div>
           <div class="smart-form-group">
-            <label class="smart-label">案件编号</label
-            ><input v-model="editForm.id" type="text" class="smart-input" />
+            <label class="smart-label">案件ID</label>
+            <input 
+              v-model="editForm.caseNumber" 
+              type="text" 
+              class="smart-input" 
+              disabled 
+              style="background: #f1f5f9; cursor: not-allowed"
+            />
+            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">系统自动生成，不可修改</span>
+          </div>
+          <div class="smart-form-group">
+            <label class="smart-label">案号</label>
+            <input 
+              v-model="editForm.courtCaseNumber" 
+              type="text" 
+              class="smart-input" 
+              placeholder="如 (2025)京0105民初67890号"
+            />
+            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">法院正式案号，立案后填写</span>
           </div>
           <div class="smart-form-group">
             <label class="smart-label">案由</label
@@ -787,19 +805,31 @@
         </div>
       </div>
     </div>
+    <!-- Global Confirm Modal -->
+    <ConfirmModal
+      :is-open="confirmState.visible"
+      :title="confirmState.title"
+      :message="confirmState.message"
+      :type="confirmState.type"
+      @confirm="handleConfirm"
+      @cancel="closeConfirm"
+    />
   </CaseModuleLayout>
 </template>
 
 <script>
 import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useCaseData, useModal, useStakeholders } from '@/features/case/composables'
+import { caseService } from '@/features/case/services'
 
 export default {
   name: 'CaseBasicInfo',
 
   components: {
-    CaseModuleLayout
+    CaseModuleLayout,
+    ConfirmModal
   },
 
   setup() {
@@ -862,13 +892,62 @@ export default {
       openModal('stakeholder')
     }
 
+    // 4. 通用确认弹窗逻辑
+    const confirmState = ref({
+      visible: false,
+      title: '确认',
+      message: '',
+      type: 'info',
+      resolve: null,
+      reject: null
+    })
+
+    const showConfirm = ({ title, message, type = 'danger' }) => {
+      return new Promise((resolve, reject) => {
+        confirmState.value = {
+          visible: true,
+          title,
+          message,
+          type,
+          resolve,
+          reject
+        }
+      })
+    }
+
+    const handleConfirm = () => {
+      if (confirmState.value.resolve) {
+        confirmState.value.resolve(true)
+      }
+      closeConfirm()
+    }
+
+    const closeConfirm = () => {
+      confirmState.value = {
+        visible: false,
+        title: '',
+        message: '',
+        type: 'info',
+        resolve: null,
+        reject: null
+      }
+    }
+
     const deleteStakeholder = async (type, id) => {
-      if (confirm('确定要删除该当事人吗？')) {
+      try {
+        await showConfirm({
+          title: '删除确认',
+          message: '确定要删除该当事人吗？此操作无法撤销。',
+          type: 'danger'
+        })
+        
         try {
           await _deleteStakeholder(type, id, caseId.value)
         } catch (e) {
           alert('删除失败: ' + e.message)
         }
+      } catch (e) {
+        // 用户取消，不做任何事
       }
     }
 
@@ -900,12 +979,14 @@ export default {
     ]
     const newFocusInput = ref('')
     const editForm = ref({})
+    const saving = ref(false)
 
     // 5. 本地业务逻辑
     const editBasicInfo = () => {
       editForm.value = {
         name: caseData.value.name,
-        id: caseData.value.id,
+        caseNumber: caseData.value.caseNumber, // 案件ID (只读)
+        courtCaseNumber: caseData.value.courtCaseNumber || '', // 案号 (可编辑)
         type: caseData.value.type,
         category: caseData.value.category,
         court: caseData.value.court || '',
@@ -915,9 +996,38 @@ export default {
       openModal('basicInfo')
     }
 
-    const saveBasicInfo = () => {
-      Object.assign(caseData.value, editForm.value)
-      closeModal('basicInfo')
+    const saveBasicInfo = async () => {
+      saving.value = true
+      try {
+        // 构建数据库更新数据 (不更新 case_number，该字段只读)
+        const dbData = {
+          case_title: editForm.value.name,
+          court_case_number: editForm.value.courtCaseNumber || null, // 新增: 案号
+          case_type: editForm.value.type,
+          court: editForm.value.court,
+          filing_date: editForm.value.filingDate || null,
+          stage: editForm.value.stage
+        }
+        
+        await caseService.update(caseId.value, dbData)
+        
+        // 更新本地状态
+        Object.assign(caseData.value, {
+          name: editForm.value.name,
+          courtCaseNumber: editForm.value.courtCaseNumber, // 新增
+          type: editForm.value.type,
+          court: editForm.value.court,
+          filingDate: editForm.value.filingDate,
+          stage: editForm.value.stage
+        })
+        
+        closeModal('basicInfo')
+      } catch (e) {
+        console.error('保存基础信息失败:', e)
+        alert('保存失败: ' + e.message)
+      } finally {
+        saving.value = false
+      }
     }
 
     const editCaseFacts = () => {
@@ -930,11 +1040,30 @@ export default {
       openModal('caseFacts')
     }
 
-    const saveCaseFacts = () => {
-      factsData.value.description = editForm.value.description
-      factsData.value.disputeFocus = editForm.value.disputeFocus
-      factsData.value.objective = editForm.value.objective
-      closeModal('caseFacts')
+    const saveCaseFacts = async () => {
+      saving.value = true
+      try {
+        // 构建数据库更新数据
+        const dbData = {
+          description: editForm.value.description,
+          dispute_focus: editForm.value.disputeFocus,
+          objective: editForm.value.objective
+        }
+        
+        await caseService.update(caseId.value, dbData)
+        
+        // 更新本地状态 (caseData 是响应式的，factsData 是 computed)
+        caseData.value.description = editForm.value.description
+        caseData.value.disputeFocus = editForm.value.disputeFocus
+        caseData.value.objective = editForm.value.objective
+        
+        closeModal('caseFacts')
+      } catch (e) {
+        console.error('保存案情描述失败:', e)
+        alert('保存失败: ' + e.message)
+      } finally {
+        saving.value = false
+      }
     }
 
     const addFocusTag = () => {
@@ -991,7 +1120,11 @@ export default {
       addStakeholder,
       editStakeholder,
       deleteStakeholder,
-      saveStakeholder
+      saveStakeholder,
+      // Confirm Modal related
+      confirmState,
+      handleConfirm,
+      closeConfirm,
     }
   }
 }

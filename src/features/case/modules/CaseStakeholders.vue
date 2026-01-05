@@ -492,19 +492,30 @@
         </div>
       </div>
     </div>
+    <!-- Global Confirm Modal -->
+    <ConfirmModal
+      :is-open="confirmState.visible"
+      :title="confirmState.title"
+      :message="confirmState.message"
+      :type="confirmState.type"
+      @confirm="handleConfirm"
+      @cancel="closeConfirm"
+    />
   </CaseModuleLayout>
 </template>
 
 <script>
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useCaseData, useModal, useStakeholders } from '@/features/case/composables'
 
 export default {
   name: 'CaseStakeholders',
 
   components: {
-    CaseModuleLayout
+    CaseModuleLayout,
+    ConfirmModal
   },
 
   setup() {
@@ -554,13 +565,62 @@ export default {
       openModal('stakeholder')
     }
 
+    // 4. 通用确认弹窗逻辑
+    const confirmState = ref({
+      visible: false,
+      title: '确认',
+      message: '',
+      type: 'info',
+      resolve: null,
+      reject: null
+    })
+
+    const showConfirm = ({ title, message, type = 'danger' }) => {
+      return new Promise((resolve, reject) => {
+        confirmState.value = {
+          visible: true,
+          title,
+          message,
+          type,
+          resolve,
+          reject
+        }
+      })
+    }
+
+    const handleConfirm = () => {
+      if (confirmState.value.resolve) {
+        confirmState.value.resolve(true)
+      }
+      closeConfirm()
+    }
+
+    const closeConfirm = () => {
+      confirmState.value = {
+        visible: false,
+        title: '',
+        message: '',
+        type: 'info',
+        resolve: null,
+        reject: null
+      }
+    }
+
     const deleteStakeholder = async (type, id) => {
-      if (confirm('确定要删除该当事人吗？')) {
+      try {
+        await showConfirm({
+          title: '删除确认',
+          message: '确定要删除该当事人吗？此操作无法撤销。',
+          type: 'danger'
+        })
+        
         try {
           await _deleteStakeholder(type, id, caseId.value)
         } catch (e) {
           alert('删除失败: ' + e.message)
         }
+      } catch (e) {
+        // 用户取消
       }
     }
 
@@ -585,7 +645,11 @@ export default {
       editStakeholder,
       deleteStakeholder,
       saveStakeholder,
-      showStakeholderModal
+      saveStakeholder,
+      showStakeholderModal,
+      confirmState,
+      handleConfirm,
+      closeConfirm
     }
   }
 }
