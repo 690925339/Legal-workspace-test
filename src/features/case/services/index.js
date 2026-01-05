@@ -3,4 +3,6 @@
  */
 export { caseService } from './caseService'
 export { aiService } from './aiService'
-
+export { stakeholderService } from './stakeholderService'
+export { evidenceService } from './evidenceService'
+export { financialService } from './financialService'
