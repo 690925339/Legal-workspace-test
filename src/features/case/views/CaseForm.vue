@@ -62,12 +62,12 @@
                     <label class="smart-label">案件阶段</label>
                     <select v-model="form.caseStage" class="smart-select">
                       <option value="">请选择...</option>
-                      <option value="consultation">咨询</option>
-                      <option value="filing">立案</option>
-                      <option value="first_instance">一审</option>
-                      <option value="second_instance">二审</option>
-                      <option value="execution">执行</option>
-                      <option value="closed">结案</option>
+                      <option value="咨询">咨询</option>
+                      <option value="立案">立案</option>
+                      <option value="一审">一审</option>
+                      <option value="二审">二审</option>
+                      <option value="执行">执行</option>
+                      <option value="结案">结案</option>
                     </select>
                   </div>
                   <div class="smart-form-group">
@@ -438,10 +438,23 @@
 
         <!-- New Case Buttons -->
         <template v-if="!isEdit">
-          <button type="button" class="smart-btn-secondary" @click="saveCase('draft')">
+          <button
+            type="button"
+            class="smart-btn-secondary"
+            :disabled="saving"
+            @click="saveCase('draft')"
+          >
             保存草稿
           </button>
-          <button type="button" class="smart-btn-primary" @click="saveCase('active')">提交</button>
+          <button
+            type="button"
+            class="smart-btn-primary"
+            :disabled="saving"
+            @click="saveCase('active')"
+          >
+            <i v-if="saving" class="fas fa-spinner fa-spin" />
+            {{ saving ? '提交中...' : '提交' }}
+          </button>
         </template>
 
         <!-- Edit Case Buttons -->
@@ -449,9 +462,11 @@
           v-if="isEdit && form.status !== 'closed'"
           type="button"
           class="smart-btn-primary"
+          :disabled="saving"
           @click="saveCase()"
         >
-          <i class="fas fa-save" /> 保存
+          <i v-if="saving" class="fas fa-spinner fa-spin" />
+          {{ saving ? '保存中...' : '保存' }}
         </button>
       </div>
     </div>
@@ -498,7 +513,8 @@ export default {
         isAttorneyFeeIncluded: false,
         courtCost: '',
         billableHours: ''
-      }
+      },
+      saving: false // 添加保存状态
     }
   },
   computed: {
@@ -659,7 +675,7 @@ export default {
     },
     async saveCase(status) {
       if (!this.validateForm()) {
-        console.warn('Form validation failed')
+        // 添加显式的错误提示，让用户知道为什么没反应
         return
       }
 
@@ -667,6 +683,7 @@ export default {
         this.form.status = status
       }
 
+      this.saving = true // 开始保存
       try {
         // 映射前端字段到数据库结构
         const dbData = {
@@ -698,6 +715,8 @@ export default {
       } catch (e) {
         console.error('保存案件失败:', e)
         alert('保存失败: ' + e.message)
+      } finally {
+        this.saving = false // 结束保存
       }
     },
     close() {
@@ -712,6 +731,9 @@ export default {
         alert('请选择案件类型')
         return false
       }
+      // 案件阶段通常不是必填，但如果原来逻辑里有校验，在这里加上提示
+      // 看起来上面的 validateForm 没有校验 caseStage，所以应该不是 stage 为空导致保存失败
+      // 但用户提到“点击保存无反应”，说明进了 validateForm 失败分支的可能性很大
 
       for (let i = 0; i < this.form.clients.length; i++) {
         if (!this.form.clients[i].name) {
