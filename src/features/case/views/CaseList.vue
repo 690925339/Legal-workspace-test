@@ -39,12 +39,11 @@
       <table class="case-table">
         <thead>
           <tr>
-            <th width="35%">案件信息</th>
-            <th width="12%">客户</th>
-            <th width="12%">状态</th>
-            <th width="12%">负责人</th>
-            <th width="12%">最后更新</th>
-            <th width="17%">操作</th>
+            <th width="40%">案件信息</th>
+            <th width="15%">客户</th>
+            <th width="15%">状态</th>
+            <th width="15%">最后更新</th>
+            <th width="15%">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -70,18 +69,6 @@
               <span :class="getStatusClass(caseItem.status)">
                 {{ caseItem.statusText }}
               </span>
-            </td>
-            <td>
-              <div class="avatar-stack">
-                <div
-                  v-for="(assignee, index) in caseItem.assignees"
-                  :key="index"
-                  class="avatar-small"
-                  :style="{ background: assignee.color, color: assignee.textColor }"
-                >
-                  {{ assignee.name }}
-                </div>
-              </div>
             </td>
             <td class="last-update">
               {{ caseItem.lastUpdate }}
@@ -212,13 +199,12 @@ export default {
           code: c.case_number || `CASE-${c.id.slice(0, 8)}`,
           type: c.case_type || '民事',
           category: 'civil',
-          client: '-', // 需要从 stakeholders 关联查询
+          client: c.client_name || '-',
           status: c.status || 'draft',
           statusText: this.getStatusText(c.status),
           court: '-',
           lastUpdate: this.formatDate(c.updated_at),
-          updatedAt: c.updated_at,
-          assignees: [{ name: '我', color: '#dbeafe', textColor: '#1e40af' }]
+          updatedAt: c.updated_at
         }))
       } catch (e) {
         console.error('加载案件列表失败:', e)
