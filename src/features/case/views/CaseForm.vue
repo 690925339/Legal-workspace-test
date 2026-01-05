@@ -589,18 +589,25 @@ export default {
       console.log('Loading case data for:', id)
       try {
         const data = await caseService.getById(id)
+
+        // 简单的类型映射逻辑
+        let type = 'civil' // 默认为民事
+        if (['criminal', 'administrative', 'ip'].includes(data.case_type)) {
+          type = data.case_type
+        }
+
         this.form = {
           name: data.case_title || '',
           caseId: data.case_number || '',
-          type: data.case_type || '',
-          legalCause: data.legal_cause || '',
+          type: type,
+          legalCause: data.legal_cause || data.case_type || '', // 如果 case_type 是中文，存入具体案由
           caseStage: data.stage || '',
           court: data.court || '',
           judge: data.judge || '',
           filingDate: data.filing_date || '',
           deadline: data.deadline || '',
           status: data.status || 'active',
-          clients: [{ name: '', type: 'individual', id: '' }],
+          clients: [{ name: data.client_name || '', type: 'individual', id: '' }],
           opposingParties: [{ name: '', type: 'company', rep: '', counsel: '' }],
           description: data.description || '',
           disputeFocus: Array.isArray(data.dispute_focus) ? data.dispute_focus.join(', ') : '',
@@ -651,7 +658,10 @@ export default {
       }
     },
     async saveCase(status) {
-      if (!this.validateForm()) return
+      if (!this.validateForm()) {
+        console.warn('Form validation failed')
+        return
+      }
 
       if (status && typeof status === 'string') {
         this.form.status = status
