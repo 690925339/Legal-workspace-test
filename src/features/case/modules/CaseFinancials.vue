@@ -280,6 +280,7 @@ import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import InterestCalculator from '@/components/case/InterestCalculator.js'
 import { useCaseData, useModal } from '@/features/case/composables'
+import { financialService } from '@/features/case/services'
 
 export default {
   name: 'CaseFinancials',
@@ -306,21 +307,51 @@ export default {
       set: val => (val ? openModal('calculator') : closeModal('calculator'))
     })
 
-    // 3. 财务数据
+    // 3. 财务数据（从数据库加载）
+    const financialsLoading = ref(false)
     const financialsData = ref({
-      claimItems: [
-        { name: '欠款本金', amount: 500000 },
-        { name: '违约金', amount: 80000 }
-      ],
-      attorneyFee: 85000,
+      claimItems: [],
+      attorneyFee: 0,
       isAttorneyFeeIncluded: false,
-      courtCost: 11300,
-      billableHours: 45.5
+      courtCost: 0,
+      billableHours: 0
     })
 
     const editForm = ref({
       claimItems: []
     })
+
+    // 加载财务数据
+    const loadFinancials = async caseId => {
+      if (!caseId) return
+      financialsLoading.value = true
+      try {
+        const data = await financialService.get(caseId)
+        // 映射数据库字段到前端结构
+        financialsData.value = {
+          claimItems: data.claim_items || [],
+          attorneyFee: data.attorney_fee || 0,
+          isAttorneyFeeIncluded: data.attorney_fee_included || false,
+          courtCost: data.court_cost || 0,
+          billableHours: data.billable_hours || 0
+        }
+      } catch (e) {
+        console.error('加载财务数据失败:', e)
+      } finally {
+        financialsLoading.value = false
+      }
+    }
+
+    // 监听 caseId 变化，加载真实数据
+    watch(
+      () => caseId.value,
+      newCaseId => {
+        if (newCaseId) {
+          loadFinancials(newCaseId)
+        }
+      },
+      { immediate: true }
+    )
 
     // 4. 计算属性
     const totalClaimAmount = computed(() => {
@@ -402,13 +433,26 @@ export default {
       editForm.value.claimItems.splice(index, 1)
     }
 
-    const saveFinancials = () => {
+    const saveFinancials = async () => {
       if (editForm.value.claimItems.some(item => !item.name)) {
         alert('请输入完整的标的项名称')
         return
       }
-      financialsData.value = JSON.parse(JSON.stringify(editForm.value))
-      closeModal('financials')
+      try {
+        // 映射前端结构到数据库字段
+        const dbData = {
+          claim_items: editForm.value.claimItems,
+          attorney_fee: Number(editForm.value.attorneyFee) || 0,
+          attorney_fee_included: editForm.value.isAttorneyFeeIncluded,
+          court_cost: Number(editForm.value.courtCost) || 0,
+          billable_hours: Number(editForm.value.billableHours) || 0
+        }
+        await financialService.upsert(caseId.value, dbData)
+        financialsData.value = JSON.parse(JSON.stringify(editForm.value))
+        closeModal('financials')
+      } catch (e) {
+        alert('保存失败: ' + e.message)
+      }
     }
 
     const openCalculator = () => {
