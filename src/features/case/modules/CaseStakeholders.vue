@@ -496,7 +496,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import { useCaseData, useModal, useStakeholders } from '@/features/case/composables'
 
@@ -509,7 +509,7 @@ export default {
 
   setup() {
     // 1. 案件上下文
-    const { caseId, onCaseLoaded } = useCaseData()
+    const { caseId, caseData, onCaseLoaded } = useCaseData()
 
     // 2. 模态框管理
     const { openModal, closeModal, isModalOpen } = useModal()
@@ -519,51 +519,29 @@ export default {
       set: val => (val ? openModal('stakeholder') : closeModal('stakeholder'))
     })
 
-    // 3. 当事人管理
-    const initialStakeholders = {
-      plaintiffs: [
-        {
-          id: 1,
-          name: '张三',
-          type: 'person',
-          idNumber: '110101198001011234',
-          phone: '13800138000',
-          address: '北京市朝阳区某某街道123号',
-          role: '原告',
-          contactName: '王经理',
-          contactRole: '主要联络人',
-          contactPhone: '138-0000-1234',
-          contactEmail: 'wang@abc.com'
-        }
-      ],
-      defendants: [
-        {
-          id: 1,
-          name: '某科技有限公司',
-          type: 'company',
-          legalRepresentative: '李四',
-          creditCode: '91110000MA01A2B3C4',
-          address: '北京市海淀区某某大厦10层',
-          lawyer: '王律师（某律所）',
-          role: '被告',
-          contactName: '',
-          contactRole: '',
-          contactPhone: '',
-          contactEmail: ''
-        }
-      ],
-      thirdParties: []
-    }
-
+    // 3. 当事人管理（不传初始数据，从数据库加载）
     const {
       stakeholders,
       currentStakeholder,
       stakeholderType,
+      loading,
+      loadStakeholders,
       addStakeholder: _addStakeholder,
       editStakeholder: _editStakeholder,
       deleteStakeholder: _deleteStakeholder,
       saveStakeholder: _saveStakeholder
-    } = useStakeholders(initialStakeholders)
+    } = useStakeholders()
+
+    // 监听 caseId 变化，加载真实数据
+    watch(
+      () => caseId.value,
+      newCaseId => {
+        if (newCaseId) {
+          loadStakeholders(newCaseId)
+        }
+      },
+      { immediate: true }
+    )
 
     // 包装交互逻辑
     const addStakeholder = type => {
@@ -576,15 +554,19 @@ export default {
       openModal('stakeholder')
     }
 
-    const deleteStakeholder = (type, id) => {
+    const deleteStakeholder = async (type, id) => {
       if (confirm('确定要删除该当事人吗？')) {
-        _deleteStakeholder(type, id)
+        try {
+          await _deleteStakeholder(type, id, caseId.value)
+        } catch (e) {
+          alert('删除失败: ' + e.message)
+        }
       }
     }
 
-    const saveStakeholder = () => {
+    const saveStakeholder = async () => {
       try {
-        _saveStakeholder()
+        await _saveStakeholder(caseId.value)
         closeModal('stakeholder')
       } catch (e) {
         alert(e.message)
@@ -593,10 +575,12 @@ export default {
 
     return {
       caseId,
+      caseData,
       onCaseLoaded,
       stakeholders,
       currentStakeholder,
       stakeholderType,
+      loading,
       addStakeholder,
       editStakeholder,
       deleteStakeholder,
