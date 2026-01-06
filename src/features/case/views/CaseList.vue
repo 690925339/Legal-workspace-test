@@ -87,6 +87,7 @@
                   <i class="fas fa-eye" />
                 </button>
                 <button
+                  v-if="caseItem.status !== 'closed'"
                   class="action-btn"
                   title="编辑"
                   aria-label="编辑案件"

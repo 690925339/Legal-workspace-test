@@ -3,8 +3,8 @@
  * 支持 Supabase / BFF 双模式切换
  */
 import { getSupabaseClient } from '@/config/supabase'
-import { apiClient } from '@services/api-client'
-import { API_ENDPOINTS } from '@shared/constants'
+import { apiClient } from '../../../services/api-client'
+import { API_ENDPOINTS } from '../../../shared/constants'
 
 const USE_BFF = import.meta.env.VITE_USE_BFF === 'true'
 

@@ -44,12 +44,12 @@
 <script>
 import { ref } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
-import AIAnalysis from '@/views/refactor/AIAnalysis.js'
-import AIAssistant from '@/views/refactor/AIAssistant.js'
-import RelationshipGraph from '@/views/refactor/RelationshipGraph.js'
-import EvidenceTimeline from '@/views/refactor/EvidenceTimeline.js'
-import QuoteGenerator from '@/views/refactor/QuoteGenerator.js'
-import { useCaseData } from '@/features/case/composables'
+import AIAnalysis from './analysis/AIAnalysis.js'
+import AIAssistant from './analysis/AIAssistant.js'
+import RelationshipGraph from './analysis/RelationshipGraph.js'
+import EvidenceTimeline from './analysis/EvidenceTimeline.js'
+import QuoteGenerator from './analysis/QuoteGenerator.vue'
+import { useCaseData } from '@/features/case/composables/useCaseData.js'
 
 export default {
   name: 'CaseAdvanced',

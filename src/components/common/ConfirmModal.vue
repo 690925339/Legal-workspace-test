@@ -20,7 +20,7 @@
         </p>
       </div>
       <div class="modal-footer">
-        <button class="smart-btn-secondary" @click="handleCancel">
+        <button v-if="showCancel" class="smart-btn-secondary" @click="handleCancel">
           {{ cancelText }}
         </button>
         <button
@@ -67,6 +67,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    showCancel: {
+      type: Boolean,
+      default: true
     },
     showClose: {
       type: Boolean,

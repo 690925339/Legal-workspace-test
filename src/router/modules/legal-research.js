@@ -30,19 +30,19 @@ export default [
   {
     path: 'contract-review',
     name: 'ContractReview',
-    component: () => import('@/features/contract/views/ContractReview.js'),
+    component: () => import('@/features/contract/views/ContractReview.vue'),
     meta: { title: '合同审查' }
   },
   {
     path: 'contract-review-result',
     name: 'ContractReviewResult',
-    component: () => import('@/features/contract/views/ContractReviewResult.js'),
+    component: () => import('@/features/contract/views/ContractReviewResult.vue'),
     meta: { title: '合同审查结果' }
   },
   {
     path: 'doc-generate',
     name: 'DocGenerate',
-    component: () => import('@/features/document/views/DocGenerate.js'),
+    component: () => import('@/features/document/views/DocGenerate.vue'),
     meta: { title: '文书生成' }
   }
 ]

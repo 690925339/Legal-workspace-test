@@ -821,8 +821,8 @@
 import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
-import { useCaseData, useModal, useStakeholders } from '@/features/case/composables'
 import { caseService } from '@/features/case/services'
+import { useCaseData, useModal, useStakeholders, useCaseBasicInfo } from '@/features/case/composables'
 
 export default {
   name: 'CaseBasicInfo',
@@ -967,120 +967,49 @@ export default {
       objective: caseData.value.objective || '暂无客户诉求'
     }))
 
-    const commonFocusOptions = [
-      '合同效力',
-      '违约责任',
-      '赔偿金额',
-      '交付标准',
-      '工期延误',
-      '质量异议',
-      '付款条件',
-      '解除合同'
-    ]
-    const newFocusInput = ref('')
-    const editForm = ref({})
-    const saving = ref(false)
+    // 5. 引入新的业务逻辑 Composable
+    const {
+      editForm,
+      saving,
+      newFocusInput,
+      commonFocusOptions,
+      initBasicInfoForm,
+      saveBasicInfo: _saveBasicInfo,
+      initFactsForm,
+      saveCaseFacts: _saveCaseFacts,
+      addFocusTag,
+      removeFocusTag,
+      addCommonFocus
+    } = useCaseBasicInfo()
 
-    // 5. 本地业务逻辑
+    // 包装本地方法以连接 UI 和 Composable
     const editBasicInfo = () => {
-      editForm.value = {
-        name: caseData.value.name,
-        caseNumber: caseData.value.caseNumber, // 案件ID (只读)
-        courtCaseNumber: caseData.value.courtCaseNumber || '', // 案号 (可编辑)
-        type: caseData.value.type,
-        category: caseData.value.category,
-        court: caseData.value.court || '',
-        filingDate: caseData.value.filingDate || '',
-        stage: caseData.value.stage || '咨询'
-      }
+      initBasicInfoForm(caseData.value)
       openModal('basicInfo')
     }
 
     const saveBasicInfo = async () => {
-      saving.value = true
       try {
-        // 构建数据库更新数据 (不更新 case_number，该字段只读)
-        const dbData = {
-          case_title: editForm.value.name,
-          court_case_number: editForm.value.courtCaseNumber || null, // 新增: 案号
-          case_type: editForm.value.type,
-          court: editForm.value.court,
-          filing_date: editForm.value.filingDate || null,
-          stage: editForm.value.stage
-        }
-        
-        await caseService.update(caseId.value, dbData)
-        
-        // 更新本地状态
-        Object.assign(caseData.value, {
-          name: editForm.value.name,
-          courtCaseNumber: editForm.value.courtCaseNumber, // 新增
-          type: editForm.value.type,
-          court: editForm.value.court,
-          filingDate: editForm.value.filingDate,
-          stage: editForm.value.stage
-        })
-        
+        await _saveBasicInfo(caseId.value, caseData.value)
         closeModal('basicInfo')
       } catch (e) {
         console.error('保存基础信息失败:', e)
         alert('保存失败: ' + e.message)
-      } finally {
-        saving.value = false
       }
     }
 
     const editCaseFacts = () => {
-      editForm.value = {
-        description: factsData.value.description,
-        disputeFocus: JSON.parse(JSON.stringify(factsData.value.disputeFocus)),
-        objective: factsData.value.objective
-      }
-      newFocusInput.value = ''
+      initFactsForm(factsData.value)
       openModal('caseFacts')
     }
 
     const saveCaseFacts = async () => {
-      saving.value = true
       try {
-        // 构建数据库更新数据
-        const dbData = {
-          description: editForm.value.description,
-          dispute_focus: editForm.value.disputeFocus,
-          objective: editForm.value.objective
-        }
-        
-        await caseService.update(caseId.value, dbData)
-        
-        // 更新本地状态 (caseData 是响应式的，factsData 是 computed)
-        caseData.value.description = editForm.value.description
-        caseData.value.disputeFocus = editForm.value.disputeFocus
-        caseData.value.objective = editForm.value.objective
-        
+        await _saveCaseFacts(caseId.value, caseData.value)
         closeModal('caseFacts')
       } catch (e) {
         console.error('保存案情描述失败:', e)
         alert('保存失败: ' + e.message)
-      } finally {
-        saving.value = false
-      }
-    }
-
-    const addFocusTag = () => {
-      const val = newFocusInput.value.trim()
-      if (val && !editForm.value.disputeFocus.includes(val)) {
-        editForm.value.disputeFocus.push(val)
-      }
-      newFocusInput.value = ''
-    }
-
-    const removeFocusTag = index => {
-      editForm.value.disputeFocus.splice(index, 1)
-    }
-
-    const addCommonFocus = focus => {
-      if (!editForm.value.disputeFocus.includes(focus)) {
-        editForm.value.disputeFocus.push(focus)
       }
     }
 

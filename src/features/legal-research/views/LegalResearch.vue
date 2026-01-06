@@ -505,13 +505,20 @@ export default {
     async openHistory() {
       try {
         const history = await faruiCaseService.getSearchHistory(10)
-        this.historyRecords = history.map(item => ({
-          id: item.id,
-          title: item.query,
-          date: item.created_at,
-          type: '案例检索',
-          totalResults: item.total_results
-        }))
+        console.log('Fetched history:', history)
+        
+        if (Array.isArray(history)) {
+          this.historyRecords = history.map(item => ({
+            id: item.id,
+            title: item.query,
+            date: item.created_at,
+            type: '案例检索',
+            totalResults: item.total_results || 0
+          }))
+        } else {
+          console.warn('History data is not an array:', history)
+          this.historyRecords = []
+        }
         this.showHistoryModal = true
       } catch (error) {
         console.error('Failed to load search history:', error)
