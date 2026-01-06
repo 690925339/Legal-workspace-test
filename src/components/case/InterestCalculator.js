@@ -59,7 +59,9 @@ export default {
       },
       lprRates: [],
       lprLoading: false,
-      lprError: null
+      lprError: null,
+      // 提示弹窗状态
+      tipMessage: ''
     }
   },
   computed: {
@@ -155,6 +157,65 @@ export default {
     }
   },
   methods: {
+    // 数字转中文大写金额
+    toChineseCurrency(num) {
+      if (num === 0 || !num) return '零元'
+      const digits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖']
+      const units = ['', '拾', '佰', '仟']
+      const bigUnits = ['', '万', '亿', '兆']
+
+      let result = ''
+      const numStr = Math.abs(num).toFixed(2)
+      const parts = numStr.split('.')
+      const intPart = parts[0]
+      const decPart = parts[1]
+
+      // 整数部分
+      if (intPart !== '0') {
+        let intStr = ''
+        const len = intPart.length
+        for (let i = 0; i < len; i++) {
+          const digit = parseInt(intPart[i])
+          const pos = len - i - 1
+          const unitPos = pos % 4
+          const bigUnitPos = Math.floor(pos / 4)
+
+          if (digit !== 0) {
+            intStr += digits[digit] + units[unitPos]
+          } else {
+            if (intStr && !intStr.endsWith('零')) {
+              intStr += '零'
+            }
+          }
+
+          if (unitPos === 0 && bigUnitPos > 0 && intStr && !intStr.endsWith('零')) {
+            intStr = intStr.replace(/零+$/, '') + bigUnits[bigUnitPos]
+          }
+        }
+        result = intStr.replace(/零+$/, '') + '元'
+      } else {
+        result = ''
+      }
+
+      // 小数部分
+      if (decPart && decPart !== '00') {
+        const jiao = parseInt(decPart[0])
+        const fen = parseInt(decPart[1])
+        if (jiao > 0) {
+          result += digits[jiao] + '角'
+        } else if (result) {
+          result += '零'
+        }
+        if (fen > 0) {
+          result += digits[fen] + '分'
+        }
+      } else if (result) {
+        result += '整'
+      }
+
+      return result || '零元'
+    },
+
     async loadLprRates() {
       this.lprLoading = true
       this.lprError = null
@@ -188,15 +249,22 @@ export default {
     },
     // 获取指定日期（或之前最近）的LPR记录对象
     getLprRecordForDate(dateStr) {
-      if (!this.lprRates || this.lprRates.length === 0) return null
-      // lprRates 按日期降序排列，查找第一个 <= dateStr 的记录
-      for (const rate of this.lprRates) {
+      // 合并 Supabase 数据与备用数据，确保历史数据完整
+      const combinedRates = [...(this.lprRates || []), ...FALLBACK_LPR_RATES]
+        // 去重（按日期取第一个）
+        .filter((rate, index, arr) => arr.findIndex(r => r.date === rate.date) === index)
+        // 按日期降序排列
+        .sort((a, b) => b.date.localeCompare(a.date))
+
+      if (combinedRates.length === 0) return null
+      // 查找第一个 <= dateStr 的记录
+      for (const rate of combinedRates) {
         if (rate.date <= dateStr) {
           return rate
         }
       }
       // 如果日期太早，返回最老的记录
-      return this.lprRates[this.lprRates.length - 1]
+      return combinedRates[combinedRates.length - 1]
     },
     calculateInterest() {
       const calc = this.calculator
@@ -212,7 +280,7 @@ export default {
       }
 
       if (!isValid) {
-        alert('请填写完整的计算参数')
+        this.showTip('请填写完整的计算参数')
         return
       }
 
@@ -222,7 +290,13 @@ export default {
         calc.startDate < '1991-04-21' &&
         (calc.rateType !== 'custom' || calc.customDurationType === 'dateRange')
       ) {
-        alert('起始日期不能早于 1991年4月21日')
+        this.showTip('起始日期不能早于 1991年4月21日')
+        return
+      }
+
+      // LPR模式校验：起始日期不得早于 2019-08-20
+      if (calc.startDate && calc.startDate < '2019-08-20' && calc.rateType === 'lpr') {
+        this.showTip('起始日期不能早于2019-08-20,因为LPR自2019年8月20起每月公布!')
         return
       }
 
@@ -399,8 +473,9 @@ export default {
             dailyRate = annualRate / yearDays
           }
 
-          // 期间分组逻辑
-          if (!currentPeriod || currentPeriod.type !== periodType) {
+          // 期间分组逻辑 - 当类型或利率发生变化时创建新期间
+          const rateChanged = currentPeriod && Math.abs(currentPeriod.baseRate - baseRate) > 0.001
+          if (!currentPeriod || currentPeriod.type !== periodType || rateChanged) {
             if (currentPeriod) {
               currentPeriod.endDate = new Date(loopDate)
               currentPeriod.endDate.setDate(currentPeriod.endDate.getDate() - 1)
@@ -414,13 +489,12 @@ export default {
               baseRate: baseRate,
               adjustedRate: adjustedRate,
               adjustmentDesc: adjustmentDesc || '无',
-              interest: 0
+              dailyRate: dailyRate // 暂存日利率用于后续计算
             }
           }
 
           currentPeriod.days++
-          currentPeriod.interest += calc.principal * dailyRate
-          totalInterest += calc.principal * dailyRate
+          // 不在按日累加利息，改为分段结算
 
           loopDate.setDate(loopDate.getDate() + 1)
         }
@@ -430,24 +504,34 @@ export default {
           periods.push(currentPeriod)
         }
 
-        const formattedPeriods = periods.map(p => ({
-          type: p.type,
-          typeLabel: p.type === 'benchmark' ? '基准利率' : 'LPR',
-          startDate: p.startDate.toISOString().slice(0, 10),
-          endDate: p.endDate.toISOString().slice(0, 10),
-          days: p.days,
-          baseRate: p.baseRate.toFixed(2) + '%',
-          adjustmentDesc: p.adjustmentDesc,
-          adjustedRate: p.adjustedRate.toFixed(2) + '%',
-          interest: Math.round(p.interest * 100) / 100,
-          formula: `${calc.principal} × (${p.adjustedRate.toFixed(2)}% ÷ ${yearDays}) × ${p.days}`
-        }))
+        // 统一计算每段利息并累加 (解决精度差异)
+        periods.forEach(p => {
+          // 分段利息 = 本金 * 日利率 * 天数
+          const rawInterest = calc.principal * p.dailyRate * p.days
+          // 关键：每一段的利息先四舍五入保留两位小数
+          p.interest = Math.round(rawInterest * 100) / 100
 
-        calc.result = {
-          days,
-          rate: '分段计算',
-          interest: Math.round(totalInterest * 100) / 100,
-          periods: formattedPeriods
+          // 格式化日期和利率
+          p.startDate = p.startDate.toISOString().slice(0, 10)
+          p.endDate = p.endDate.toISOString().slice(0, 10)
+          p.baseRate = parseFloat(p.baseRate.toFixed(4)) + '%'
+          p.adjustedRate = parseFloat(p.adjustedRate.toFixed(4)) + '%'
+          p.typeLabel = p.type === 'benchmark' ? '央行基准' : 'LPR'
+
+          // 生成公式
+          // 公式: 本金 × (年利率% ÷ 360) × 天数
+          const annualRate = (p.dailyRate * yearDays * 100).toFixed(4)
+          p.formula = `= ${calc.principal} × (${parseFloat(annualRate)}% ÷ ${yearDays}) × ${p.days}`
+
+          // 累加到总利息
+          totalInterest += p.interest
+        })
+
+        this.calculator.result = {
+          days: days,
+          rate: '-', // 混合利率不显示单一数值
+          interest: Math.round(totalInterest * 100) / 100, // 总额再次确保两位小数
+          periods: periods
         }
         return
       } else if (calc.rateType === 'benchmark') {
@@ -528,6 +612,12 @@ export default {
       if (!this.calculator.result) return
       this.$emit('apply', this.calculator.result.interest)
       this.$emit('update:visible', false)
+    },
+    showTip(message) {
+      this.tipMessage = message
+    },
+    closeTip() {
+      this.tipMessage = ''
     }
   },
   template: `
@@ -538,45 +628,37 @@ export default {
                         <i class="fas fa-calculator" style="margin-right: 8px;"></i>
                         利息/违约金/占用费计算器
                     </div>
-                    <button class="modal-close" style="color: white;" @click="$emit('update:visible', false)">
-                        <i class="fas fa-times"></i>
+                    <button class="modal-close" style="color: white; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 6px 10px; transition: all 0.2s;" @click="$emit('update:visible', false)">
+                        <i class="fas fa-times" style="font-size: 16px;"></i>
                     </button>
                 </div>
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     
                     <!-- 基础参数 -->
                     <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; color: #334155; margin-bottom: 12px;"><i class="fas fa-cog" style="margin-right: 6px;"></i>基础参数</div>
+                        <div style="font-weight: 600; color: #334155; margin-bottom: 12px;"><i class="fas fa-calculator" style="margin-right: 6px;"></i>基础参数</div>
                         
                         <div class="smart-form-group">
                             <label class="smart-label">计算基数 (元)</label>
                             <input type="number" class="smart-input" v-model.number="calculator.principal" placeholder="请输入金额" style="border: 1px solid #e2e8f0;">
+                            <div v-if="calculator.principal" style="color: #64748b; font-size: 12px; margin-top: 4px; padding-left: 2px;">{{ toChineseCurrency(calculator.principal) }}</div>
                         </div>
                         
                         <!-- 利率类型 -->
                         <div class="smart-form-group">
-                            <label class="smart-label">利率类型</label>
-                            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" name="rateType" v-model="calculator.rateType" value="custom"> 1. 自定义利率
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" name="rateType" v-model="calculator.rateType" value="segmented"> 
-                                    <span>2. 中国人民银行同期贷款基准利率与LPR自动分段 <span style="color: #f59e0b; font-size: 11px;">(推荐)</span></span>
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" name="rateType" v-model="calculator.rateType" value="lpr"> 3. 全国银行间同业拆借中心公布的贷款市场报价利率（LPR）
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" name="rateType" v-model="calculator.rateType" value="benchmark"> 4. 中国人民银行同期贷款基准利率
-                                </label>
-                            </div>
+                            <label class="smart-label">生效法律文书确定的利率类型</label>
+                            <select class="smart-input" v-model="calculator.rateType" style="border: 1px solid #e2e8f0;">
+                                <option value="custom">自定义利率</option>
+                                <option value="segmented">中国人民银行同期贷款基准利率与LPR自动分段</option>
+                                <option value="lpr">全国银行间同业拆借中心公布的贷款市场报价利率（LPR）</option>
+                                <option value="benchmark">中国人民银行同期贷款基准利率</option>
+                            </select>
                         </div>
                         
                         <!-- 自定义利率设置 (嵌入在基础参数中) -->
                         <template v-if="calculator.rateType === 'custom'">
                             <div style="margin-top: 12px; padding: 12px; background: #f1f5f9; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                                <div style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 12px;">自定义利率设置</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 12px;">自定义利率设置</div>
                                 
                                 <div class="smart-form-group" style="margin-bottom: 12px;">
                                     <label class="smart-label">利率大小</label>
@@ -662,33 +744,21 @@ export default {
                             
                             <div class="smart-form-group">
                                 <label class="smart-label">起止日期选项</label>
-                                <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px;">
-                                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                        <input type="radio" v-model="calculator.dateBoundary" value="both"> 起止日期均计算在内
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                        <input type="radio" v-model="calculator.dateBoundary" value="startOnly"> 起始计算，截止不计
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                        <input type="radio" v-model="calculator.dateBoundary" value="endOnly"> 起始不计，截止计算
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                        <input type="radio" v-model="calculator.dateBoundary" value="neither"> 起止日期均不计算
-                                    </label>
-                                </div>
+                                <select class="smart-input" v-model="calculator.dateBoundary" style="border: 1px solid #e2e8f0;">
+                                    <option value="both">起止日期均计算在内</option>
+                                    <option value="startOnly">起始计算，截止不计</option>
+                                    <option value="endOnly">起始不计，截止计算</option>
+                                    <option value="neither">起止日期均不计算</option>
+                                </select>
                             </div>
                         </template>
                         
                         <div class="smart-form-group">
                             <label class="smart-label">一年为</label>
-                            <div style="display: flex; gap: 16px; font-size: 13px;">
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" v-model.number="calculator.yearBasis" :value="360"> 360天
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <input type="radio" v-model.number="calculator.yearBasis" :value="365"> 365天
-                                </label>
-                            </div>
+                            <select class="smart-input" v-model.number="calculator.yearBasis" style="width: 120px; border: 1px solid #e2e8f0;">
+                                <option :value="360">360天</option>
+                                <option :value="365">365天</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -899,8 +969,35 @@ export default {
                         </template>
                     </div>
 
-                    <div v-if="calculator.result" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 8px; border: 1px solid #a7f3d0;">
-                        <div style="font-weight: 600; color: #065f46; margin-bottom: 12px;"><i class="fas fa-check-circle" style="margin-right: 6px;"></i>计算结果</div>
+                    <!-- 3. 计算结果 - 空状态 -->
+                    <div v-if="!calculator.result" style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="font-weight: 600; color: #334155; margin-bottom: 12px;">
+                            <i class="fas fa-chart-bar" style="margin-right: 6px;"></i>计算结果
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
+                            <div>
+                                <div style="font-size: 12px; color: #64748b;">计息天数</div>
+                                <div style="font-size: 18px; font-weight: 600; color: #94a3b8;">-- 天</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #64748b;">适用利率</div>
+                                <div style="font-size: 18px; font-weight: 600; color: #94a3b8;">--%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #64748b;">利息金额</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #94a3b8;">¥--</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3. 计算结果 - 有数据 -->
+                    <div v-if="calculator.result" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 8px; border: 1px solid #a7f3d0; animation: resultFadeIn 0.3s ease-out;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div style="font-weight: 600; color: #065f46;">
+                                <i class="fas fa-check-circle" style="margin-right: 6px;"></i>计算结果
+                            </div>
+                        </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
                             <div>
                                 <div style="font-size: 12px; color: #047857;">计息天数</div>
@@ -913,6 +1010,7 @@ export default {
                             <div>
                                 <div style="font-size: 12px; color: #047857;">利息金额</div>
                                 <div style="font-size: 24px; font-weight: 700; color: #059669;">¥{{ calculator.result.interest.toLocaleString() }}</div>
+                                <div style="font-size: 11px; color: #047857; margin-top: 2px;">{{ toChineseCurrency(calculator.result.interest) }}</div>
                             </div>
                         </div>
                         
@@ -932,50 +1030,107 @@ export default {
                                 <div style="font-size: 13px; font-weight: 600; color: #065f46; margin-bottom: 12px;">
                                     <i class="fas fa-list-alt" style="margin-right: 6px;"></i>计算详单
                                 </div>
-                                <div v-for="(period, idx) in calculator.result.periods" :key="idx" 
-                                     style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 8px; border: 1px solid #d1fae5;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span :style="{
-                                                background: period.type === 'benchmark' ? '#fef3c7' : '#dbeafe',
-                                                color: period.type === 'benchmark' ? '#92400e' : '#1e40af',
-                                                padding: '2px 8px',
-                                                borderRadius: '4px',
-                                                fontSize: '11px',
-                                                fontWeight: '600'
-                                            }">{{ period.typeLabel }}</span>
-                                            <span style="font-size: 12px; color: #64748b;">{{ period.startDate }} ~ {{ period.endDate }}</span>
-                                        </div>
-                                        <div style="font-size: 16px; font-weight: 700; color: #059669;">¥{{ period.interest.toLocaleString() }}</div>
+                                
+                                <div style="background: white; border-radius: 8px; border: 1px solid #10b981; overflow: hidden;">
+                                    <div style="background: #10b981; color: white; padding: 10px 16px; font-weight: 600; font-size: 14px; text-align: center;">
+                                        利息计算明细
                                     </div>
-                                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; color: #64748b;">
-                                        <div><span style="color: #94a3b8;">天数：</span>{{ period.days }}天</div>
-                                        <div><span style="color: #94a3b8;">基础利率：</span>{{ period.baseRate }}</div>
-                                        <div><span style="color: #94a3b8;">调整：</span>{{ period.adjustmentDesc }}</div>
-                                        <div><span style="color: #94a3b8;">适用利率：</span>{{ period.adjustedRate }}</div>
+                                    <div style="padding: 12px; overflow-x: auto;">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                            <thead>
+                                                <tr style="background: #f0fdf4;">
+                                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #d1fae5; color: #065f46;">时间段</th>
+                                                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #d1fae5; color: #065f46;">天数</th>
+                                                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #d1fae5; color: #065f46;">LPR值</th>
+                                                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #d1fae5; color: #065f46;">利率调整</th>
+                                                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #d1fae5; color: #065f46;">金额</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(period, idx) in calculator.result.periods" :key="idx">
+                                                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                                                        <div>
+                                                            <div>{{ period.startDate }}</div>
+                                                            <div style="color: #94a3b8;">{{ period.endDate }}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td style="padding: 8px; text-align: center; border-bottom: 1px solid #e2e8f0;">{{ period.days }}</td>
+                                                    <td style="padding: 8px; text-align: center; border-bottom: 1px solid #e2e8f0;">{{ period.baseRate }}</td>
+                                                    <td style="padding: 8px; text-align: center; border-bottom: 1px solid #e2e8f0;">{{ period.adjustmentDesc }}</td>
+                                                    <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                                                        <div style="font-weight: 600; color: #059669;">¥{{ period.interest.toLocaleString() }}</div>
+                                                        <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">{{ period.formula }}</div>
+                                                    </td>
+                                                </tr>
+                                                <tr style="background: #f0fdf4;">
+                                                    <td colspan="4" style="padding: 10px 8px; text-align: right; font-weight: 600; color: #065f46;">合计</td>
+                                                    <td style="padding: 10px 8px; text-align: right; font-weight: 700; font-size: 14px; color: #059669;">¥{{ calculator.result.interest.toLocaleString() }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2e8f0; font-size: 11px; color: #94a3b8; font-family: monospace;">
-                                        {{ period.formula }} = ¥{{ period.interest.toLocaleString() }}
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: flex-end; padding-top: 8px; font-weight: 600; color: #065f46;">
-                                    合计：¥{{ calculator.result.interest.toLocaleString() }}
                                 </div>
                             </div>
                         </template>
                     </div>
 
                 </div>
-                <div class="modal-footer">
-                    <button class="smart-btn-secondary" @click="$emit('update:visible', false)">关闭</button>
-                    <button class="smart-btn-primary" style="background: #10b981;" @click="calculateInterest">
+                <div class="modal-footer" style="gap: 12px;">
+                    <button class="smart-btn-secondary" style="transition: all 0.2s; padding: 10px 20px;" @click="$emit('update:visible', false)">关闭</button>
+                    <button class="smart-btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); transition: all 0.2s; padding: 10px 24px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);" @click="calculateInterest">
                         <i class="fas fa-calculator"></i> 计算
                     </button>
-                    <button v-if="calculator.result" class="smart-btn-primary" @click="applyToCase">
+                    <button v-if="calculator.result" class="smart-btn-primary" style="transition: all 0.2s; padding: 10px 24px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);" @click="applyToCase">
                         <i class="fas fa-plus"></i> 应用到标的
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- 提示弹窗 -->
+        <div v-if="tipMessage" class="modal-overlay" style="z-index: 10000;" @click.self="closeTip">
+            <div style="
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+                width: 320px;
+                max-width: 85vw;
+                overflow: hidden;
+                animation: tipFadeIn 0.2s ease-out;
+            ">
+                <div style="padding: 28px 24px 20px 24px; text-align: center;">
+                    <div style="font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px;">提示</div>
+                    <div style="font-size: 16px; color: #475569; line-height: 1.7;">{{ tipMessage }}</div>
+                </div>
+                <div style="padding: 12px 24px 24px 24px; display: flex; justify-content: center;">
+                    <button 
+                        @click="closeTip" 
+                        style="
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 48px;
+                            border-radius: 6px;
+                            font-size: 16px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+                        "
+                    >确定</button>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        @keyframes tipFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        </style>
     `
 }

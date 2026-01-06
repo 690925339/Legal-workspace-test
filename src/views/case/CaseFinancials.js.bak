@@ -1,160 +1,139 @@
-import CaseModuleLayout from '../../components/case/CaseModuleLayout.js'
-import InterestCalculator from '../../components/case/InterestCalculator.js'
-import DelayedInterestCalculator from '../../components/case/DelayedInterestCalculator.js'
+import CaseModuleLayout from '../../components/case/CaseModuleLayout.js';
+import InterestCalculator from '../../components/case/InterestCalculator.js';
 
 /**
  * 财务信息模块
  */
 export default {
-  name: 'CaseFinancials',
-  components: {
-    CaseModuleLayout,
-    InterestCalculator,
-    DelayedInterestCalculator
-  },
-  data() {
-    return {
-      caseId: '',
-      caseData: {},
-      financialsData: {
-        // 标的子项 (替代原有的 principal/penalty 固定字段)
-        claimItems: [
-          { name: '欠款本金', amount: 500000 },
-          { name: '违约金', amount: 80000 }
-        ],
-        attorneyFee: 85000,
-        isAttorneyFeeIncluded: false, // 律师费是否包含在标的中
-        courtCost: 11300,
-        billableHours: 45.5
-      },
-      showFinancialsModal: false,
-      editForm: {
-        claimItems: []
-      },
-      // 利息计算器显示状态
-      showCalculatorModal: false,
-      // 迟延履行利息计算器显示状态
-      showDelayedCalculatorModal: false
-    }
-  },
-  computed: {
-    // 自动计算诉讼标的额
-    totalClaimAmount() {
-      if (!this.financialsData.claimItems) return 0
-      return this.financialsData.claimItems.reduce(
-        (sum, item) => sum + (Number(item.amount) || 0),
-        0
-      )
+    name: 'CaseFinancials',
+    components: {
+        CaseModuleLayout,
+        InterestCalculator
     },
-    // 编辑态的实时计算
-    editTotalAmount() {
-      if (!this.editForm || !this.editForm.claimItems) return 0
-      return this.editForm.claimItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
-    }
-  },
-  watch: {
-    'editForm.isAttorneyFeeIncluded'(val) {
-      if (!this.editForm.claimItems) return
-      const existingIndex = this.editForm.claimItems.findIndex(i => i.name === '律师费')
+    data() {
+        return {
+            caseId: '',
+            caseData: {},
+            financialsData: {
+                // 标的子项 (替代原有的 principal/penalty 固定字段)
+                claimItems: [
+                    { name: '欠款本金', amount: 500000 },
+                    { name: '违约金', amount: 80000 }
+                ],
+                attorneyFee: 85000,
+                isAttorneyFeeIncluded: false, // 律师费是否包含在标的中
+                courtCost: 11300,
+                billableHours: 45.5
+            },
+            showFinancialsModal: false,
+            editForm: {
+                claimItems: []
+            },
+            // 利息计算器显示状态
+            showCalculatorModal: false
+        };
+    },
+    computed: {
+        // 自动计算诉讼标的额
+        totalClaimAmount() {
+            if (!this.financialsData.claimItems) return 0;
+            return this.financialsData.claimItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        },
+        // 编辑态的实时计算
+        editTotalAmount() {
+            if (!this.editForm || !this.editForm.claimItems) return 0;
+            return this.editForm.claimItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        }
+    },
+    watch: {
+        'editForm.isAttorneyFeeIncluded'(val) {
+            if (!this.editForm.claimItems) return;
+            const existingIndex = this.editForm.claimItems.findIndex(i => i.name === '律师费');
 
-      if (val) {
-        // Checked: Add if missing
-        if (existingIndex === -1) {
-          this.editForm.claimItems.push({ name: '律师费', amount: this.editForm.attorneyFee || 0 })
+            if (val) {
+                // Checked: Add if missing
+                if (existingIndex === -1) {
+                    this.editForm.claimItems.push({ name: '律师费', amount: this.editForm.attorneyFee || 0 });
+                }
+            } else {
+                // Unchecked: Remove if exists
+                if (existingIndex !== -1) {
+                    this.editForm.claimItems.splice(existingIndex, 1);
+                }
+            }
+        },
+        'editForm.attorneyFee'(val) {
+            if (this.editForm.isAttorneyFeeIncluded) {
+                const item = this.editForm.claimItems.find(i => i.name === '律师费');
+                if (item) {
+                    item.amount = val || 0;
+                }
+            }
+        },
+        'editForm.claimItems': {
+            handler(newVal) {
+                if (!newVal) return;
+                // Check if '律师费' exists to keep checkbox synced
+                const hasFee = newVal.some(i => i.name === '律师费');
+                if (this.editForm.isAttorneyFeeIncluded !== hasFee) {
+                    this.editForm.isAttorneyFeeIncluded = hasFee;
+                }
+            },
+            deep: true
         }
-      } else {
-        // Unchecked: Remove if exists
-        if (existingIndex !== -1) {
-          this.editForm.claimItems.splice(existingIndex, 1)
+    },
+    created() {
+        const hash = window.location.hash;
+        const match = hash.match(/\/detail\/([^/]+)/);
+        this.caseId = match ? match[1] : '1';
+    },
+    methods: {
+        onCaseLoaded(data) {
+            this.caseData = data;
+        },
+        formatCurrency(value) {
+            return '¥' + (Number(value) || 0).toLocaleString();
+        },
+        editFinancials() {
+            // 深拷贝，防止编辑时直接修改原数据
+            this.editForm = JSON.parse(JSON.stringify(this.financialsData));
+            // 防御性处理：确保 claimItems 数组存在
+            if (!this.editForm.claimItems) {
+                this.editForm.claimItems = [];
+            }
+            this.showFinancialsModal = true;
+        },
+        addClaimItem() {
+            if (!this.editForm.claimItems) this.editForm.claimItems = [];
+            this.editForm.claimItems.push({ name: '', amount: 0 });
+        },
+        removeClaimItem(index) {
+            this.editForm.claimItems.splice(index, 1);
+        },
+        saveFinancials() {
+            // 简单校验
+            if (this.editForm.claimItems.some(item => !item.name)) {
+                alert('请输入完整的标的项名称');
+                return;
+            }
+            this.financialsData = JSON.parse(JSON.stringify(this.editForm));
+            this.showFinancialsModal = false;
+        },
+        openCalculator() {
+            this.showCalculatorModal = true;
+        },
+        handleInterestApplied(amount) {
+            const name = '利息/违约金';
+            const existingIndex = this.financialsData.claimItems.findIndex(i => i.name === name);
+            if (existingIndex !== -1) {
+                this.financialsData.claimItems[existingIndex].amount = amount;
+            } else {
+                this.financialsData.claimItems.push({ name: name, amount: amount });
+            }
+            this.showCalculatorModal = false;
         }
-      }
     },
-    'editForm.attorneyFee'(val) {
-      if (this.editForm.isAttorneyFeeIncluded) {
-        const item = this.editForm.claimItems.find(i => i.name === '律师费')
-        if (item) {
-          item.amount = val || 0
-        }
-      }
-    },
-    'editForm.claimItems': {
-      handler(newVal) {
-        if (!newVal) return
-        // Check if '律师费' exists to keep checkbox synced
-        const hasFee = newVal.some(i => i.name === '律师费')
-        if (this.editForm.isAttorneyFeeIncluded !== hasFee) {
-          this.editForm.isAttorneyFeeIncluded = hasFee
-        }
-      },
-      deep: true
-    }
-  },
-  created() {
-    const hash = window.location.hash
-    const match = hash.match(/\/detail\/([^/]+)/)
-    this.caseId = match ? match[1] : '1'
-  },
-  methods: {
-    onCaseLoaded(data) {
-      this.caseData = data
-    },
-    formatCurrency(value) {
-      return '¥' + (Number(value) || 0).toLocaleString()
-    },
-    editFinancials() {
-      // 深拷贝，防止编辑时直接修改原数据
-      this.editForm = JSON.parse(JSON.stringify(this.financialsData))
-      // 防御性处理：确保 claimItems 数组存在
-      if (!this.editForm.claimItems) {
-        this.editForm.claimItems = []
-      }
-      this.showFinancialsModal = true
-    },
-    addClaimItem() {
-      if (!this.editForm.claimItems) this.editForm.claimItems = []
-      this.editForm.claimItems.push({ name: '', amount: 0 })
-    },
-    removeClaimItem(index) {
-      this.editForm.claimItems.splice(index, 1)
-    },
-    saveFinancials() {
-      // 简单校验
-      if (this.editForm.claimItems.some(item => !item.name)) {
-        alert('请输入完整的标的项名称')
-        return
-      }
-      this.financialsData = JSON.parse(JSON.stringify(this.editForm))
-      this.showFinancialsModal = false
-    },
-    openCalculator() {
-      this.showCalculatorModal = true
-    },
-    handleInterestApplied(amount) {
-      const name = '利息/违约金'
-      const existingIndex = this.financialsData.claimItems.findIndex(i => i.name === name)
-      if (existingIndex !== -1) {
-        this.financialsData.claimItems[existingIndex].amount = amount
-      } else {
-        this.financialsData.claimItems.push({ name: name, amount: amount })
-      }
-      this.showCalculatorModal = false
-    },
-    openDelayedCalculator() {
-      this.showDelayedCalculatorModal = true
-    },
-    handleDelayedInterestApplied(result) {
-      // 添加迟延履行利息到标的组成
-      const name = '迟延履行利息'
-      const existingIndex = this.financialsData.claimItems.findIndex(i => i.name === name)
-      if (existingIndex !== -1) {
-        this.financialsData.claimItems[existingIndex].amount = result.totalInterest
-      } else {
-        this.financialsData.claimItems.push({ name: name, amount: result.totalInterest })
-      }
-      this.showDelayedCalculatorModal = false
-    }
-  },
-  template: `
+    template: `
         <CaseModuleLayout :case-id="caseId" active-module="financials" @case-loaded="onCaseLoaded">
             <div class="tab-pane">
                 <div class="modern-card">
@@ -202,24 +181,14 @@ export default {
 
                     <!-- 利息计算器入口 -->
                     <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e2e8f0;">
-                        <div style="display: flex; gap: 12px;">
-                            <button 
-                                class="smart-btn-secondary" 
-                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;"
-                                @click="openCalculator"
-                            >
-                                <i class="fas fa-calculator"></i>
-                                利息/违约金/占用费计算器
-                            </button>
-                            <button 
-                                class="smart-btn-secondary" 
-                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: #fffbeb; border-color: #fcd34d; color: #92400e;"
-                                @click="openDelayedCalculator"
-                            >
-                                <i class="fas fa-clock"></i>
-                                迟延履行利息计算器
-                            </button>
-                        </div>
+                        <button 
+                            class="smart-btn-secondary" 
+                            style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;"
+                            @click="openCalculator"
+                        >
+                            <i class="fas fa-calculator"></i>
+                            利息/违约金/占用费计算器
+                        </button>
                     </div>
                 </div>
             </div>
@@ -318,14 +287,6 @@ export default {
                 @apply="handleInterestApplied" 
             />
 
-            <!-- 迟延履行利息计算器组件 -->
-            <DelayedInterestCalculator 
-                :visible="showDelayedCalculatorModal" 
-                :initial-principal="totalClaimAmount" 
-                @update:visible="showDelayedCalculatorModal = $event" 
-                @apply="handleDelayedInterestApplied" 
-            />
-
         </CaseModuleLayout>
     `
-}
+};

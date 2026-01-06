@@ -84,21 +84,41 @@
 
         <!-- 利息计算器入口 -->
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e2e8f0">
-          <button
-            class="smart-btn-secondary"
-            style="
-              width: 100%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 8px;
-              padding: 12px;
-            "
-            @click="openCalculator"
-          >
-            <i class="fas fa-calculator" />
-            利息/违约金/占用费计算器
-          </button>
+          <div style="display: flex; gap: 12px">
+            <button
+              class="smart-btn-secondary"
+              style="
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 12px;
+              "
+              @click="openCalculator"
+            >
+              <i class="fas fa-calculator" />
+              利息/违约金/占用费计算器
+            </button>
+            <button
+              class="smart-btn-secondary"
+              style="
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 12px;
+                background: #fffbeb;
+                border-color: #fcd34d;
+                color: #92400e;
+              "
+              @click="openDelayedCalculator"
+            >
+              <i class="fas fa-clock" />
+              迟延履行利息计算器
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -272,6 +292,14 @@
       @update:visible="showCalculatorModal = $event"
       @apply="handleInterestApplied"
     />
+
+    <!-- 迟延履行利息计算器组件 -->
+    <DelayedInterestCalculator
+      :visible="showDelayedCalculatorModal"
+      :initial-principal="totalClaimAmount"
+      @update:visible="showDelayedCalculatorModal = $event"
+      @apply="handleDelayedInterestApplied"
+    />
   </CaseModuleLayout>
 </template>
 
@@ -279,6 +307,7 @@
 import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import InterestCalculator from '@/components/case/InterestCalculator.js'
+import DelayedInterestCalculator from '@/components/case/DelayedInterestCalculator.js'
 import { useCaseData, useModal } from '@/features/case/composables'
 import { financialService } from '@/features/case/services'
 
@@ -287,7 +316,8 @@ export default {
 
   components: {
     CaseModuleLayout,
-    InterestCalculator
+    InterestCalculator,
+    DelayedInterestCalculator
   },
 
   setup() {
@@ -305,6 +335,11 @@ export default {
     const showCalculatorModal = computed({
       get: () => isModalOpen('calculator'),
       set: val => (val ? openModal('calculator') : closeModal('calculator'))
+    })
+
+    const showDelayedCalculatorModal = computed({
+      get: () => isModalOpen('delayedCalculator'),
+      set: val => (val ? openModal('delayedCalculator') : closeModal('delayedCalculator'))
     })
 
     // 3. 财务数据（从数据库加载）
@@ -470,6 +505,21 @@ export default {
       closeModal('calculator')
     }
 
+    const openDelayedCalculator = () => {
+      openModal('delayedCalculator')
+    }
+
+    const handleDelayedInterestApplied = result => {
+      const name = '迟延履行利息'
+      const existingIndex = financialsData.value.claimItems.findIndex(i => i.name === name)
+      if (existingIndex !== -1) {
+        financialsData.value.claimItems[existingIndex].amount = result.totalInterest
+      } else {
+        financialsData.value.claimItems.push({ name: name, amount: result.totalInterest })
+      }
+      closeModal('delayedCalculator')
+    }
+
     return {
       caseId,
       onCaseLoaded,
@@ -485,7 +535,10 @@ export default {
       removeClaimItem,
       saveFinancials,
       openCalculator,
-      handleInterestApplied
+      handleInterestApplied,
+      showDelayedCalculatorModal,
+      openDelayedCalculator,
+      handleDelayedInterestApplied
     }
   }
 }
