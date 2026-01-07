@@ -613,7 +613,7 @@ export default {
           message: '确定要删除该当事人吗？此操作无法撤销。',
           type: 'danger'
         })
-        
+
         try {
           await _deleteStakeholder(type, id, caseId.value)
         } catch (e) {
@@ -644,7 +644,6 @@ export default {
       addStakeholder,
       editStakeholder,
       deleteStakeholder,
-      saveStakeholder,
       saveStakeholder,
       showStakeholderModal,
       confirmState,

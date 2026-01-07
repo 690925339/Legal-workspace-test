@@ -36,9 +36,16 @@
                       type="text"
                       class="smart-input"
                       disabled
-                      style="background: #f1f5f9; cursor: not-allowed; font-family: monospace; font-size: 12px"
+                      style="
+                        background: #f1f5f9;
+                        cursor: not-allowed;
+                        font-family: monospace;
+                        font-size: 12px;
+                      "
                     />
-                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">系统自动生成</span>
+                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px"
+                      >系统自动生成</span
+                    >
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">案号</label>
@@ -48,7 +55,9 @@
                       placeholder="如 (2025)京0105民初67890号"
                       class="smart-input"
                     />
-                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">法院正式案号，立案后填写</span>
+                    <span style="font-size: 11px; color: #94a3b8; margin-top: 4px"
+                      >法院正式案号，立案后填写</span
+                    >
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label required">案由 (一级)</label>
@@ -162,7 +171,11 @@
                       </div>
                       <div class="smart-form-group" style="margin-bottom: 0">
                         <label class="smart-label">法定代表人</label>
-                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
+                        <input
+                          v-model="party.legalRepresentative"
+                          type="text"
+                          class="smart-input"
+                        />
                       </div>
 
                       <!-- Contact Info -->
@@ -257,7 +270,11 @@
                       </div>
                       <div class="smart-form-group" style="margin-bottom: 0">
                         <label class="smart-label">法定代表人</label>
-                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
+                        <input
+                          v-model="party.legalRepresentative"
+                          type="text"
+                          class="smart-input"
+                        />
                       </div>
 
                       <!-- Contact Info -->
@@ -325,11 +342,7 @@
                       :key="'thirdParty-' + index"
                       class="party-item"
                     >
-                      <button
-                        type="button"
-                        class="remove-btn"
-                        @click="removeThirdParty(index)"
-                      >
+                      <button type="button" class="remove-btn" @click="removeThirdParty(index)">
                         <i class="fas fa-trash-alt" />
                       </button>
 
@@ -351,7 +364,11 @@
                       </div>
                       <div class="smart-form-group" style="margin-bottom: 0">
                         <label class="smart-label">法定代表人</label>
-                        <input v-model="party.legalRepresentative" type="text" class="smart-input" />
+                        <input
+                          v-model="party.legalRepresentative"
+                          type="text"
+                          class="smart-input"
+                        />
                       </div>
 
                       <!-- Contact Info -->
@@ -594,7 +611,10 @@
 
     <!-- Toast Component -->
     <div v-if="toast.show" class="toast-notification" :class="toast.type">
-      <i class="fas" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+      <i
+        class="fas"
+        :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"
+      />
       {{ toast.message }}
     </div>
   </div>
@@ -602,7 +622,7 @@
 
 <script>
 import { caseService, financialService, stakeholderService } from '@/features/case/services'
-import { ref } from 'vue'
+// import { ref } from 'vue'
 
 export default {
   name: 'CaseForm',
@@ -613,6 +633,10 @@ export default {
     },
     editId: {
       type: [String, Number],
+      default: null
+    },
+    initialData: {
+      type: Object,
       default: null
     }
   },
@@ -665,7 +689,17 @@ export default {
     visible(newVal) {
       if (newVal) {
         if (this.editId) {
-          this.loadCaseData(this.editId)
+          // 检查是否是预加载的完整数据（包含 caseData, financials, stakeholders）
+          if (this.initialData && this.initialData.caseData) {
+            // 使用预加载的完整数据，无需再请求
+            this.applyPreloadedData(this.initialData)
+          } else if (this.initialData) {
+            // 兼容旧的基础数据格式
+            this.applyInitialData(this.initialData)
+            this.loadCaseData(this.editId)
+          } else {
+            this.loadCaseData(this.editId)
+          }
         } else {
           this.resetForm()
         }
@@ -711,6 +745,93 @@ export default {
     }
   },
   methods: {
+    // 使用缓存数据快速填充基础表单字段（秒开）
+    applyInitialData(data) {
+      // 映射列表数据格式到表单格式
+      this.form.name = data.name || ''
+      this.form.caseId = data.code || ''
+      this.form.type = data.type || ''
+      this.form.caseStage = data.stage || ''
+      this.form.court = data.court || ''
+      this.form.status = data.status || 'active'
+      // 其他字段（财务、当事人等）将由 loadCaseData 加载
+      console.log('[CaseForm] 使用缓存数据秒开')
+    },
+    // 使用预加载的完整数据填充表单（零延迟）
+    applyPreloadedData({ caseData, financials, stakeholders }) {
+      console.log('[CaseForm] 使用预加载完整数据')
+      const data = caseData
+      const fin = financials || {
+        claim_items: [],
+        attorney_fee: '',
+        attorney_fee_included: false,
+        court_cost: '',
+        billable_hours: ''
+      }
+
+      // 类型映射
+      const typeMap = { civil: '民事', criminal: '刑事', administrative: '行政', ip: '知识产权' }
+      const type = typeMap[data.case_type] || data.case_type || '民事'
+
+      // 处理当事人分类
+      let plaintiffs = []
+      let defendants = []
+      let thirdParties = []
+      const emptyStakeholder = () => ({
+        name: '',
+        entityType: 'person',
+        idNumber: '',
+        legalRepresentative: '',
+        contactName: '',
+        contactRole: '',
+        contactPhone: '',
+        contactEmail: ''
+      })
+      ;(stakeholders || []).forEach(s => {
+        const item = {
+          id: s.id,
+          name: s.name,
+          entityType: s.entity_type || 'person',
+          idNumber: s.id_number || '',
+          legalRepresentative: s.legal_representative || '',
+          contactName: s.contact_name || '',
+          contactRole: s.contact_role || '',
+          contactPhone: s.contact_phone || '',
+          contactEmail: s.contact_email || ''
+        }
+        if (s.type === 'plaintiff') plaintiffs.push(item)
+        else if (s.type === 'defendant') defendants.push(item)
+        else if (s.type === 'third_party') thirdParties.push(item)
+      })
+      if (plaintiffs.length === 0) plaintiffs.push(emptyStakeholder())
+      if (defendants.length === 0) defendants.push(emptyStakeholder())
+
+      this.form = {
+        name: data.case_title || '',
+        caseId: data.case_number || '',
+        courtCaseNumber: data.court_case_number || '',
+        type: type,
+        legalCause: data.legal_cause || data.case_type || '',
+        caseStage: data.stage || '',
+        court: data.court || '',
+        judge: data.judge || data.assignee || '',
+        filingDate: data.filing_date || '',
+        deadline: data.deadline || '',
+        status: data.status || 'active',
+        plaintiffs: plaintiffs,
+        defendants: defendants,
+        thirdParties: thirdParties,
+        description: data.description || '',
+        disputeFocus: Array.isArray(data.dispute_focus) ? data.dispute_focus.join(', ') : '',
+        objective: data.objective || '',
+        amount: 0,
+        claimItems: fin.claim_items || [],
+        attorneyFee: fin.attorney_fee || '',
+        isAttorneyFeeIncluded: fin.attorney_fee_included || false,
+        courtCost: fin.court_cost || '',
+        billableHours: fin.billable_hours || ''
+      }
+    },
     async resetForm() {
       const emptyStakeholder = () => ({
         name: '',
@@ -759,57 +880,54 @@ export default {
     async loadCaseData(id) {
       console.log('Loading case data for:', id)
       try {
-        const data = await caseService.getById(id)
-        
+        // 并行加载所有数据，减少总等待时间
+        const [data, financials, stakeholders] = await Promise.all([
+          caseService.getById(id),
+          financialService.get(id).catch(err => {
+            console.warn('Failed to load financials:', err)
+            return {
+              claim_items: [],
+              attorney_fee: '',
+              attorney_fee_included: false,
+              court_cost: '',
+              billable_hours: ''
+            }
+          }),
+          stakeholderService.getList(id).catch(err => {
+            console.warn('Failed to load stakeholders:', err)
+            return []
+          })
+        ])
+
         // 类型映射：兼容英文旧数据
         const typeMap = { civil: '民事', criminal: '刑事', administrative: '行政', ip: '知识产权' }
         let type = typeMap[data.case_type] || data.case_type || '民事'
 
-        // 加载财务信息
-        let financials = {
-            claim_items: [],
-            attorney_fee: '',
-            attorney_fee_included: false,
-            court_cost: '',
-            billable_hours: ''
-        };
-        try {
-            financials = await financialService.get(id) || financials;
-        } catch (err) {
-            console.warn('Failed to load financials:', err);
-        }
+        // 处理当事人分类
+        let plaintiffs = []
+        let defendants = []
+        let thirdParties = []
+        ;(stakeholders || []).forEach(s => {
+          const item = {
+            id: s.id,
+            name: s.name,
+            entityType: s.entity_type || 'person',
+            idNumber: s.id_number || '',
+            legalRepresentative: s.legal_representative || '',
+            contactName: s.contact_name || '',
+            contactRole: s.contact_role || '',
+            contactPhone: s.contact_phone || '',
+            contactEmail: s.contact_email || ''
+          }
+          if (s.type === 'plaintiff') {
+            plaintiffs.push(item)
+          } else if (s.type === 'defendant') {
+            defendants.push(item)
+          } else if (s.type === 'third_party') {
+            thirdParties.push(item)
+          }
+        })
 
-        // 加载当事人信息
-        let plaintiffs = [];
-        let defendants = [];
-        let thirdParties = [];
-        try {
-            const stakeholders = await stakeholderService.getList(id) || [];
-            // 根据 type 字段分类
-            stakeholders.forEach(s => {
-                const item = {
-                    id: s.id,
-                    name: s.name,
-                    entityType: s.entity_type || 'person',
-                    idNumber: s.id_number || '',
-                    legalRepresentative: s.legal_representative || '',
-                    contactName: s.contact_name || '',
-                    contactRole: s.contact_role || '',
-                    contactPhone: s.contact_phone || '',
-                    contactEmail: s.contact_email || ''
-                };
-                if (s.type === 'plaintiff') {
-                    plaintiffs.push(item);
-                } else if (s.type === 'defendant') {
-                    defendants.push(item);
-                } else if (s.type === 'third_party') {
-                    thirdParties.push(item);
-                }
-            });
-        } catch (err) {
-            console.warn('Failed to load stakeholders:', err);
-        }
-        
         // 定义空当事人模板
         const emptyStakeholder = () => ({
           name: '',
@@ -821,16 +939,16 @@ export default {
           contactPhone: '',
           contactEmail: ''
         })
-        
+
         // 保证原告和被告至少有一行
-        if (plaintiffs.length === 0) plaintiffs.push(emptyStakeholder());
-        if (defendants.length === 0) defendants.push(emptyStakeholder());
+        if (plaintiffs.length === 0) plaintiffs.push(emptyStakeholder())
+        if (defendants.length === 0) defendants.push(emptyStakeholder())
 
         this.form = {
           name: data.case_title || '',
           caseId: data.case_number || '',
           courtCaseNumber: data.court_case_number || '',
-          type: type, 
+          type: type,
           legalCause: data.legal_cause || data.case_type || '',
           caseStage: data.stage || '',
           court: data.court || '',
@@ -934,7 +1052,7 @@ export default {
             : [],
           objective: this.form.objective
         }
-        
+
         let savedCaseId = this.editId
 
         if (this.isEdit) {
@@ -946,44 +1064,44 @@ export default {
 
         // 保存财务信息
         if (savedCaseId) {
-            const financialData = {
-                claim_items: this.form.claimItems,
-                attorney_fee: this.form.attorneyFee ? Number(this.form.attorneyFee) : null,
-                attorney_fee_included: this.form.isAttorneyFeeIncluded,
-                court_cost: this.form.courtCost ? Number(this.form.courtCost) : null,
-                billable_hours: this.form.billableHours ? Number(this.form.billableHours) : null
+          const financialData = {
+            claim_items: this.form.claimItems,
+            attorney_fee: this.form.attorneyFee ? Number(this.form.attorneyFee) : null,
+            attorney_fee_included: this.form.isAttorneyFeeIncluded,
+            court_cost: this.form.courtCost ? Number(this.form.courtCost) : null,
+            billable_hours: this.form.billableHours ? Number(this.form.billableHours) : null
+          }
+          await financialService.upsert(savedCaseId, financialData)
+
+          // 保存当事人信息的辅助函数
+          const saveStakeholders = async (list, type) => {
+            for (const party of list) {
+              if (!party.name) continue
+              const payload = {
+                name: party.name,
+                type: type,
+                entity_type: party.entityType || 'person',
+                id_number: party.idNumber || null,
+                legal_representative: party.legalRepresentative || null,
+                contact_name: party.contactName || null,
+                contact_role: party.contactRole || null,
+                contact_phone: party.contactPhone || null,
+                contact_email: party.contactEmail || null
+              }
+              if (party.id) {
+                await stakeholderService.update(party.id, payload)
+              } else {
+                await stakeholderService.create(savedCaseId, payload)
+              }
             }
-            await financialService.upsert(savedCaseId, financialData)
-            
-            // 保存当事人信息的辅助函数
-            const saveStakeholders = async (list, type) => {
-                for (const party of list) {
-                    if (!party.name) continue;
-                    const payload = {
-                        name: party.name,
-                        type: type,
-                        entity_type: party.entityType || 'person',
-                        id_number: party.idNumber || null,
-                        legal_representative: party.legalRepresentative || null,
-                        contact_name: party.contactName || null,
-                        contact_role: party.contactRole || null,
-                        contact_phone: party.contactPhone || null,
-                        contact_email: party.contactEmail || null
-                    };
-                    if (party.id) {
-                        await stakeholderService.update(party.id, payload);
-                    } else {
-                        await stakeholderService.create(savedCaseId, payload);
-                    }
-                }
-            }
-            
-            // 保存原告
-            await saveStakeholders(this.form.plaintiffs, 'plaintiff')
-            // 保存被告
-            await saveStakeholders(this.form.defendants, 'defendant')
-            // 保存第三人
-            await saveStakeholders(this.form.thirdParties, 'third_party')
+          }
+
+          // 保存原告
+          await saveStakeholders(this.form.plaintiffs, 'plaintiff')
+          // 保存被告
+          await saveStakeholders(this.form.defendants, 'defendant')
+          // 保存第三人
+          await saveStakeholders(this.form.thirdParties, 'third_party')
         }
 
         this.$emit('saved', this.form)
@@ -1212,7 +1330,7 @@ export default {
   transform: translate(-50%, -50%);
   padding: 16px 32px;
   border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   z-index: 2000;
   display: flex;
   align-items: center;

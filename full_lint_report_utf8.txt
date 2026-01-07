@@ -1,0 +1,15 @@
+﻿E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\components\__tests__\HistoryModal.test.js: line 56, col 19, Error - 'modal' is assigned a value but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\config\supabase.js: line 229, col 21, Error - Empty block statement. (no-empty)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\auth\views\ForgotPassword.vue: line 153, col 17, Error - 'data' is assigned a value but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\CaseBasicInfo.vue: line 1001, col 10, Error - 'caseService' is defined but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\CaseBasicInfo.vue: line 1150, col 7, Error - 'saving' is assigned a value but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\CaseFacts.vue: line 149, col 13, Error - 'modals' is assigned a value but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\CaseStakeholders.vue: line 777, col 7, Error - Duplicate key 'saveStakeholder'. (no-dupe-keys)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\CaseStakeholders.vue: line 777, col 7, Error - Duplicate key 'saveStakeholder'. May cause name collision in script or template tag. (vue/no-dupe-keys)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\modules\analysis\QuoteGenerator.vue: line 244, col 28, Warning - Prop "caseData" should define at least its type. (vue/require-prop-types)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\services\__tests__\caseService.spec.js: line 4, col 10, Error - 'apiClient' is defined but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\case\views\CaseForm.vue: line 796, col 10, Error - 'ref' is defined but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\legal-research\views\CaseSearchResults.js: line 404, col 19, Error - 'textLower' is assigned a value but never used. (no-unused-vars)
+E:\宸ヤ綔鍙癨odoo\legal-workspace-vue\src\features\legal-research\views\RegulationSearchResults.js: line 208, col 39, Error - 'regulation' is defined but never used. (no-unused-vars)
+
+13 problems

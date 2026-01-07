@@ -75,10 +75,7 @@
           帮助文档
         </a>
 
-        <a
-          class="menu-item"
-          @click.prevent="openFeedback"
-        >
+        <a class="menu-item" @click.prevent="openFeedback">
           <i class="fas fa-comment-alt" />
           产品反馈
         </a>

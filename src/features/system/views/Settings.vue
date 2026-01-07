@@ -10,25 +10,21 @@
       <div class="avatar-section">
         <div class="avatar-preview">
           <img v-if="user.avatar" :src="user.avatar" alt="用户头像" />
-          <i v-else class="fas fa-user"></i>
+          <i v-else class="fas fa-user" />
         </div>
         <div class="avatar-actions">
           <h3>头像</h3>
           <div class="action-buttons">
             <label class="smart-btn-secondary">
               更换头像
-              <input 
-                type="file" 
-                @change="handleAvatarChange" 
-                accept="image/*" 
-                style="display: none;"
+              <input
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="handleAvatarChange"
               />
             </label>
-            <button 
-              v-if="user.avatar" 
-              @click="user.avatar = null" 
-              class="text-btn danger"
-            >
+            <button v-if="user.avatar" class="text-btn danger" @click="user.avatar = null">
               删除
             </button>
           </div>
@@ -61,12 +57,8 @@
 
       <!-- Actions -->
       <div class="form-actions">
-        <button 
-          @click="saveSettings" 
-          class="smart-btn-primary" 
-          :disabled="isSaving"
-        >
-          <i v-if="isSaving" class="fas fa-spinner fa-spin"></i>
+        <button class="smart-btn-primary" :disabled="isSaving" @click="saveSettings">
+          <i v-if="isSaving" class="fas fa-spinner fa-spin" />
           <span v-else>保存更改</span>
         </button>
       </div>
@@ -77,7 +69,7 @@
 <script>
 export default {
   name: 'Settings',
-  
+
   data() {
     return {
       user: {
@@ -97,7 +89,7 @@ export default {
       isSaving: false
     }
   },
-  
+
   methods: {
     handleAvatarChange(event) {
       const file = event.target.files[0]
@@ -105,7 +97,7 @@ export default {
         this.user.avatar = URL.createObjectURL(file)
       }
     },
-    
+
     saveSettings() {
       this.isSaving = true
       setTimeout(() => {
@@ -247,11 +239,11 @@ export default {
   .settings-page {
     padding: 20px;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .avatar-section {
     flex-direction: column;
     text-align: center;

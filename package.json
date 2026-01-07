@@ -15,6 +15,7 @@
     "help:dev": "vitepress dev help --port 5174",
     "help:build": "vitepress build help",
     "help:preview": "vitepress preview help",
+    "mock:server": "cd tools/mock-server && npm start",
     "prepare": "husky"
   },
   "dependencies": {

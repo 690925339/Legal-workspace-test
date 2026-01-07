@@ -453,6 +453,18 @@ export default {
       return '¥' + (Number(value) || 0).toLocaleString()
     }
 
+    // 保存数据到后端的通用方法
+    const persistFinancials = async sourceData => {
+      const dbData = {
+        claim_items: sourceData.claimItems,
+        attorney_fee: Number(sourceData.attorneyFee) || 0,
+        attorney_fee_included: sourceData.isAttorneyFeeIncluded,
+        court_cost: Number(sourceData.courtCost) || 0,
+        billable_hours: Number(sourceData.billableHours) || 0
+      }
+      return await financialService.upsert(caseId.value, dbData)
+    }
+
     const editFinancials = () => {
       editForm.value = JSON.parse(JSON.stringify(financialsData.value))
       if (!editForm.value.claimItems) editForm.value.claimItems = []
@@ -474,18 +486,11 @@ export default {
         return
       }
       try {
-        // 映射前端结构到数据库字段
-        const dbData = {
-          claim_items: editForm.value.claimItems,
-          attorney_fee: Number(editForm.value.attorneyFee) || 0,
-          attorney_fee_included: editForm.value.isAttorneyFeeIncluded,
-          court_cost: Number(editForm.value.courtCost) || 0,
-          billable_hours: Number(editForm.value.billableHours) || 0
-        }
-        await financialService.upsert(caseId.value, dbData)
+        await persistFinancials(editForm.value)
         financialsData.value = JSON.parse(JSON.stringify(editForm.value))
         closeModal('financials')
       } catch (e) {
+        console.error('保存财务信息失败:', e)
         alert('保存失败: ' + e.message)
       }
     }
@@ -494,30 +499,58 @@ export default {
       openModal('calculator')
     }
 
-    const handleInterestApplied = amount => {
+    const handleInterestApplied = async amount => {
       const name = '利息/违约金'
-      const existingIndex = financialsData.value.claimItems.findIndex(i => i.name === name)
+      // 1. 基于当前数据构建新状态（不直接修改视图）
+      const newData = JSON.parse(JSON.stringify(financialsData.value))
+      if (!newData.claimItems) newData.claimItems = []
+
+      const existingIndex = newData.claimItems.findIndex(i => i.name === name)
       if (existingIndex !== -1) {
-        financialsData.value.claimItems[existingIndex].amount = amount
+        newData.claimItems[existingIndex].amount = amount
       } else {
-        financialsData.value.claimItems.push({ name: name, amount: amount })
+        newData.claimItems.push({ name: name, amount: amount })
       }
-      closeModal('calculator')
+
+      // 2. 保存到后端
+      try {
+        await persistFinancials(newData)
+        // 3. 保存成功后更新视图
+        financialsData.value = newData
+        closeModal('calculator')
+      } catch (e) {
+        console.error('自动保存利息失败:', e)
+        alert('自动保存失败，请重试')
+      }
     }
 
     const openDelayedCalculator = () => {
       openModal('delayedCalculator')
     }
 
-    const handleDelayedInterestApplied = result => {
+    const handleDelayedInterestApplied = async result => {
       const name = '迟延履行利息'
-      const existingIndex = financialsData.value.claimItems.findIndex(i => i.name === name)
+      // 1. 基于当前数据构建新状态
+      const newData = JSON.parse(JSON.stringify(financialsData.value))
+      if (!newData.claimItems) newData.claimItems = []
+
+      const existingIndex = newData.claimItems.findIndex(i => i.name === name)
       if (existingIndex !== -1) {
-        financialsData.value.claimItems[existingIndex].amount = result.totalInterest
+        newData.claimItems[existingIndex].amount = result.totalInterest
       } else {
-        financialsData.value.claimItems.push({ name: name, amount: result.totalInterest })
+        newData.claimItems.push({ name: name, amount: result.totalInterest })
       }
-      closeModal('delayedCalculator')
+
+      // 2. 保存到后端
+      try {
+        await persistFinancials(newData)
+        // 3. 保存成功后更新视图
+        financialsData.value = newData
+        closeModal('delayedCalculator')
+      } catch (e) {
+        console.error('自动保存迟延利息失败:', e)
+        alert('自动保存失败，请重试')
+      }
     }
 
     return {

@@ -6,7 +6,7 @@
         <div class="smart-header-title-row">
           <div class="smart-header-actions">
             <button class="smart-btn-secondary" @click="openHistory">
-              <i class="fas fa-history"></i> 历史记录
+              <i class="fas fa-history" /> 历史记录
             </button>
           </div>
           <h1>文书生成，一键生成专属法律文书</h1>
@@ -15,8 +15,8 @@
 
         <!-- 标签切换 -->
         <div class="smart-tabs">
-          <button 
-            v-for="type in types" 
+          <button
+            v-for="type in types"
             :key="type.id"
             :class="['smart-tab-btn', { active: activeType === type.id }]"
             @click="switchDocType(type.id)"
@@ -27,21 +27,31 @@
       </div>
 
       <!-- 输入区域 -->
-      <div class="smart-card" v-if="!generatedDoc">
+      <div v-if="!generatedDoc" class="smart-card">
         <!-- 报价书表单 -->
-        <div v-if="activeType === 'quote'" style="padding: 24px;">
-          <div class="smart-form-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div v-if="activeType === 'quote'" style="padding: 24px">
+          <div class="smart-form-grid" style="grid-template-columns: 1fr 1fr; gap: 20px">
             <div class="smart-form-group">
               <label class="smart-label required">客户名称</label>
-              <input type="text" class="smart-input" v-model="quoteForm.clientName" placeholder="请输入客户名称">
+              <input
+                v-model="quoteForm.clientName"
+                type="text"
+                class="smart-input"
+                placeholder="请输入客户名称"
+              />
             </div>
             <div class="smart-form-group">
               <label class="smart-label">联系方式</label>
-              <input type="text" class="smart-input" v-model="quoteForm.clientContact" placeholder="电话或邮箱">
+              <input
+                v-model="quoteForm.clientContact"
+                type="text"
+                class="smart-input"
+                placeholder="电话或邮箱"
+              />
             </div>
             <div class="smart-form-group">
               <label class="smart-label">案件类型</label>
-              <select class="smart-select" v-model="quoteForm.caseType">
+              <select v-model="quoteForm.caseType" class="smart-select">
                 <option>合同纠纷</option>
                 <option>劳动争议</option>
                 <option>知识产权</option>
@@ -52,66 +62,156 @@
             </div>
             <div class="smart-form-group">
               <label class="smart-label">有效期（天）</label>
-              <input type="number" class="smart-input" v-model.number="quoteForm.validDays" min="1" max="90">
+              <input
+                v-model.number="quoteForm.validDays"
+                type="number"
+                class="smart-input"
+                min="1"
+                max="90"
+              />
             </div>
           </div>
 
-          <div class="smart-form-group" style="margin-top: 20px;">
+          <div class="smart-form-group" style="margin-top: 20px">
             <label class="smart-label required">案件描述</label>
-            <textarea class="smart-textarea" v-model="quoteForm.caseDescription" rows="4" placeholder="请简要描述案件情况" style="border: 1px solid #ccc;"></textarea>
+            <textarea
+              v-model="quoteForm.caseDescription"
+              class="smart-textarea"
+              rows="4"
+              placeholder="请简要描述案件情况"
+              style="border: 1px solid #ccc"
+            />
           </div>
 
-          <div class="smart-form-group" style="margin-top: 20px;">
+          <div class="smart-form-group" style="margin-top: 20px">
             <label class="smart-label">服务项目</label>
-            <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fafafa;">
-              <div v-for="(item, index) in quoteForm.serviceItems" :key="item.id" 
-                   style="display: flex; align-items: center; padding: 12px; background: white; border-radius: 6px; margin-bottom: 12px; border: 1px solid #e5e5e5;">
-                <input type="checkbox" v-model="item.selected" style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;">
-                
-                <div style="flex: 1; margin-right: 12px;">
-                  <input v-if="item.isCustom" type="text" v-model="item.name" class="smart-input" placeholder="请输入项目名称" style="width: 100%;">
-                  <div v-else style="font-weight: 500; color: #1a1a1a;">{{ item.name }}</div>
+            <div
+              style="
+                border: 1px solid #e5e5e5;
+                border-radius: 8px;
+                padding: 16px;
+                background: #fafafa;
+              "
+            >
+              <div
+                v-for="(item, index) in quoteForm.serviceItems"
+                :key="item.id"
+                style="
+                  display: flex;
+                  align-items: center;
+                  padding: 12px;
+                  background: white;
+                  border-radius: 6px;
+                  margin-bottom: 12px;
+                  border: 1px solid #e5e5e5;
+                "
+              >
+                <input
+                  v-model="item.selected"
+                  type="checkbox"
+                  style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer"
+                />
+
+                <div style="flex: 1; margin-right: 12px">
+                  <input
+                    v-if="item.isCustom"
+                    v-model="item.name"
+                    type="text"
+                    class="smart-input"
+                    placeholder="请输入项目名称"
+                    style="width: 100%"
+                  />
+                  <div v-else style="font-weight: 500; color: #1a1a1a">
+                    {{ item.name }}
+                  </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #666;">¥</span>
-                  <input type="number" v-model.number="item.price" 
-                         style="width: 120px; padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 4px; text-align: right;"
-                         :disabled="!item.selected">
-                  <span style="color: #666;">元/</span>
-                  <input v-if="item.isCustom" type="text" v-model="item.unit" style="width: 50px; padding: 6px; border: 1px solid #e5e5e5; border-radius: 4px; text-align: center;" placeholder="单位">
-                  <span v-else style="color: #666; min-width: 30px;">{{ item.unit }}</span>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span style="color: #666">¥</span>
+                  <input
+                    v-model.number="item.price"
+                    type="number"
+                    style="
+                      width: 120px;
+                      padding: 6px 12px;
+                      border: 1px solid #e5e5e5;
+                      border-radius: 4px;
+                      text-align: right;
+                    "
+                    :disabled="!item.selected"
+                  />
+                  <span style="color: #666">元/</span>
+                  <input
+                    v-if="item.isCustom"
+                    v-model="item.unit"
+                    type="text"
+                    style="
+                      width: 50px;
+                      padding: 6px;
+                      border: 1px solid #e5e5e5;
+                      border-radius: 4px;
+                      text-align: center;
+                    "
+                    placeholder="单位"
+                  />
+                  <span v-else style="color: #666; min-width: 30px">{{ item.unit }}</span>
                 </div>
 
-                <button class="smart-btn-secondary" style="margin-left: 12px; padding: 6px 10px; color: #94a3b8; border: none; background: transparent;" @click="removeServiceItem(index)" title="删除此项">
-                  <i class="fas fa-trash-alt"></i>
+                <button
+                  class="smart-btn-secondary"
+                  style="
+                    margin-left: 12px;
+                    padding: 6px 10px;
+                    color: #94a3b8;
+                    border: none;
+                    background: transparent;
+                  "
+                  title="删除此项"
+                  @click="removeServiceItem(index)"
+                >
+                  <i class="fas fa-trash-alt" />
                 </button>
               </div>
-              
-              <button class="smart-btn-secondary" style="width: 100%; border-style: dashed;" @click="addServiceItem">
-                <i class="fas fa-plus"></i> 添加自定义服务项目
+
+              <button
+                class="smart-btn-secondary"
+                style="width: 100%; border-style: dashed"
+                @click="addServiceItem"
+              >
+                <i class="fas fa-plus" /> 添加自定义服务项目
               </button>
             </div>
           </div>
 
-          <div class="smart-form-group" style="margin-top: 20px;">
+          <div class="smart-form-group" style="margin-top: 20px">
             <label class="smart-label">付款方式</label>
-            <input type="text" class="smart-input" v-model="quoteForm.paymentTerms" placeholder="例如：签订委托协议后3个工作日内支付">
+            <input
+              v-model="quoteForm.paymentTerms"
+              type="text"
+              class="smart-input"
+              placeholder="例如：签订委托协议后3个工作日内支付"
+            />
           </div>
 
-          <div class="smart-form-group" style="margin-top: 20px;">
+          <div class="smart-form-group" style="margin-top: 20px">
             <label class="smart-label">备注说明</label>
-            <textarea class="smart-textarea" v-model="quoteForm.remarks" rows="3" placeholder="其他需要说明的事项（选填）" style="border: 1px solid #ccc;"></textarea>
+            <textarea
+              v-model="quoteForm.remarks"
+              class="smart-textarea"
+              rows="3"
+              placeholder="其他需要说明的事项（选填）"
+              style="border: 1px solid #ccc"
+            />
           </div>
 
-          <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
-            <button 
+          <div style="margin-top: 24px; display: flex; justify-content: flex-end">
+            <button
               class="smart-btn-primary"
-              @click="generateDocument"
               :disabled="isGenerating"
-              style="min-width: 140px;"
+              style="min-width: 140px"
+              @click="generateDocument"
             >
-              <i :class="isGenerating ? 'fas fa-spinner fa-spin' : 'fas fa-file-invoice'"></i>
+              <i :class="isGenerating ? 'fas fa-spinner fa-spin' : 'fas fa-file-invoice'" />
               {{ isGenerating ? '生成中...' : '生成报价书' }}
             </button>
           </div>
@@ -119,23 +219,27 @@
 
         <!-- 起诉状/答辩状表单 -->
         <div v-else>
-          <textarea 
-            class="smart-textarea" 
+          <textarea
             v-model="inputText"
-            :placeholder="activeType === 'complaint' ? '请您尽可能详细地描述案情事实和法律诉求，包括原告和被告的身份信息，事情发生的时间、地点、起因、经过和结果信息等。' : '请您尽可能详细地描述答辩理由，包括对原告诉讼请求的意见、事实依据和法律依据等。'"
-          ></textarea>
+            class="smart-textarea"
+            :placeholder="
+              activeType === 'complaint'
+                ? '请您尽可能详细地描述案情事实和法律诉求，包括原告和被告的身份信息，事情发生的时间、地点、起因、经过和结果信息等。'
+                : '请您尽可能详细地描述答辩理由，包括对原告诉讼请求的意见、事实依据和法律依据等。'
+            "
+          />
 
           <div class="smart-card-footer">
             <div class="smart-tips">
-              <i class="fas fa-lightbulb"></i>
+              <i class="fas fa-lightbulb" />
               <span>提示：描述越详细，生成的文书质量越高</span>
             </div>
-            <button 
+            <button
               class="smart-btn-primary"
-              @click="generateDocument"
               :disabled="isGenerating || !inputText.trim()"
+              @click="generateDocument"
             >
-              <i :class="isGenerating ? 'fas fa-spinner fa-spin' : 'fas fa-magic'"></i>
+              <i :class="isGenerating ? 'fas fa-spinner fa-spin' : 'fas fa-magic'" />
               {{ isGenerating ? '生成中...' : '立即撰写' }}
             </button>
           </div>
@@ -143,18 +247,18 @@
       </div>
 
       <!-- 生成结果 -->
-      <div class="smart-result" v-else>
+      <div v-else class="smart-result">
         <div class="smart-result-header">
           <h3>{{ generatedDoc.title }}</h3>
           <div class="smart-result-actions">
             <button class="smart-result-btn" @click="copyDocument">
-              <i class="fas fa-copy"></i> 复制
+              <i class="fas fa-copy" /> 复制
             </button>
             <button class="smart-result-btn" @click="downloadDocument">
-              <i class="fas fa-download"></i> 下载
+              <i class="fas fa-download" /> 下载
             </button>
             <button class="smart-result-btn" @click="resetDocument">
-              <i class="fas fa-redo"></i> 重新生成
+              <i class="fas fa-redo" /> 重新生成
             </button>
           </div>
         </div>
@@ -165,7 +269,7 @@
 
       <!-- 底部提示 -->
       <div class="smart-footer-info">
-        <i class="fas fa-info-circle"></i>
+        <i class="fas fa-info-circle" />
         <span>生成的文书仅供参考，请根据实际情况进行修改</span>
       </div>
     </div>
@@ -270,17 +374,17 @@ const addServiceItem = () => {
   })
 }
 
-const removeServiceItem = (index) => {
+const removeServiceItem = index => {
   quoteForm.value.serviceItems.splice(index, 1)
 }
 
 // Methods
-const switchDocType = (typeId) => {
+const switchDocType = typeId => {
   activeType.value = typeId
   generatedDoc.value = null
 }
 
-const getMockDocument = (type) => {
+const getMockDocument = type => {
   let content = ''
   const date = new Date().toLocaleDateString('zh-CN')
   const validDate = new Date()
@@ -299,7 +403,8 @@ const getMockDocument = (type) => {
     content += '三、判令被告承担本案全部诉讼费用。\n\n'
     content += '事实与理由：\n'
     content += inputText.value + '\n\n'
-    content += '综上所述，被告的行为已构成违约，严重损害了原告的合法权益。为维护原告的合法权益，特依据《中华人民共和国民事诉讼法》相关规定，向贵院提起诉讼，恳请贵院依法支持原告的诉讼请求。\n\n'
+    content +=
+      '综上所述，被告的行为已构成违约，严重损害了原告的合法权益。为维护原告的合法权益，特依据《中华人民共和国民事诉讼法》相关规定，向贵院提起诉讼，恳请贵院依法支持原告的诉讼请求。\n\n'
     content += '此致\n'
     content += '[受理法院名称]\n\n'
     content += '具状人：[原告名称]\n'
@@ -315,7 +420,8 @@ const getMockDocument = (type) => {
     content += '二、本案诉讼费用由被答辩人承担。\n\n'
     content += '事实与理由：\n'
     content += inputText.value + '\n\n'
-    content += '综上所述，被答辩人的诉讼请求缺乏事实和法律依据，恳请贵院依法驳回其全部诉讼请求。\n\n'
+    content +=
+      '综上所述，被答辩人的诉讼请求缺乏事实和法律依据，恳请贵院依法驳回其全部诉讼请求。\n\n'
     content += '此致\n'
     content += '[受理法院名称]\n\n'
     content += '答辩人：[答辩人名称]\n'
@@ -449,7 +555,7 @@ const openHistory = () => {
   showHistoryModal.value = true
 }
 
-const handleHistorySelect = (record) => {
+const handleHistorySelect = record => {
   if (record.type === '起诉状') {
     activeType.value = 'complaint'
   } else if (record.type === '答辩状') {

@@ -1,5 +1,5 @@
 <template>
-  <div class="smart-page" style="overflow-y: auto;">
+  <div class="smart-page" style="overflow-y: auto">
     <div class="smart-container">
       <div class="smart-header">
         <div class="header-left">
@@ -7,7 +7,7 @@
         </div>
       </div>
 
-      <div class="smart-content" style="max-width: 1000px;">
+      <div class="smart-content" style="max-width: 1000px">
         <div class="profile-layout">
           <!-- Left Sidebar: Profile Card -->
           <div class="profile-sidebar">
@@ -15,21 +15,23 @@
               <div class="avatar-wrapper">
                 <img v-if="user.avatar" :src="user.avatar" alt="用户头像" />
                 <div v-else class="avatar-placeholder">
-                  <i class="fas fa-user"></i>
+                  <i class="fas fa-user" />
                 </div>
-                <div class="avatar-overlay" @click="triggerAvatarUpload">
-                  更换头像
-                </div>
-                <input 
-                  type="file" 
-                  ref="avatarInput" 
-                  @change="handleAvatarChange" 
-                  style="display: none;" 
+                <div class="avatar-overlay" @click="triggerAvatarUpload">更换头像</div>
+                <input
+                  ref="avatarInput"
+                  type="file"
+                  style="display: none"
                   accept="image/*"
+                  @change="handleAvatarChange"
                 />
               </div>
-              <h2 class="user-name">{{ user.name }}</h2>
-              <p class="user-title">{{ user.title }}</p>
+              <h2 class="user-name">
+                {{ user.name }}
+              </h2>
+              <p class="user-title">
+                {{ user.title }}
+              </p>
               <div class="user-tags">
                 <span class="smart-tag">{{ user.department }}</span>
                 <span class="smart-tag">{{ user.location }}</span>
@@ -38,26 +40,26 @@
 
             <div class="modern-card menu-card">
               <div class="menu-list">
-                <div 
-                  :class="['menu-item', { active: activeTab === 'basic' }]" 
+                <div
+                  :class="['menu-item', { active: activeTab === 'basic' }]"
                   @click="activeTab = 'basic'"
                 >
                   <span>基本信息</span>
-                  <i class="fas fa-chevron-right"></i>
+                  <i class="fas fa-chevron-right" />
                 </div>
-                <div 
-                  :class="['menu-item', { active: activeTab === 'security' }]" 
+                <div
+                  :class="['menu-item', { active: activeTab === 'security' }]"
                   @click="activeTab = 'security'"
                 >
                   <span>账号安全</span>
-                  <i class="fas fa-chevron-right"></i>
+                  <i class="fas fa-chevron-right" />
                 </div>
-                <div 
-                  :class="['menu-item', { active: activeTab === 'preferences' }]" 
+                <div
+                  :class="['menu-item', { active: activeTab === 'preferences' }]"
                   @click="activeTab = 'preferences'"
                 >
                   <span>偏好设置</span>
-                  <i class="fas fa-chevron-right"></i>
+                  <i class="fas fa-chevron-right" />
                 </div>
               </div>
             </div>
@@ -70,7 +72,7 @@
               <div class="card-header">
                 <div class="card-title">基本信息</div>
                 <button v-if="!isEditing" class="smart-btn-secondary" @click="isEditing = true">
-                  <i class="fas fa-edit"></i> 编辑
+                  <i class="fas fa-edit" /> 编辑
                 </button>
                 <div v-else class="edit-actions">
                   <button class="smart-btn-secondary" @click="isEditing = false">取消</button>
@@ -81,67 +83,82 @@
                 <div class="smart-form-grid">
                   <div class="smart-form-group">
                     <label class="smart-label">姓名 <span class="required">*</span></label>
-                    <input 
-                      type="text" 
-                      class="smart-input" 
-                      v-model="user.name" 
+                    <input
+                      v-model="user.name"
+                      type="text"
+                      class="smart-input"
                       :disabled="!isEditing"
-                      @blur="validateField('name')"
                       :class="{ 'has-error': errors.name }"
+                      @blur="validateField('name')"
                     />
                     <div v-if="errors.name" class="error-message">
-                      <i class="fas fa-exclamation-circle"></i> {{ errors.name }}
+                      <i class="fas fa-exclamation-circle" /> {{ errors.name }}
                     </div>
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">职位</label>
-                    <input type="text" class="smart-input" v-model="user.title" :disabled="!isEditing" />
+                    <input
+                      v-model="user.title"
+                      type="text"
+                      class="smart-input"
+                      :disabled="!isEditing"
+                    />
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">邮箱</label>
-                    <input 
-                      type="email" 
-                      class="smart-input" 
-                      v-model="user.email" 
+                    <input
+                      v-model="user.email"
+                      type="email"
+                      class="smart-input"
                       :disabled="!isEditing"
-                      @blur="validateField('email')"
                       :class="{ 'has-error': errors.email }"
+                      @blur="validateField('email')"
                     />
                     <div v-if="errors.email" class="error-message">
-                      <i class="fas fa-exclamation-circle"></i> {{ errors.email }}
+                      <i class="fas fa-exclamation-circle" /> {{ errors.email }}
                     </div>
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">手机号码</label>
-                    <input 
-                      type="text" 
-                      class="smart-input" 
-                      v-model="user.phone" 
+                    <input
+                      v-model="user.phone"
+                      type="text"
+                      class="smart-input"
                       :disabled="!isEditing"
-                      @blur="validateField('phone')"
                       :class="{ 'has-error': errors.phone }"
                       placeholder="请输入11位手机号"
+                      @blur="validateField('phone')"
                     />
                     <div v-if="errors.phone" class="error-message">
-                      <i class="fas fa-exclamation-circle"></i> {{ errors.phone }}
+                      <i class="fas fa-exclamation-circle" /> {{ errors.phone }}
                     </div>
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">所属部门</label>
-                    <input type="text" class="smart-input" v-model="user.department" :disabled="!isEditing" />
+                    <input
+                      v-model="user.department"
+                      type="text"
+                      class="smart-input"
+                      :disabled="!isEditing"
+                    />
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">办公地点</label>
-                    <input type="text" class="smart-input" v-model="user.location" :disabled="!isEditing" />
+                    <input
+                      v-model="user.location"
+                      type="text"
+                      class="smart-input"
+                      :disabled="!isEditing"
+                    />
                   </div>
                   <div class="smart-form-group full-width">
                     <label class="smart-label">个人简介</label>
-                    <textarea 
-                      class="smart-textarea" 
-                      v-model="user.bio" 
-                      :disabled="!isEditing" 
+                    <textarea
+                      v-model="user.bio"
+                      class="smart-textarea"
+                      :disabled="!isEditing"
                       rows="4"
-                    ></textarea>
+                    />
                   </div>
                 </div>
               </div>
@@ -156,15 +173,15 @@
                 <div class="password-form">
                   <div class="smart-form-group">
                     <label class="smart-label">当前密码</label>
-                    <input type="password" class="smart-input" v-model="security.currentPassword" />
+                    <input v-model="security.currentPassword" type="password" class="smart-input" />
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">新密码</label>
-                    <input type="password" class="smart-input" v-model="security.newPassword" />
+                    <input v-model="security.newPassword" type="password" class="smart-input" />
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">确认新密码</label>
-                    <input type="password" class="smart-input" v-model="security.confirmPassword" />
+                    <input v-model="security.confirmPassword" type="password" class="smart-input" />
                   </div>
                   <div class="form-actions">
                     <button class="smart-btn-primary" @click="changePassword">修改密码</button>
@@ -181,14 +198,14 @@
               <div class="card-body">
                 <div class="notification-settings">
                   <label class="checkbox-wrapper">
-                    <input type="checkbox" v-model="preferences.emailNotifications" />
+                    <input v-model="preferences.emailNotifications" type="checkbox" />
                     <div class="checkbox-content">
                       <div class="checkbox-title">邮件通知</div>
                       <div class="checkbox-desc">接收关于案件更新、任务提醒的邮件通知</div>
                     </div>
                   </label>
                   <label class="checkbox-wrapper">
-                    <input type="checkbox" v-model="preferences.smsNotifications" />
+                    <input v-model="preferences.smsNotifications" type="checkbox" />
                     <div class="checkbox-content">
                       <div class="checkbox-title">短信通知</div>
                       <div class="checkbox-desc">接收重要紧急事项的短信提醒</div>
@@ -203,14 +220,14 @@
                 <div class="system-settings">
                   <div class="smart-form-group">
                     <label class="smart-label">语言</label>
-                    <select class="smart-select" v-model="preferences.language">
+                    <select v-model="preferences.language" class="smart-select">
                       <option value="zh-CN">简体中文</option>
                       <option value="en-US">English</option>
                     </select>
                   </div>
                   <div class="smart-form-group">
                     <label class="smart-label">主题</label>
-                    <select class="smart-select" v-model="preferences.theme">
+                    <select v-model="preferences.theme" class="smart-select">
                       <option value="light">浅色模式</option>
                       <option value="dark">深色模式</option>
                       <option value="auto">跟随系统</option>
@@ -226,20 +243,19 @@
 
     <!-- Success Toast -->
     <div v-if="saveSuccess" class="success-toast">
-      <i class="fas fa-check-circle"></i>
+      <i class="fas fa-check-circle" />
       保存成功
     </div>
   </div>
 </template>
 
 <script>
-import router from '@/router/index.js'
 import { authService, getSupabaseClient } from '@/config/supabase.js'
 import { authStore } from '@/stores/auth.js'
 
 export default {
   name: 'UserProfile',
-  
+
   data() {
     return {
       activeTab: 'basic',
@@ -267,7 +283,6 @@ export default {
       isEditing: false,
       saveSuccess: false,
       isLoading: true,
-      authStore,
       errors: {
         name: '',
         email: '',
@@ -277,11 +292,11 @@ export default {
       }
     }
   },
-  
+
   async mounted() {
     await this.loadProfile()
   },
-  
+
   methods: {
     async loadProfile() {
       this.isLoading = true
@@ -348,21 +363,19 @@ export default {
           return
         }
 
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            full_name: this.user.name,
-            title: this.user.title,
-            phone: this.user.phone,
-            department: this.user.department,
-            location: this.user.location,
-            bio: this.user.bio,
-            email_notifications: this.preferences.emailNotifications,
-            sms_notifications: this.preferences.smsNotifications,
-            theme: this.preferences.theme,
-            language: this.preferences.language
-          })
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: userId,
+          full_name: this.user.name,
+          title: this.user.title,
+          phone: this.user.phone,
+          department: this.user.department,
+          location: this.user.location,
+          bio: this.user.bio,
+          email_notifications: this.preferences.emailNotifications,
+          sms_notifications: this.preferences.smsNotifications,
+          theme: this.preferences.theme,
+          language: this.preferences.language
+        })
 
         if (profileError) {
           console.error('Error updating profile:', profileError)
@@ -477,9 +490,7 @@ export default {
           return
         }
 
-        const { data: urlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName)
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
 
         const avatarUrl = urlData.publicUrl
 
@@ -626,7 +637,7 @@ export default {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 4px 0;
   font-size: 12px;
@@ -785,7 +796,7 @@ export default {
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -808,15 +819,15 @@ export default {
   .profile-layout {
     flex-direction: column;
   }
-  
+
   .profile-sidebar {
     width: 100%;
   }
-  
+
   .smart-form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .smart-form-group.full-width {
     grid-column: span 1;
   }

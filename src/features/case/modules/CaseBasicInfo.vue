@@ -19,7 +19,9 @@
             </div>
             <div class="info-row">
               <span class="label">案件ID</span>
-              <span class="value" style="font-family: monospace; font-size: 12px">{{ caseData.caseNumber || '-' }}</span>
+              <span class="value" style="font-family: monospace; font-size: 12px">{{
+                caseData.caseNumber || '-'
+              }}</span>
             </div>
             <div class="info-row">
               <span class="label">案号</span>
@@ -529,24 +531,28 @@
           </div>
           <div class="smart-form-group">
             <label class="smart-label">案件ID</label>
-            <input 
-              v-model="editForm.caseNumber" 
-              type="text" 
-              class="smart-input" 
-              disabled 
+            <input
+              v-model="editForm.caseNumber"
+              type="text"
+              class="smart-input"
+              disabled
               style="background: #f1f5f9; cursor: not-allowed"
             />
-            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">系统自动生成，不可修改</span>
+            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px"
+              >系统自动生成，不可修改</span
+            >
           </div>
           <div class="smart-form-group">
             <label class="smart-label">案号</label>
-            <input 
-              v-model="editForm.courtCaseNumber" 
-              type="text" 
-              class="smart-input" 
+            <input
+              v-model="editForm.courtCaseNumber"
+              type="text"
+              class="smart-input"
               placeholder="如 (2025)京0105民初67890号"
             />
-            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px">法院正式案号，立案后填写</span>
+            <span style="font-size: 11px; color: #94a3b8; margin-top: 4px"
+              >法院正式案号，立案后填写</span
+            >
           </div>
           <div class="smart-form-group">
             <label class="smart-label">案由</label
@@ -821,8 +827,13 @@
 import { ref, computed, watch } from 'vue'
 import CaseModuleLayout from '@/components/case/CaseModuleLayout.js'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
-import { caseService } from '@/features/case/services'
-import { useCaseData, useModal, useStakeholders, useCaseBasicInfo } from '@/features/case/composables'
+// import { caseService } from '@/features/case/services'
+import {
+  useCaseData,
+  useModal,
+  useStakeholders,
+  useCaseBasicInfo
+} from '@/features/case/composables'
 
 export default {
   name: 'CaseBasicInfo',
@@ -940,7 +951,7 @@ export default {
           message: '确定要删除该当事人吗？此操作无法撤销。',
           type: 'danger'
         })
-        
+
         try {
           await _deleteStakeholder(type, id, caseId.value)
         } catch (e) {
@@ -970,7 +981,7 @@ export default {
     // 5. 引入新的业务逻辑 Composable
     const {
       editForm,
-      saving,
+      // saving,
       newFocusInput,
       commonFocusOptions,
       initBasicInfoForm,
@@ -1053,7 +1064,7 @@ export default {
       // Confirm Modal related
       confirmState,
       handleConfirm,
-      closeConfirm,
+      closeConfirm
     }
   }
 }

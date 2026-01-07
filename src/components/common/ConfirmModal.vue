@@ -7,7 +7,7 @@
             class="fas"
             :class="type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'"
             style="margin-right: 8px"
-          ></i>
+          />
           {{ title }}
         </div>
         <button v-if="showClose" class="modal-close" @click="handleCancel">
@@ -28,7 +28,7 @@
           :disabled="loading"
           @click="handleConfirm"
         >
-          <i v-if="loading" class="fas fa-spinner fa-spin" style="margin-right: 4px"></i>
+          <i v-if="loading" class="fas fa-spinner fa-spin" style="margin-right: 4px" />
           {{ confirmText }}
         </button>
       </div>
@@ -115,7 +115,9 @@ export default {
 .modal-container {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   animation: modal-fade-in 0.2s ease-out;
 }

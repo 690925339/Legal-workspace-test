@@ -4,10 +4,10 @@
       <div class="modal-header">
         <div class="modal-title">产品反馈</div>
         <button class="modal-close" @click="close">
-          <i class="fas fa-times"></i>
+          <i class="fas fa-times" />
         </button>
       </div>
-      
+
       <div class="modal-body">
         <div class="smart-form-grid">
           <div class="smart-form-group">
@@ -24,57 +24,57 @@
 
           <div class="smart-form-group">
             <label class="smart-label required">标题</label>
-            <input 
-              type="text" 
-              class="smart-input" 
-              v-model="feedback.title" 
+            <input
+              v-model="feedback.title"
+              type="text"
+              class="smart-input"
               placeholder="请简要描述您的问题或建议"
             />
           </div>
 
           <div class="smart-form-group">
             <label class="smart-label required">详细描述</label>
-            <textarea 
-              class="smart-textarea" 
-              v-model="feedback.description" 
-              rows="6" 
+            <textarea
+              v-model="feedback.description"
+              class="smart-textarea"
+              rows="6"
               placeholder="请详细描述您遇到的问题或建议，如果是问题反馈，请包含复现步骤。"
-            ></textarea>
+            />
           </div>
 
           <div class="smart-form-group">
             <label class="smart-label">附件（截图/文档）</label>
             <div class="upload-zone" @click="triggerFileUpload">
-              <i class="fas fa-cloud-upload-alt"></i>
+              <i class="fas fa-cloud-upload-alt" />
               <div class="upload-hint">点击上传文件，或将文件拖拽至此</div>
             </div>
-            <input 
-              type="file" 
-              ref="fileInput" 
-              @change="handleFileChange" 
-              multiple 
-              style="display: none;"
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              style="display: none"
+              @change="handleFileChange"
             />
-            
+
             <!-- Attachment List -->
             <div v-if="feedback.attachments.length > 0" class="attachment-list">
-              <div 
-                v-for="(file, index) in feedback.attachments" 
-                :key="index" 
+              <div
+                v-for="(file, index) in feedback.attachments"
+                :key="index"
                 class="attachment-item"
               >
                 <span>{{ file.name }}</span>
-                <i class="fas fa-times" @click="removeAttachment(index)"></i>
+                <i class="fas fa-times" @click="removeAttachment(index)" />
               </div>
             </div>
           </div>
 
           <div class="smart-form-group">
             <label class="smart-label">联系邮箱（选填）</label>
-            <input 
-              type="email" 
-              class="smart-input" 
-              v-model="feedback.email" 
+            <input
+              v-model="feedback.email"
+              type="email"
+              class="smart-input"
               placeholder="方便我们进一步与您沟通"
             />
           </div>
@@ -83,13 +83,9 @@
 
       <div class="modal-footer">
         <button class="smart-btn-secondary" @click="close">取消</button>
-        <button 
-          class="smart-btn-primary" 
-          @click="submitFeedback" 
-          :disabled="isSubmitting"
-        >
-          <i v-if="isSubmitting" class="fas fa-spinner fa-spin"></i>
-          <i v-else class="fas fa-paper-plane"></i>
+        <button class="smart-btn-primary" :disabled="isSubmitting" @click="submitFeedback">
+          <i v-if="isSubmitting" class="fas fa-spinner fa-spin" />
+          <i v-else class="fas fa-paper-plane" />
           {{ isSubmitting ? '提交中...' : '提交反馈' }}
         </button>
       </div>
@@ -97,7 +93,7 @@
 
     <!-- Success Toast -->
     <div v-if="submitSuccess" class="success-toast">
-      <i class="fas fa-check-circle"></i>
+      <i class="fas fa-check-circle" />
       感谢您的反馈，我们会尽快处理！
     </div>
   </div>
@@ -109,16 +105,16 @@ import { authStore } from '@/stores/auth.js'
 
 export default {
   name: 'ProductFeedback',
-  
+
   props: {
     visible: {
       type: Boolean,
       default: false
     }
   },
-  
+
   emits: ['close'],
-  
+
   data() {
     return {
       feedback: {
@@ -133,25 +129,25 @@ export default {
       authStore
     }
   },
-  
+
   methods: {
     close() {
       this.$emit('close')
     },
-    
+
     triggerFileUpload() {
       this.$refs.fileInput.click()
     },
-    
+
     handleFileChange(event) {
       const files = Array.from(event.target.files)
       this.feedback.attachments = [...this.feedback.attachments, ...files]
     },
-    
+
     removeAttachment(index) {
       this.feedback.attachments.splice(index, 1)
     },
-    
+
     async submitFeedback() {
       if (!this.feedback.title || !this.feedback.title.trim()) {
         alert('请填写标题')
@@ -184,17 +180,17 @@ export default {
           title: this.feedback.title.trim(),
           description: this.feedback.description.trim(),
           user_email: this.feedback.email || authStore.state.user?.email || '',
-          user_name: authStore.state.user?.user_metadata?.full_name || authStore.state.user?.email?.split('@')[0] || '匿名用户',
+          user_name:
+            authStore.state.user?.user_metadata?.full_name ||
+            authStore.state.user?.email?.split('@')[0] ||
+            '匿名用户',
           browser_info: browserInfo,
           page_url: pageUrl,
           status: 'pending',
           priority: 'medium'
         }
 
-        const { error } = await supabase
-          .from('product_feedback')
-          .insert([feedbackData])
-          .select()
+        const { error } = await supabase.from('product_feedback').insert([feedbackData]).select()
 
         if (error) {
           console.error('Error submitting feedback:', error)
@@ -217,7 +213,6 @@ export default {
           }
           this.close()
         }, 2000)
-
       } catch (err) {
         console.error('Failed to submit feedback:', err)
         alert('提交失败，请重试')
@@ -332,7 +327,7 @@ export default {
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1100;
   display: flex;
   align-items: center;

@@ -15,7 +15,7 @@ const state = reactive({
 
 export const useAuthStore = () => {
   // Getters
-  const isAuthenticated = computed(() => !!state.session)
+
   const currentUser = computed(() => state.user)
   const userEmail = computed(() => state.user?.email)
   const userId = computed(() => state.user?.id)
@@ -75,7 +75,9 @@ export const useAuthStore = () => {
 
   async function initialize() {
     try {
-      const { data: { session } } = await authService.getSession()
+      const {
+        data: { session }
+      } = await authService.getSession()
       setAuth(session)
 
       if (session?.user?.id) {
@@ -103,20 +105,30 @@ export const useAuthStore = () => {
   return {
     // State (响应式)
     state,
-    
+
     // Getters
-    isAuthenticated,
+
     currentUser,
     userEmail,
     userId,
-    
+
     // Legacy API 兼容
-    get user() { return state.user },
-    get session() { return state.session },
-    get loading() { return state.loading },
-    get avatarUrl() { return state.avatarUrl },
-    get title() { return state.title },
-    
+    get user() {
+      return state.user
+    },
+    get session() {
+      return state.session
+    },
+    get loading() {
+      return state.loading
+    },
+    get avatarUrl() {
+      return state.avatarUrl
+    },
+    get title() {
+      return state.title
+    },
+
     // Actions
     setAuth,
     clearAuth,
@@ -127,7 +139,7 @@ export const useAuthStore = () => {
     initialize,
     signIn,
     signOut,
-    
+
     // 兼容旧 API
     isAuthenticated: () => !!state.session
   }
@@ -137,4 +149,3 @@ export const useAuthStore = () => {
 export const authStore = useAuthStore()
 
 export default authStore
-

@@ -1,212 +1,225 @@
 import router from '@/router/index.js'
-import { faruiLawService } from '@/services/faruiService.js';
+import { faruiLawService } from '@/services/faruiService.js'
 
 export default {
-    name: 'RegulationSearchResults',
-    data() {
-        return {
-            searchQuery: '',
-            keywords: [],
-            // 筛选条件（从 URL 参数解析）
-            filterConditions: {
-                keywords: '',
-                effectiveLevel: '',
-                issuingAuthority: '',
-                publishYearStart: '',
-                publishYearEnd: '',
-                effectiveYearStart: '',
-                effectiveYearEnd: '',
-                timeliness: ''
-            },
-            sortBy: 'relevance',
-            showSortDropdown: false,
-            showEffectivenessDropdown: false,
-            effectivenessFilters: {
-                current: true,
-                amended: true,
-                abolished: true
-            },
-            showRegulationDetailModal: false,
-            selectedRegulation: null,
-            collapsedChapters: {},
-            activeChapter: null,
-            results: [],
-            totalResults: 0,
-            isLoading: false,
-            loadError: null,
-            // 分步加载状态
-            loadingStep: 0, // 0=无, 1=关键词提取, 2=法规检索, 3=结果分析
-            loadingSteps: [
-                { id: 1, label: '分析中', description: '正在分析您的检索需求...' },
-                { id: 2, label: '检索法规', description: '正在检索相关法律法规...' },
-                { id: 3, label: '整理分析', description: '正在整理检索结果...' }
-            ]
-        };
-    },
-    async mounted() {
-        const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
-        this.searchQuery = urlParams.get('q') || '';
+  name: 'RegulationSearchResults',
+  data() {
+    return {
+      searchQuery: '',
+      keywords: [],
+      // 筛选条件（从 URL 参数解析）
+      filterConditions: {
+        keywords: '',
+        effectiveLevel: '',
+        issuingAuthority: '',
+        publishYearStart: '',
+        publishYearEnd: '',
+        effectiveYearStart: '',
+        effectiveYearEnd: '',
+        timeliness: ''
+      },
+      sortBy: 'relevance',
+      showSortDropdown: false,
+      showEffectivenessDropdown: false,
+      effectivenessFilters: {
+        current: true,
+        amended: true,
+        abolished: true
+      },
+      showRegulationDetailModal: false,
+      selectedRegulation: null,
+      collapsedChapters: {},
+      activeChapter: null,
+      results: [],
+      totalResults: 0,
+      isLoading: false,
+      loadError: null,
+      // 分步加载状态
+      loadingStep: 0, // 0=无, 1=关键词提取, 2=法规检索, 3=结果分析
+      loadingSteps: [
+        { id: 1, label: '分析中', description: '正在分析您的检索需求...' },
+        { id: 2, label: '检索法规', description: '正在检索相关法律法规...' },
+        { id: 3, label: '整理分析', description: '正在整理检索结果...' }
+      ]
+    }
+  },
+  async mounted() {
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1])
+    this.searchQuery = urlParams.get('q') || ''
 
-        // 解析筛选条件
-        this.filterConditions.keywords = urlParams.get('keywords') || '';
-        this.filterConditions.effectiveLevel = urlParams.get('level') || '';
-        this.filterConditions.issuingAuthority = urlParams.get('issuingAuthority') || '';
-        this.filterConditions.publishYearStart = urlParams.get('publishYearStart') || '';
-        this.filterConditions.publishYearEnd = urlParams.get('publishYearEnd') || '';
-        this.filterConditions.effectiveYearStart = urlParams.get('effectiveYearStart') || '';
-        this.filterConditions.effectiveYearEnd = urlParams.get('effectiveYearEnd') || '';
-        this.filterConditions.timeliness = urlParams.get('timeliness') || '';
+    // 解析筛选条件
+    this.filterConditions.keywords = urlParams.get('keywords') || ''
+    this.filterConditions.effectiveLevel = urlParams.get('level') || ''
+    this.filterConditions.issuingAuthority = urlParams.get('issuingAuthority') || ''
+    this.filterConditions.publishYearStart = urlParams.get('publishYearStart') || ''
+    this.filterConditions.publishYearEnd = urlParams.get('publishYearEnd') || ''
+    this.filterConditions.effectiveYearStart = urlParams.get('effectiveYearStart') || ''
+    this.filterConditions.effectiveYearEnd = urlParams.get('effectiveYearEnd') || ''
+    this.filterConditions.timeliness = urlParams.get('timeliness') || ''
 
-        if (this.searchQuery) {
-            this.keywords = this.extractLegalKeywords(this.searchQuery);
-            // 调用真实 API
-            await this.performSearch();
+    if (this.searchQuery) {
+      this.keywords = this.extractLegalKeywords(this.searchQuery)
+      // 调用真实 API
+      await this.performSearch()
+    }
+  },
+  methods: {
+    extractLegalKeywords(text) {
+      const legalTerms = [
+        '无因管理',
+        '不当得利',
+        '合同',
+        '侵权',
+        '物权',
+        '债权',
+        '继承',
+        '婚姻',
+        '劳动',
+        '行政',
+        '刑事',
+        '民事',
+        '诉讼',
+        '仲裁',
+        '执行'
+      ]
+      const keywords = []
+      legalTerms.forEach(term => {
+        if (text.includes(term)) {
+          keywords.push(term)
         }
+      })
+      if (keywords.length === 0) {
+        const words = []
+        for (let len = 4; len >= 2; len--) {
+          for (let i = 0; i <= text.length - len; i++) {
+            const word = text.substring(i, i + len)
+            if (!['可以', '如何', '怎么', '什么', '哪些'].includes(word)) {
+              words.push(word)
+            }
+          }
+        }
+        keywords.push(...[...new Set(words)].slice(0, 7))
+      }
+      return [...new Set(keywords)].slice(0, 7)
     },
-    methods: {
-        extractLegalKeywords(text) {
-            const legalTerms = [
-                '无因管理', '不当得利', '合同', '侵权', '物权', '债权', '继承', '婚姻',
-                '劳动', '行政', '刑事', '民事', '诉讼', '仲裁', '执行'
-            ];
-            const keywords = [];
-            legalTerms.forEach(term => {
-                if (text.includes(term)) {
-                    keywords.push(term);
-                }
-            });
-            if (keywords.length === 0) {
-                const words = [];
-                for (let len = 4; len >= 2; len--) {
-                    for (let i = 0; i <= text.length - len; i++) {
-                        const word = text.substring(i, i + len);
-                        if (!['可以', '如何', '怎么', '什么', '哪些'].includes(word)) {
-                            words.push(word);
-                        }
-                    }
-                }
-                keywords.push(...[...new Set(words)].slice(0, 7));
-            }
-            return [...new Set(keywords)].slice(0, 7);
-        },
-        newSearch() {
-            router.push('/legal-research');
-        },
-        async performSearch() {
-            if (!this.searchQuery) return;
+    newSearch() {
+      router.push('/legal-research')
+    },
+    async performSearch() {
+      if (!this.searchQuery) return
 
-            this.isLoading = true;
-            this.loadError = null;
+      this.isLoading = true
+      this.loadError = null
 
-            try {
-                // 步骤1: LLM 关键词提取
-                this.loadingStep = 1;
-                const { llmService } = await import('@/services/llmService.js');
-                const extracted = await llmService.extractLawKeywords(this.searchQuery);
-                console.log('Extracted law keywords:', extracted);
+      try {
+        // 步骤1: LLM 关键词提取
+        this.loadingStep = 1
+        const { llmService } = await import('@/services/llmService.js')
+        const extracted = await llmService.extractLawKeywords(this.searchQuery)
+        console.log('Extracted law keywords:', extracted)
 
-                // 步骤2: 法规检索
-                this.loadingStep = 2;
-                // 构建筛选条件
-                const filterCondition = {};
-                if (this.filterConditions.effectiveLevel) {
-                    filterCondition.effectiveLevel = [this.filterConditions.effectiveLevel];
-                }
-                if (this.filterConditions.timeliness) {
-                    filterCondition.timeliness = [this.filterConditions.timeliness];
-                }
+        // 步骤2: 法规检索
+        this.loadingStep = 2
+        // 构建筛选条件
+        const filterCondition = {}
+        if (this.filterConditions.effectiveLevel) {
+          filterCondition.effectiveLevel = [this.filterConditions.effectiveLevel]
+        }
+        if (this.filterConditions.timeliness) {
+          filterCondition.timeliness = [this.filterConditions.timeliness]
+        }
 
-                const result = await faruiLawService.searchLaws({
-                    query: this.searchQuery,
-                    pageNumber: 1,
-                    pageSize: 50,
-                    filterCondition,
-                    queryKeywords: extracted.keywords
-                });
+        const result = await faruiLawService.searchLaws({
+          query: this.searchQuery,
+          pageNumber: 1,
+          pageSize: 50,
+          filterCondition,
+          queryKeywords: extracted.keywords
+        })
 
-                // 步骤3: 结果分析
-                this.loadingStep = 3;
-                await new Promise(resolve => setTimeout(resolve, 300)); // 短暂延迟以显示步骤3
+        // 步骤3: 结果分析
+        this.loadingStep = 3
+        await new Promise(resolve => setTimeout(resolve, 300)) // 短暂延迟以显示步骤3
 
-                this.results = result.results.map(item => ({
-                    id: item.id,
-                    title: item.name || item.title,
-                    category: item.effectiveLevel || '法规',
-                    publisher: item.department || '',
-                    publisherCode: '',
-                    publishDate: item.releaseDate || '',
-                    effectiveDate: item.releaseDate || '',
-                    status: item.timeliness || '未知',
-                    content: item.content || '',
-                    htmlContent: item.htmlContent || ''
-                }));
-                this.totalResults = result.totalCount;
+        this.results = result.results.map(item => ({
+          id: item.id,
+          title: item.name || item.title,
+          category: item.effectiveLevel || '法规',
+          publisher: item.department || '',
+          publisherCode: '',
+          publishDate: item.releaseDate || '',
+          effectiveDate: item.releaseDate || '',
+          status: item.timeliness || '未知',
+          content: item.content || '',
+          htmlContent: item.htmlContent || ''
+        }))
+        this.totalResults = result.totalCount
 
-                // 使用 LLM 提取的关键词
-                if (extracted.keywords && extracted.keywords.length > 0) {
-                    this.keywords = extracted.keywords;
-                } else if (result.queryKeywords && result.queryKeywords.length > 0) {
-                    this.keywords = result.queryKeywords;
-                }
+        // 使用 LLM 提取的关键词
+        if (extracted.keywords && extracted.keywords.length > 0) {
+          this.keywords = extracted.keywords
+        } else if (result.queryKeywords && result.queryKeywords.length > 0) {
+          this.keywords = result.queryKeywords
+        }
 
-                console.log('Regulation search completed:', this.totalResults, 'results');
-            } catch (error) {
-                console.error('Regulation search failed:', error);
-                this.loadError = error.message || '法规检索失败';
-            } finally {
-                this.isLoading = false;
-                this.loadingStep = 0;
-            }
-        },
-        toggleSortDropdown() {
-            this.showSortDropdown = !this.showSortDropdown;
-        },
-        changeSortBy(sort) {
-            this.sortBy = sort;
-            this.showSortDropdown = false;
-        },
-        toggleEffectivenessDropdown() {
-            this.showEffectivenessDropdown = !this.showEffectivenessDropdown;
-        },
-        toggleEffectivenessFilter(filterKey) {
-            this.effectivenessFilters[filterKey] = !this.effectivenessFilters[filterKey];
-        },
-        viewRegulationDetail(regId) {
-            const regulation = this.results.find(r => r.id === regId);
-            if (regulation) {
-                this.selectedRegulation = {
-                    ...regulation,
-                    fullContent: this.generateFullRegulationContent(regulation),
-                    chapters: this.generateChapters()
-                };
-                this.showRegulationDetailModal = true;
-            }
-        },
-        closeRegulationDetailModal() {
-            this.showRegulationDetailModal = false;
-            this.selectedRegulation = null;
-            this.collapsedChapters = {};
-            this.activeChapter = null;
-        },
-        toggleChapter(chapterId) {
-            this.$set(this.collapsedChapters, chapterId, !this.collapsedChapters[chapterId]);
-        },
-        scrollToChapter(chapterId) {
-            this.activeChapter = chapterId;
-            // 实际应用中，这里会滚动到对应的章节位置
-            // 由于是模拟数据，这里只设置激活状态
-        },
-        isChapterVisible(chapter) {
-            if (chapter.level === 1) return true;
-            // 查找父章节
-            const parentChapter = this.selectedRegulation.chapters.find(c =>
-                c.level === chapter.level - 1 && c.id < chapter.id
-            );
-            if (!parentChapter) return true;
-            return !this.collapsedChapters[parentChapter.id];
-        },
-        generateFullRegulationContent(regulation) {
-            return `第一编 总则
+        console.log('Regulation search completed:', this.totalResults, 'results')
+      } catch (error) {
+        console.error('Regulation search failed:', error)
+        this.loadError = error.message || '法规检索失败'
+      } finally {
+        this.isLoading = false
+        this.loadingStep = 0
+      }
+    },
+    toggleSortDropdown() {
+      this.showSortDropdown = !this.showSortDropdown
+    },
+    changeSortBy(sort) {
+      this.sortBy = sort
+      this.showSortDropdown = false
+    },
+    toggleEffectivenessDropdown() {
+      this.showEffectivenessDropdown = !this.showEffectivenessDropdown
+    },
+    toggleEffectivenessFilter(filterKey) {
+      this.effectivenessFilters[filterKey] = !this.effectivenessFilters[filterKey]
+    },
+    viewRegulationDetail(regId) {
+      const regulation = this.results.find(r => r.id === regId)
+      if (regulation) {
+        this.selectedRegulation = {
+          ...regulation,
+          fullContent: this.generateFullRegulationContent(regulation),
+          chapters: this.generateChapters()
+        }
+        this.showRegulationDetailModal = true
+      }
+    },
+    closeRegulationDetailModal() {
+      this.showRegulationDetailModal = false
+      this.selectedRegulation = null
+      this.collapsedChapters = {}
+      this.activeChapter = null
+    },
+    toggleChapter(chapterId) {
+      this.$set(this.collapsedChapters, chapterId, !this.collapsedChapters[chapterId])
+    },
+    scrollToChapter(chapterId) {
+      this.activeChapter = chapterId
+      // 实际应用中，这里会滚动到对应的章节位置
+      // 由于是模拟数据，这里只设置激活状态
+    },
+    isChapterVisible(chapter) {
+      if (chapter.level === 1) return true
+      // 查找父章节
+      const parentChapter = this.selectedRegulation.chapters.find(
+        c => c.level === chapter.level - 1 && c.id < chapter.id
+      )
+      if (!parentChapter) return true
+      return !this.collapsedChapters[parentChapter.id]
+    },
+    generateFullRegulationContent() {
+      return `第一编 总则
 
 第一章 基本规定
 
@@ -223,28 +236,28 @@ export default {
 民事主体在民事活动中的法律地位一律平等。
 
 第五条
-民事主体从事民事活动，应当遵循自愿原则，按照自己的意思设立、变更、终止民事法律关系。`;
-        },
-        generateChapters() {
-            return [
-                { id: 1, title: '第一编 总则', level: 1 },
-                { id: 2, title: '第一章 基本规定', level: 2 },
-                { id: 3, title: '第二章 自然人', level: 2 },
-                { id: 4, title: '第三章 法人', level: 2 },
-                { id: 5, title: '第四章 非法人组织', level: 2 },
-                { id: 6, title: '第五章 民事权利', level: 2 },
-                { id: 7, title: '第六章 民事法律行为', level: 2 },
-                { id: 8, title: '第七章 代理', level: 2 },
-                { id: 9, title: '第八章 民事责任', level: 2 },
-                { id: 10, title: '第九章 诉讼时效', level: 2 },
-                { id: 11, title: '第十章 期间计算', level: 2 },
-                { id: 12, title: '第二编 物权', level: 1 },
-                { id: 13, title: '第一分编 通则', level: 2 },
-                { id: 14, title: '第一章 一般规定', level: 3 }
-            ];
-        }
+民事主体从事民事活动，应当遵循自愿原则，按照自己的意思设立、变更、终止民事法律关系。`
     },
-    template: `
+    generateChapters() {
+      return [
+        { id: 1, title: '第一编 总则', level: 1 },
+        { id: 2, title: '第一章 基本规定', level: 2 },
+        { id: 3, title: '第二章 自然人', level: 2 },
+        { id: 4, title: '第三章 法人', level: 2 },
+        { id: 5, title: '第四章 非法人组织', level: 2 },
+        { id: 6, title: '第五章 民事权利', level: 2 },
+        { id: 7, title: '第六章 民事法律行为', level: 2 },
+        { id: 8, title: '第七章 代理', level: 2 },
+        { id: 9, title: '第八章 民事责任', level: 2 },
+        { id: 10, title: '第九章 诉讼时效', level: 2 },
+        { id: 11, title: '第十章 期间计算', level: 2 },
+        { id: 12, title: '第二编 物权', level: 1 },
+        { id: 13, title: '第一分编 通则', level: 2 },
+        { id: 14, title: '第一章 一般规定', level: 3 }
+      ]
+    }
+  },
+  template: `
         <div class="smart-page" style="background: #fff;">
             <div class="smart-container" style="max-width: 1200px; position: relative;">
                 <!-- 顶部搜索栏 -->
@@ -600,4 +613,4 @@ export default {
             </div>
         </div>
     `
-};
+}

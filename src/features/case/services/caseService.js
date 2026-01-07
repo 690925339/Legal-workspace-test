@@ -5,8 +5,13 @@
 import { getSupabaseClient } from '@/config/supabase'
 import { apiClient } from '../../../services/api-client'
 import { API_ENDPOINTS } from '../../../shared/constants'
+import { caseListCache } from './caseListCache'
 
 const USE_BFF = import.meta.env.VITE_USE_BFF === 'true'
+
+// 列表页只需要的字段（减少数据传输）
+const LIST_FIELDS =
+  'id, case_title, case_number, case_type, stage, status, court, created_at, updated_at'
 
 export const caseService = {
   /**
@@ -18,7 +23,7 @@ export const caseService = {
     }
 
     const supabase = getSupabaseClient()
-    let query = supabase.from('cases').select('*')
+    let query = supabase.from('cases').select(LIST_FIELDS)
 
     // 应用筛选条件
     if (filters.status) {
@@ -47,11 +52,7 @@ export const caseService = {
     }
 
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('cases')
-      .select('*')
-      .eq('id', id)
-      .single()
+    const { data, error } = await supabase.from('cases').select('*').eq('id', id).single()
 
     if (error) throw error
     return data
@@ -103,13 +104,10 @@ export const caseService = {
     }
 
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('cases')
-      .insert(caseData)
-      .select()
-      .single()
+    const { data, error } = await supabase.from('cases').insert(caseData).select().single()
 
     if (error) throw error
+    caseListCache.clear() // 清除列表缓存
     return data
   },
 
@@ -130,6 +128,7 @@ export const caseService = {
       .single()
 
     if (error) throw error
+    caseListCache.clear() // 清除列表缓存
     return data
   },
 
@@ -138,6 +137,8 @@ export const caseService = {
    */
   async delete(id) {
     console.log('[caseService] delete called with id:', id)
+    const startTime = Date.now()
+
     if (USE_BFF) {
       console.log('[caseService] using BFF mode')
       return apiClient.delete(API_ENDPOINTS.CASE_BY_ID(id))
@@ -146,41 +147,39 @@ export const caseService = {
     console.log('[caseService] using Supabase direct mode')
     const supabase = getSupabaseClient()
 
-    // 1. 手动删除关联的财务信息
-    const { error: fError } = await supabase.from('financials').delete().eq('case_id', id)
-    if (fError) {
-      console.error('删除财务信息失败:', fError)
-      throw new Error(`删除关联财务信息失败: ${fError.message || fError.details}`)
+    // 并行删除关联数据（减少延迟）
+    const [fResult, sResult, eResult] = await Promise.all([
+      supabase.from('financials').delete().eq('case_id', id),
+      supabase.from('stakeholders').delete().eq('case_id', id),
+      supabase.from('evidences').delete().eq('case_id', id)
+    ])
+
+    // 检查关联数据删除是否有错误
+    if (fResult.error) {
+      console.error('删除财务信息失败:', fResult.error)
+      throw new Error(`删除关联财务信息失败: ${fResult.error.message || fResult.error.details}`)
+    }
+    if (sResult.error) {
+      console.error('删除当事人失败:', sResult.error)
+      throw new Error(`删除关联当事人失败: ${sResult.error.message || sResult.error.details}`)
+    }
+    if (eResult.error) {
+      console.error('删除证据失败:', eResult.error)
+      throw new Error(`删除关联证据失败: ${eResult.error.message || eResult.error.details}`)
     }
 
-    // 2. 手动删除关联的当事人
-    const { error: sError } = await supabase.from('stakeholders').delete().eq('case_id', id)
-    if (sError) {
-      console.error('删除当事人失败:', sError)
-      throw new Error(`删除关联当事人失败: ${sError.message || sError.details}`)
-    }
-
-    // 3. 手动删除关联的证据
-    const { error: eError } = await supabase.from('evidences').delete().eq('case_id', id)
-    if (eError) {
-      console.error('删除证据失败:', eError)
-      throw new Error(`删除关联证据失败: ${eError.message || eError.details}`)
-    }
-
-    // 4. 删除案件本身
-    const { error } = await supabase
-      .from('cases')
-      .delete()
-      .eq('id', id)
+    // 删除案件本身
+    const { error } = await supabase.from('cases').delete().eq('id', id)
 
     if (error) {
       console.error('删除案件主体失败:', error)
       throw new Error(`删除案件主体失败: ${error.message || error.details}`)
     }
 
+    console.log(`[caseService] delete completed in ${Date.now() - startTime}ms`)
+    caseListCache.clear() // 清除列表缓存
     return true
   }
 }
 
 export default caseService
-

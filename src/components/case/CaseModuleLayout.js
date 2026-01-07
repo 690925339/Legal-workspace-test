@@ -1,5 +1,6 @@
 import router from '@/router/index.js'
 import { caseService } from '@/features/case/services'
+import { caseDetailCache } from '@/features/case/services/caseDetailCache'
 
 /**
  * 案件模块共享布局组件
@@ -39,6 +40,7 @@ export default {
         lastUpdate: ''
       },
       loading: false,
+      initialLoading: true, // 初次加载标志
       moduleNav: [
         { id: 'basic', name: '案件总览', icon: 'fas fa-file-alt', route: 'basic' },
         { id: 'financials', name: '财务信息', icon: 'fas fa-dollar-sign', route: 'financials' },
@@ -53,36 +55,79 @@ export default {
   methods: {
     async loadCaseData() {
       if (!this.caseId) return
+
+      // 1. 先尝试从缓存加载（秒开）
+      const cached = caseDetailCache.get(this.caseId)
+      if (cached && cached.data) {
+        this.caseData = cached.data
+        this.initialLoading = false
+        this.$emit('case-loaded', this.caseData)
+        console.log(
+          '[CaseModuleLayout] 从缓存加载，年龄:',
+          Math.round(caseDetailCache.getAge(this.caseId) / 1000),
+          '秒'
+        )
+
+        // 2. 如果缓存未过期，后台静默刷新
+        if (!caseDetailCache.isStale(this.caseId)) {
+          this.refreshInBackground()
+          return
+        }
+      }
+
+      // 3. 缓存不存在或已过期，正常加载
       this.loading = true
       try {
         const data = await caseService.getById(this.caseId)
-        // 映射数据库字段到前端结构
-        const statusMap = { draft: '草稿', active: '进行中', closed: '已结案' }
-        this.caseData = {
-          id: data.id,
-          caseNumber: data.case_number || `case-${Date.now()}`,
-          courtCaseNumber: data.court_case_number || '', // 新增: 法院正式案号
-          name: data.case_title,
-          status: statusMap[data.status] || data.status,
-          statusCode: data.status || 'draft',
-          type: data.case_type || '-',
-          category: '民事',
-          stage: data.stage || '-',
-          court: data.court || '-',
-          assignee: data.assignee || '-',
-          filingDate: data.filing_date || '-',
-          deadline: data.deadline || '-',
-          description: data.description || '',
-          disputeFocus: data.dispute_focus || [],
-          objective: data.objective || '',
-          lastUpdate: this.formatDate(data.updated_at)
-        }
+        this.mapAndSetCaseData(data)
+
+        // 4. 保存到缓存
+        caseDetailCache.set(this.caseId, this.caseData)
+
         // 向父组件发送数据
         this.$emit('case-loaded', this.caseData)
       } catch (e) {
         console.error('加载案件数据失败:', e)
       } finally {
         this.loading = false
+        this.initialLoading = false
+      }
+    },
+
+    // 后台静默刷新
+    async refreshInBackground() {
+      try {
+        const data = await caseService.getById(this.caseId)
+        this.mapAndSetCaseData(data)
+        caseDetailCache.set(this.caseId, this.caseData)
+        this.$emit('case-loaded', this.caseData)
+        console.log('[CaseModuleLayout] 后台刷新完成')
+      } catch (e) {
+        console.error('后台刷新失败:', e)
+      }
+    },
+
+    // 映射数据库字段到前端结构
+    mapAndSetCaseData(data) {
+      const statusMap = { draft: '草稿', active: '进行中', closed: '已结案' }
+      this.caseData = {
+        id: data.id,
+        caseNumber: data.case_number || `case-${Date.now()}`,
+        courtCaseNumber: data.court_case_number || '', // 新增: 法院正式案号
+        name: data.case_title,
+        status: statusMap[data.status] || data.status,
+        statusCode: data.status || 'draft',
+        type: data.case_type || '-',
+        category: '民事',
+        stage: data.stage || '-',
+        court: data.court || '-',
+        assignee: data.assignee || '-',
+        filingDate: data.filing_date || '-',
+        deadline: data.deadline || '-',
+        description: data.description || '',
+        disputeFocus: data.dispute_focus || [],
+        objective: data.objective || '',
+        lastUpdate: this.formatDate(data.updated_at)
       }
     },
     formatDate(dateStr) {

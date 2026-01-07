@@ -6,7 +6,7 @@
         <div class="smart-header-title-row">
           <div class="smart-header-actions">
             <button class="smart-btn-secondary" @click="openHistory">
-              <i class="fas fa-history"></i> 历史记录
+              <i class="fas fa-history" /> 历史记录
             </button>
           </div>
           <h1>合同审查，一键开启智能审查</h1>
@@ -16,68 +16,90 @@
 
       <!-- 单文件审查 -->
       <!-- 上传区域 -->
-      <div class="smart-card" v-if="!analysisComplete" style="flex: 1; display: flex; flex-direction: column;">
-        <div 
+      <div
+        v-if="!analysisComplete"
+        class="smart-card"
+        style="flex: 1; display: flex; flex-direction: column"
+      >
+        <div
           class="smart-upload-zone"
           :class="{ dragging: isDragging }"
+          style="
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            border: 2px dashed #e0e0e0;
+            background: #fafafa;
+          "
           @dragenter="handleDragEnter"
           @dragleave="handleDragLeave"
           @dragover="handleDragOver"
           @drop="handleDrop"
           @click="triggerFileInput"
-          style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; border: 2px dashed #e0e0e0; background: #fafafa;"
         >
-          <input 
-            type="file" 
+          <input
             ref="fileInputRef"
-            @change="handleFileUpload"
+            type="file"
             accept=".pdf,.doc,.docx"
-            style="display: none;"
-          >
-          
-          <div class="smart-upload-icon" style="margin-bottom: 24px;">
-            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #999;"></i>
+            style="display: none"
+            @change="handleFileUpload"
+          />
+
+          <div class="smart-upload-icon" style="margin-bottom: 24px">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #999" />
           </div>
-          <h3 style="font-size: 18px; margin-bottom: 12px; color: #333;">点击或拖拽文件到此区域上传</h3>
-          <p style="font-size: 14px; color: #666;">支持格式：PDF、DOC、DOCX，单个文件不超过20MB</p>
+          <h3 style="font-size: 18px; margin-bottom: 12px; color: #333">
+            点击或拖拽文件到此区域上传
+          </h3>
+          <p style="font-size: 14px; color: #666">支持格式：PDF、DOC、DOCX，单个文件不超过20MB</p>
         </div>
 
         <!-- 已上传文件 -->
-        <div class="smart-file-info" v-if="uploadedFile">
+        <div v-if="uploadedFile" class="smart-file-info">
           <div class="smart-file-icon">
-            <i class="fas fa-file-pdf"></i>
+            <i class="fas fa-file-pdf" />
           </div>
           <div class="smart-file-details">
-            <div class="smart-file-name">{{ fileName }}</div>
-            <div class="smart-file-meta">{{ fileSize }}</div>
+            <div class="smart-file-name">
+              {{ fileName }}
+            </div>
+            <div class="smart-file-meta">
+              {{ fileSize }}
+            </div>
           </div>
           <button class="smart-btn-secondary" @click.stop="removeFile">
-            <i class="fas fa-times"></i> 移除
+            <i class="fas fa-times" /> 移除
           </button>
         </div>
       </div>
 
       <!-- 审查结果 -->
-      <div class="smart-result" v-if="analysisComplete">
+      <div v-if="analysisComplete" class="smart-result">
         <div class="smart-result-header">
           <h3>审查结果 - {{ fileName }}</h3>
           <div class="smart-result-actions">
-            <button class="smart-result-btn">
-              <i class="fas fa-download"></i> 导出报告
-            </button>
+            <button class="smart-result-btn"><i class="fas fa-download" /> 导出报告</button>
             <button class="smart-result-btn" @click="resetState">
-              <i class="fas fa-redo"></i> 重新审查
+              <i class="fas fa-redo" /> 重新审查
             </button>
           </div>
         </div>
         <div class="smart-risk-list">
-          <div 
-            v-for="(item, index) in riskItems" 
-            :key="index"
-            class="smart-risk-item"
-          >
+          <div v-for="(item, index) in riskItems" :key="index" class="smart-risk-item">
             <div :class="['smart-risk-icon', item.type]">
-              <i :class="['fas', item.type === 'warning' ? 'fa-exclamation-triangle' : item.type === 'info' ? 'fa-info-circle' : 'fa-check-circle']"></i>
+              <i
+                :class="[
+                  'fas',
+                  item.type === 'warning'
+                    ? 'fa-exclamation-triangle'
+                    : item.type === 'info'
+                      ? 'fa-info-circle'
+                      : 'fa-check-circle'
+                ]"
+              />
             </div>
             <div class="smart-risk-details">
               <h4>{{ item.title }}</h4>
@@ -87,7 +109,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 历史记录模态框 -->
     <HistoryModal
       v-model:visible="showHistoryModal"
@@ -107,10 +129,12 @@ const router = useRouter()
 const fileInputRef = ref(null)
 
 // State
+// eslint-disable-next-line no-unused-vars
 const activeTab = ref('single')
 const uploadedFile = ref(null)
 const fileName = ref('')
 const fileSize = ref('')
+// eslint-disable-next-line no-unused-vars
 const isAnalyzing = ref(false)
 const analysisComplete = ref(false)
 const isDragging = ref(false)
@@ -135,7 +159,8 @@ const riskItems = ref([
 ])
 
 // Methods
-const switchTab = (tab) => {
+// eslint-disable-next-line no-unused-vars
+const switchTab = tab => {
   activeTab.value = tab
   resetState()
 }
@@ -148,24 +173,24 @@ const resetState = () => {
   analysisComplete.value = false
 }
 
-const handleDragEnter = (e) => {
+const handleDragEnter = e => {
   e.preventDefault()
   e.stopPropagation()
   isDragging.value = true
 }
 
-const handleDragLeave = (e) => {
+const handleDragLeave = e => {
   e.preventDefault()
   e.stopPropagation()
   isDragging.value = false
 }
 
-const handleDragOver = (e) => {
+const handleDragOver = e => {
   e.preventDefault()
   e.stopPropagation()
 }
 
-const handleDrop = (e) => {
+const handleDrop = e => {
   e.preventDefault()
   e.stopPropagation()
   isDragging.value = false
@@ -175,22 +200,22 @@ const handleDrop = (e) => {
   }
 }
 
-const handleFileUpload = (event) => {
+const handleFileUpload = event => {
   const file = event.target.files[0]
   if (file) {
     processFile(file)
   }
 }
 
-const formatFileSize = (bytes) => {
+const formatFileSize = bytes => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
-const processFile = (file) => {
+const processFile = file => {
   uploadedFile.value = file
   fileName.value = file.name
   fileSize.value = formatFileSize(file.size)
@@ -202,6 +227,7 @@ const triggerFileInput = () => {
   fileInputRef.value.click()
 }
 
+// eslint-disable-next-line no-unused-vars
 const startAnalysis = () => {
   if (!uploadedFile.value) {
     alert('请先上传合同文件')
@@ -232,7 +258,7 @@ const openHistory = () => {
   showHistoryModal.value = true
 }
 
-const handleHistorySelect = (_record) => {
+const handleHistorySelect = () => {
   // 跳转到审查结果页
   router.push('/contract-review-result')
 }

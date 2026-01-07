@@ -1,570 +1,647 @@
 import router from '@/router/index.js'
-import { faruiCaseService } from '@/services/faruiService.js';
-import { searchFilterMixin } from '@/mixins/searchFilterMixin.js';
+import { faruiCaseService } from '@/services/faruiService.js'
+import { searchFilterMixin } from '@/mixins/searchFilterMixin.js'
 
 export default {
-    name: 'CaseSearchResults',
-    mixins: [searchFilterMixin],
-    data() {
-        return {
-            searchQuery: '',
-            keywords: [],
-            // 筛选条件（从 URL 参数解析）
-            filterConditions: {
-                keywords: '',
-                courtLevel: '',
-                regions: [],       // 地域与法院（数组）
-                yearStart: '',
-                yearEnd: '',
-                procedures: [],    // 审判程序（数组）
-                docType: ''
-            },
-            activeCategory: 'general',
-            sortBy: 'relevance',
-            showSortDropdown: false,
-            showAdvancedFilter: false,
-            showCaseDetailModal: false,
-            selectedCase: null,
-            isLoading: false,
-            loadError: null,
-            currentPage: 1,
-            pageSize: 10,
-            totalResults: 0,
-            isLoadingMore: false,
-            isHistoryLoading: false,
-            isSortLoading: false,
-            // 分步加载状态
-            loadingStep: 0, // 0=无, 1=关键词提取, 2=案例检索, 3=结果分析
-            loadingSteps: [
-                { id: 1, label: '分析中', description: '正在分析您的检索需求...' },
-                { id: 2, label: '检索案例', description: '正在检索相关案例...' },
-                { id: 3, label: '整理分析', description: '正在整理检索结果...' }
-            ],
-            filterOptions: {
-                caseTypes: [
-                    { name: '民事案由', count: 643063 },
-                    { name: '刑事案由', count: 20878 },
-                    { name: '行政案由', count: 17178 },
-                    { name: '国家赔偿与司法救助案由', count: 946 }
-                ],
-                regions: [
-                    { name: '广东省', count: 128951 },
-                    { name: '北京市', count: 48330 },
-                    { name: '江苏省', count: 47728 },
-                    { name: '山东省', count: 47002 },
-                    { name: '湖南省', count: 45702 },
-                    { name: '福建省', count: 43434 },
-                    { name: '浙江省', count: 42572 },
-                    { name: '四川省', count: 38654 }
-                ],
-                docTypes: [
-                    { name: '裁定书', count: 53167 },
-                    { name: '调解书', count: 16 },
-                    { name: '判决书', count: 758252 }
-                ]
-            },
-            results: [
-                {
-                    id: 1,
-                    title: '张志祥诉东辽县人民政府、东辽县自贵镇人民政府、东辽县城市管...',
-                    category: '普通案例',
-                    caseNumber: '(2020) 吉行终199号',
-                    court: '吉林省高级人民法院',
-                    date: '2020-09-30',
-                    procedure: '二审',
-                    summary: '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。三、驳回张志祥其他诉讼请求。二审案件受理费50元，由东辽县人民政府负担。',
-                    attachments: '一审',
-                    activeTab: 'verdict',
-                    verdictContent: '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。三、驳回张志祥其他诉讼请求。二审案件受理费50元，由东辽县人民政府负担。',
-                    judgmentContent: '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。\n二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。\n三、驳回张志祥其他诉讼请求。\n二审案件受理费50元，由东辽县人民政府负担。',
-                    laws: {
-                        title: '中华人民共和国行政诉讼法',
-                        category: '法律',
-                        publisher: '全国人民代表大会常务委员会',
-                        publishDate: '2017-06-27',
-                        effectiveDate: '2017-07-01',
-                        status: '现行有效',
-                        content: '第八十九条：人民法院审理上诉案件，按照下列情形，分别处理：（一）原判决、裁定认定事实清楚，适用法律、法规正确的，判决或者裁定驳回上诉，维持原判决、裁定；（二）原判决、裁定认定事实错误或者适用法律、法规错误的，依法改判、撤销或者变更；（三）原判决认定基本事实不清、证据不足的，发回原审人民法院重审，或者查清事实后改判；（四）原判决遗漏当事人或者违法缺席判决等严重违反法定程序的，裁定撤销原判决，发回原审人民法院重审。原审人民法院对发回重审的案件作出判决后，当事人提起上诉的，第二审人民法院不得再次发回重审。人民法院审理上诉案件，需要改变原审判决的，应当同时对诉讼行为作出判决。'
-                    }
-                },
-                {
-                    id: 2,
-                    title: '吴雪梅与哈尔滨市南岗区人民政府、王郊新行政复议一审行政判决书',
-                    category: '普通案例',
-                    caseNumber: '(2022) 黑01行初13号',
-                    court: '黑龙江省哈尔滨市中级人民法院',
-                    date: '2022-09-20',
-                    procedure: '一审',
-                    summary: '本院认为，行政复议决定中对行政行为的处理和对一并提出的行政赔偿请求的处理彼此可分，当事人仅就行政赔偿偿请求的处理彼此可分...',
-                    attachments: '',
-                    activeTab: 'verdict',
-                    verdictContent: '本院认为，行政复议决定中对行政行为的处理和对一并提出的行政赔偿请求的处理彼此可分，当事人仅就行政赔偿请求的处理提起诉讼的，人民法院应当受理。',
-                    judgmentContent: '驳回原告吴雪梅的诉讼请求。\n案件受理费50元，由原告吴雪梅负担。',
-                    laws: null
-                },
-                {
-                    id: 3,
-                    title: '李明诉北京市朝阳区人民政府房屋强制拆除案',
-                    category: '普通案例',
-                    caseNumber: '(2021) 京01行终32号',
-                    court: '北京市第一中级人民法院',
-                    date: '2021-05-15',
-                    procedure: '二审',
-                    summary: '一、维持一审判决。二、驳回原告其他诉讼请求。本案受理费100元，由原告负担。',
-                    attachments: '一审',
-                    activeTab: 'verdict',
-                    verdictContent: '一、维持一审判决。二、驳回原告其他诉讼请求。本案受理费100元，由原告负担。',
-                    judgmentContent: '一、维持一审判决。\n二、驳回原告其他诉讼请求。\n本案受理费100元，由原告负担。',
-                    laws: null
-                },
-                {
-                    id: 4,
-                    title: '王芳诉上海市静安区人民政府行政强制执行案',
-                    category: '普通案例',
-                    caseNumber: '(2023) 沪02行初56号',
-                    court: '上海市第二中级人民法院',
-                    date: '2023-03-10',
-                    procedure: '一审',
-                    summary: '被告上海市静安区人民政府对原告房屋实施强制拆除的行政行为缺乏法定程序，应当确认违法。',
-                    attachments: '',
-                    activeTab: 'verdict',
-                    verdictContent: '被告上海市静安区人民政府对原告房屋实施强制拆除的行政行为缺乏法定程序，应当确认违法。',
-                    judgmentContent: '确认被告上海市静安区人民政府对原告王芳房屋实施强制拆除的行政行为违法。\n案件受理费50元，由被告负担。',
-                    laws: null
-                },
-                {
-                    id: 5,
-                    title: '张伟诉广州市天河区人民政府房屋征收补偿决定案',
-                    category: '普通案例',
-                    caseNumber: '(2022) 粤01行终128号',
-                    court: '广东省广州市中级人民法院',
-                    date: '2022-11-25',
-                    procedure: '二审',
-                    summary: '一、撤销一审判决。二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。',
-                    attachments: '一审',
-                    activeTab: 'verdict',
-                    verdictContent: '一、撤销一审判决。二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。',
-                    judgmentContent: '一、撤销一审判决。\n二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。\n二审案件受理费50元，由被告负担。',
-                    laws: null
-                }
-            ],
-            totalResults: 200
-        };
+  name: 'CaseSearchResults',
+  mixins: [searchFilterMixin],
+  data() {
+    return {
+      searchQuery: '',
+      keywords: [],
+      // 筛选条件（从 URL 参数解析）
+      filterConditions: {
+        keywords: '',
+        courtLevel: '',
+        regions: [], // 地域与法院（数组）
+        yearStart: '',
+        yearEnd: '',
+        procedures: [], // 审判程序（数组）
+        docType: ''
+      },
+      activeCategory: 'general',
+      sortBy: 'relevance',
+      showSortDropdown: false,
+      showAdvancedFilter: false,
+      showCaseDetailModal: false,
+      selectedCase: null,
+      isLoading: false,
+      loadError: null,
+      currentPage: 1,
+      pageSize: 10,
+      totalResults: 0,
+      isLoadingMore: false,
+      isHistoryLoading: false,
+      isSortLoading: false,
+      // 分步加载状态
+      loadingStep: 0, // 0=无, 1=关键词提取, 2=案例检索, 3=结果分析
+      loadingSteps: [
+        { id: 1, label: '分析中', description: '正在分析您的检索需求...' },
+        { id: 2, label: '检索案例', description: '正在检索相关案例...' },
+        { id: 3, label: '整理分析', description: '正在整理检索结果...' }
+      ],
+      filterOptions: {
+        caseTypes: [
+          { name: '民事案由', count: 643063 },
+          { name: '刑事案由', count: 20878 },
+          { name: '行政案由', count: 17178 },
+          { name: '国家赔偿与司法救助案由', count: 946 }
+        ],
+        regions: [
+          { name: '广东省', count: 128951 },
+          { name: '北京市', count: 48330 },
+          { name: '江苏省', count: 47728 },
+          { name: '山东省', count: 47002 },
+          { name: '湖南省', count: 45702 },
+          { name: '福建省', count: 43434 },
+          { name: '浙江省', count: 42572 },
+          { name: '四川省', count: 38654 }
+        ],
+        docTypes: [
+          { name: '裁定书', count: 53167 },
+          { name: '调解书', count: 16 },
+          { name: '判决书', count: 758252 }
+        ]
+      },
+      results: [
+        {
+          id: 1,
+          title: '张志祥诉东辽县人民政府、东辽县自贵镇人民政府、东辽县城市管...',
+          category: '普通案例',
+          caseNumber: '(2020) 吉行终199号',
+          court: '吉林省高级人民法院',
+          date: '2020-09-30',
+          procedure: '二审',
+          summary:
+            '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。三、驳回张志祥其他诉讼请求。二审案件受理费50元，由东辽县人民政府负担。',
+          attachments: '一审',
+          activeTab: 'verdict',
+          verdictContent:
+            '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。三、驳回张志祥其他诉讼请求。二审案件受理费50元，由东辽县人民政府负担。',
+          judgmentContent:
+            '一、撤销吉林省辽源市中级人民法院（2020）吉04行初2号行政判决。\n二、确认东辽县人民政府组织的强制拆除张志祥位于东辽县自贵镇建设家村土地上的建筑物的行政行为违法。\n三、驳回张志祥其他诉讼请求。\n二审案件受理费50元，由东辽县人民政府负担。',
+          laws: {
+            title: '中华人民共和国行政诉讼法',
+            category: '法律',
+            publisher: '全国人民代表大会常务委员会',
+            publishDate: '2017-06-27',
+            effectiveDate: '2017-07-01',
+            status: '现行有效',
+            content:
+              '第八十九条：人民法院审理上诉案件，按照下列情形，分别处理：（一）原判决、裁定认定事实清楚，适用法律、法规正确的，判决或者裁定驳回上诉，维持原判决、裁定；（二）原判决、裁定认定事实错误或者适用法律、法规错误的，依法改判、撤销或者变更；（三）原判决认定基本事实不清、证据不足的，发回原审人民法院重审，或者查清事实后改判；（四）原判决遗漏当事人或者违法缺席判决等严重违反法定程序的，裁定撤销原判决，发回原审人民法院重审。原审人民法院对发回重审的案件作出判决后，当事人提起上诉的，第二审人民法院不得再次发回重审。人民法院审理上诉案件，需要改变原审判决的，应当同时对诉讼行为作出判决。'
+          }
+        },
+        {
+          id: 2,
+          title: '吴雪梅与哈尔滨市南岗区人民政府、王郊新行政复议一审行政判决书',
+          category: '普通案例',
+          caseNumber: '(2022) 黑01行初13号',
+          court: '黑龙江省哈尔滨市中级人民法院',
+          date: '2022-09-20',
+          procedure: '一审',
+          summary:
+            '本院认为，行政复议决定中对行政行为的处理和对一并提出的行政赔偿请求的处理彼此可分，当事人仅就行政赔偿偿请求的处理彼此可分...',
+          attachments: '',
+          activeTab: 'verdict',
+          verdictContent:
+            '本院认为，行政复议决定中对行政行为的处理和对一并提出的行政赔偿请求的处理彼此可分，当事人仅就行政赔偿请求的处理提起诉讼的，人民法院应当受理。',
+          judgmentContent: '驳回原告吴雪梅的诉讼请求。\n案件受理费50元，由原告吴雪梅负担。',
+          laws: null
+        },
+        {
+          id: 3,
+          title: '李明诉北京市朝阳区人民政府房屋强制拆除案',
+          category: '普通案例',
+          caseNumber: '(2021) 京01行终32号',
+          court: '北京市第一中级人民法院',
+          date: '2021-05-15',
+          procedure: '二审',
+          summary: '一、维持一审判决。二、驳回原告其他诉讼请求。本案受理费100元，由原告负担。',
+          attachments: '一审',
+          activeTab: 'verdict',
+          verdictContent:
+            '一、维持一审判决。二、驳回原告其他诉讼请求。本案受理费100元，由原告负担。',
+          judgmentContent:
+            '一、维持一审判决。\n二、驳回原告其他诉讼请求。\n本案受理费100元，由原告负担。',
+          laws: null
+        },
+        {
+          id: 4,
+          title: '王芳诉上海市静安区人民政府行政强制执行案',
+          category: '普通案例',
+          caseNumber: '(2023) 沪02行初56号',
+          court: '上海市第二中级人民法院',
+          date: '2023-03-10',
+          procedure: '一审',
+          summary:
+            '被告上海市静安区人民政府对原告房屋实施强制拆除的行政行为缺乏法定程序，应当确认违法。',
+          attachments: '',
+          activeTab: 'verdict',
+          verdictContent:
+            '被告上海市静安区人民政府对原告房屋实施强制拆除的行政行为缺乏法定程序，应当确认违法。',
+          judgmentContent:
+            '确认被告上海市静安区人民政府对原告王芳房屋实施强制拆除的行政行为违法。\n案件受理费50元，由被告负担。',
+          laws: null
+        },
+        {
+          id: 5,
+          title: '张伟诉广州市天河区人民政府房屋征收补偿决定案',
+          category: '普通案例',
+          caseNumber: '(2022) 粤01行终128号',
+          court: '广东省广州市中级人民法院',
+          date: '2022-11-25',
+          procedure: '二审',
+          summary: '一、撤销一审判决。二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。',
+          attachments: '一审',
+          activeTab: 'verdict',
+          verdictContent:
+            '一、撤销一审判决。二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。',
+          judgmentContent:
+            '一、撤销一审判决。\n二、确认被告广州市天河区人民政府作出的房屋征收补偿决定违法。\n二审案件受理费50元，由被告负担。',
+          laws: null
+        }
+      ]
+    }
+  },
+  async mounted() {
+    // 从路由参数获取搜索关键词和筛选条件
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1])
+    this.searchQuery = urlParams.get('q') || ''
+
+    // 解析筛选条件
+    this.filterConditions.keywords = urlParams.get('keywords') || ''
+    this.filterConditions.courtLevel = urlParams.get('courtLevel') || ''
+    // 解析数组参数（逗号分隔）
+    const regionsParam = urlParams.get('regions')
+    this.filterConditions.regions = regionsParam ? regionsParam.split(',') : []
+    this.filterConditions.yearStart = urlParams.get('yearStart') || ''
+    this.filterConditions.yearEnd = urlParams.get('yearEnd') || ''
+    const proceduresParam = urlParams.get('procedures')
+    this.filterConditions.procedures = proceduresParam ? proceduresParam.split(',') : []
+    this.filterConditions.docType = urlParams.get('docType') || ''
+
+    // 检查是否从历史记录进入
+    const fromHistory = urlParams.get('fromHistory') === 'true'
+
+    // 检测是否是页面刷新
+    const isPageRefresh = performance.navigation && performance.navigation.type === 1
+
+    // 如果是刷新操作,跳转回检索页
+    if (isPageRefresh && this.searchQuery) {
+      console.log('Page refreshed, redirecting to search page...')
+      router.push('/legal-research')
+      return
+    }
+
+    if (this.searchQuery) {
+      // 智能提取法律相关关键词
+      this.keywords = this.extractLegalKeywords(this.searchQuery)
+
+      if (fromHistory) {
+        // 从历史记录进入，直接从缓存加载
+        await this.loadFromCache()
+      } else {
+        // 正常搜索，调用API
+        await this.searchCases()
+      }
+    } else {
+      // 没有查询参数，重定向到法律检索页面
+      router.push('/legal-research')
+    }
+  },
+  methods: {
+    /**
+     * 搜索案例
+     */
+    async searchCases() {
+      if (!this.searchQuery.trim()) return
+
+      this.isLoading = true
+      this.loadError = null
+
+      try {
+        // 步骤1: 关键词提取
+        this.loadingStep = 1
+        const { llmService } = await import('@/services/llmService.js')
+        const extracted = await llmService.extractKeywords(this.searchQuery)
+
+        console.log('Extracted data:', extracted)
+
+        // 步骤2: 案例检索
+        this.loadingStep = 2
+        const response = await faruiCaseService.searchCases({
+          query: this.searchQuery,
+          pageNumber: this.currentPage,
+          pageSize: this.pageSize,
+          sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
+          filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
+          referLevel: this.selectedReferLevel || null,
+          queryKeywords: extracted.keywords
+        })
+
+        // 步骤3: 结果分析
+        this.loadingStep = 3
+        await new Promise(resolve => setTimeout(resolve, 300)) // 短暂延迟以显示步骤3
+
+        this.results = response.results || []
+        this.totalResults = response.totalCount || 0
+        this.keywords = extracted.keywords?.length > 0 ? extracted.keywords : this.keywords
+      } catch (error) {
+        console.error('搜索失败:', error)
+        this.loadError = error.message || '搜索失败，请稍后重试'
+      } finally {
+        this.isLoading = false
+        this.loadingStep = 0
+      }
     },
-    async mounted() {
-        // 从路由参数获取搜索关键词和筛选条件
-        const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
-        this.searchQuery = urlParams.get('q') || '';
+    /**
+     * 加载更多案例
+     */
+    async loadMore() {
+      if (this.isLoadingMore || !this.searchQuery.trim()) return
+      if (this.results.length >= this.totalResults) return // 已加载全部
 
-        // 解析筛选条件
-        this.filterConditions.keywords = urlParams.get('keywords') || '';
-        this.filterConditions.courtLevel = urlParams.get('courtLevel') || '';
-        // 解析数组参数（逗号分隔）
-        const regionsParam = urlParams.get('regions');
-        this.filterConditions.regions = regionsParam ? regionsParam.split(',') : [];
-        this.filterConditions.yearStart = urlParams.get('yearStart') || '';
-        this.filterConditions.yearEnd = urlParams.get('yearEnd') || '';
-        const proceduresParam = urlParams.get('procedures');
-        this.filterConditions.procedures = proceduresParam ? proceduresParam.split(',') : [];
-        this.filterConditions.docType = urlParams.get('docType') || '';
+      this.isLoadingMore = true
+      this.currentPage += 1
 
+      try {
+        const response = await faruiCaseService.searchCases({
+          query: this.searchQuery,
+          pageNumber: this.currentPage,
+          pageSize: this.pageSize,
+          sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
+          filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
+          referLevel: this.selectedReferLevel || null
+        })
 
-        // 检查是否从历史记录进入
-        const fromHistory = urlParams.get('fromHistory') === 'true';
+        // 追加新结果到现有结果
+        this.results = [...this.results, ...(response.results || [])]
+        this.totalResults = response.totalCount || this.totalResults
+      } catch (error) {
+        console.error('加载更多失败:', error)
+        this.currentPage -= 1 // 回退页码
+      } finally {
+        this.isLoadingMore = false
+      }
+    },
+    /**
+     * 从历史记录加载（直接从Supabase读取，不调用API）
+     */
+    async loadFromCache(isSort = false) {
+      this.isLoading = true
+      if (!isSort) {
+        this.isHistoryLoading = true
+      }
+      this.loadError = null
 
-        // 检测是否是页面刷新
-        const isPageRefresh = performance.navigation && performance.navigation.type === 1;
+      try {
+        const { getSupabaseClient } = await import('@/config/supabase.js')
+        const supabase = getSupabaseClient()
+        const { caseCache } = await import('@/services/caseCache.js')
 
-        // 如果是刷新操作,跳转回检索页
-        if (isPageRefresh && this.searchQuery) {
-            console.log('Page refreshed, redirecting to search page...');
-            router.push('/legal-research');
-            return;
+        // 生成queryHash (与保存时保持一致)
+        const paramsForCache = {
+          query: this.searchQuery,
+          queryKeywords: this.keywords || [],
+          filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
+          sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
+          referLevel: this.selectedReferLevel || null
+        }
+        const queryHash = caseCache.generateQueryHash(paramsForCache)
+
+        // 1. 从user_case_cache表查询用户的缓存数据
+        const { data: userCache, error: cacheError } = await supabase
+          .from('user_case_cache')
+          .select('*')
+          .eq('query', queryHash) // ✅ 使用queryHash
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (cacheError || !userCache || !userCache.case_ids || userCache.case_ids.length === 0) {
+          console.log('No user cache found for queryHash:', queryHash)
+          this.loadError = '未找到缓存数据'
+          return
         }
 
-        if (this.searchQuery) {
-            // 智能提取法律相关关键词
-            this.keywords = this.extractLegalKeywords(this.searchQuery);
+        // 2. 从case_cache表获取实际案例数据
+        const { data: cases, error: casesError } = await supabase
+          .from('case_cache')
+          .select('*')
+          .in('case_id', userCache.case_ids)
+          .limit(this.pageSize)
 
-            if (fromHistory) {
-                // 从历史记录进入，直接从缓存加载
-                await this.loadFromCache();
-            } else {
-                // 正常搜索，调用API
-                await this.searchCases();
+        if (casesError || !cases) {
+          console.error('Failed to load cases:', casesError)
+          this.loadError = '加载案例数据失败'
+          return
+        }
+
+        // 3. 转换数据格式
+        // 关键：必须按照userCache.case_ids的顺序重新排列cases，因为Supabase的in查询不保证顺序
+        const caseMap = new Map(cases.map(c => [c.case_id, c]))
+        const orderedCases = userCache.case_ids.map(id => caseMap.get(id)).filter(c => c) // 过滤掉可能未找到的案例
+
+        this.results = orderedCases.map(c => ({
+          id: c.case_id,
+          title: c.case_title,
+          caseNumber: c.case_no,
+          court: c.court_name,
+          date: c.trial_date,
+          procedure: c.trial_program,
+          caseType: c.case_type,
+          category: c.refer_level || '普通案例',
+          verdictContent: c.court_think,
+          judgmentContent: c.verdict,
+          relatedLaws: c.related_laws,
+          activeTab: 'verdict'
+        }))
+
+        this.totalResults = userCache.total_count || this.results.length
+        this.keywords = userCache.keywords || []
+
+        console.log('✅ Loaded from user cache (Supabase only):', {
+          query: userCache.query,
+          casesLoaded: this.results.length,
+          totalResults: this.totalResults,
+          noApiCalls: true
+        })
+      } catch (error) {
+        console.error('加载历史记录失败:', error)
+        this.loadError = '加载历史记录失败：' + (error.message || '未知错误')
+      } finally {
+        this.isLoading = false
+        if (!isSort) {
+          this.isHistoryLoading = false
+        }
+      }
+    },
+    /**
+     * 翻页
+     */
+    async goToPage(page) {
+      if (page < 1 || page > Math.ceil(this.totalResults / this.pageSize)) return
+      this.currentPage = page
+      await this.searchCases()
+    },
+    extractLegalKeywords(text) {
+      // 法律相关词汇库
+      const legalTerms = [
+        // 行政法相关
+        '违章建筑',
+        '强制拆除',
+        '城管执法',
+        '行政复议',
+        '行政赔偿',
+        '程序违法',
+        '书面通知',
+        '行政处罚',
+        '行政许可',
+        '行政强制',
+        '征收补偿',
+        '国有土地',
+        '集体土地',
+        // 民事法相关
+        '合同纠纷',
+        '买卖合同',
+        '借款合同',
+        '租赁合同',
+        '违约责任',
+        '侵权责任',
+        '人身损害',
+        '财产损失',
+        '精神损害',
+        '夫妻共同财产',
+        '离婚诉讼',
+        '抚养权',
+        '继承权',
+        '遗嘱',
+        '债权债务',
+        '担保',
+        '抵押',
+        '质押',
+        // 刑事法相关
+        '刑事责任',
+        '故意伤害',
+        '盗窃罪',
+        '诈骗罪',
+        '职务侵占',
+        '贪污受贿',
+        '交通肇事',
+        '危险驾驶',
+        '寻衅滋事',
+        '聚众斗殴',
+        // 劳动法相关
+        '劳动合同',
+        '劳动争议',
+        '工伤赔偿',
+        '经济补偿',
+        '违法解除',
+        '加班费',
+        '社会保险',
+        '竞业限制',
+        '劳务派遣',
+        // 知识产权相关
+        '著作权',
+        '商标权',
+        '专利权',
+        '侵权',
+        '不正当竞争',
+        '商业秘密',
+        // 程序法相关
+        '诉讼时效',
+        '管辖权',
+        '证据',
+        '举证责任',
+        '一审',
+        '二审',
+        '再审',
+        '执行',
+        '调解',
+        '和解',
+        '仲裁',
+        '上诉',
+        '申诉'
+      ]
+
+      const keywords = []
+      // const textLower = text.toLowerCase();
+
+      // 1. 提取法律术语
+      legalTerms.forEach(term => {
+        if (text.includes(term)) {
+          keywords.push(term)
+        }
+      })
+
+      // 2. 如果没有匹配到法律术语，尝试分词提取关键词
+      if (keywords.length === 0) {
+        // 简单的中文分词：提取2-4字的词组
+        const words = []
+        for (let len = 4; len >= 2; len--) {
+          for (let i = 0; i <= text.length - len; i++) {
+            const word = text.substring(i, i + len)
+            // 过滤掉常见的停用词
+            if (
+              ![
+                '可以',
+                '如何',
+                '怎么',
+                '什么',
+                '哪些',
+                '因为',
+                '所以',
+                '但是',
+                '然后',
+                '我的',
+                '我家'
+              ].includes(word)
+            ) {
+              words.push(word)
             }
+          }
+        }
+        // 去重并限制数量
+        const uniqueWords = [...new Set(words)]
+        keywords.push(...uniqueWords.slice(0, 7))
+      }
+
+      // 去重并限制最多7个关键词
+      return [...new Set(keywords)].slice(0, 7)
+    },
+    goBack() {
+      router.back()
+    },
+    newSearch() {
+      router.push('/legal-research')
+    },
+    switchCategory(category) {
+      this.activeCategory = category
+    },
+    toggleSortDropdown() {
+      this.showSortDropdown = !this.showSortDropdown
+    },
+    changeSortBy(sort) {
+      this.sortBy = sort
+      this.showSortDropdown = false
+      // 应用排序
+      this.applySort()
+    },
+    /**
+     * 应用排序
+     */
+    async applySort() {
+      this.isLoading = true
+      this.isSortLoading = true
+      try {
+        if (this.sortBy === 'relevance') {
+          // 相关度排序：不再调用API，而是从缓存重新加载（因为缓存中的顺序就是默认的相关度顺序）
+          // 传入true表示这是一个排序操作，不显示历史记录加载动画，而是显示排序动画
+          await this.loadFromCache(true)
         } else {
-            // 没有查询参数，重定向到法律检索页面
-            router.push('/legal-research');
+          // 日期排序:从user_case_cache获取完整的case_ids列表,然后按trial_date排序
+          const supabase = (await import('@/config/supabase.js')).getSupabaseClient()
+          const { caseCache } = await import('@/services/caseCache.js')
+
+          // 1. 生成queryHash (与保存时保持一致)
+          const paramsForCache = {
+            query: this.searchQuery,
+            queryKeywords: this.keywords || [],
+            filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
+            sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
+            referLevel: this.selectedReferLevel || null
+          }
+          const queryHash = caseCache.generateQueryHash(paramsForCache)
+
+          // 2. 使用queryHash获取当前搜索的完整case_ids列表(来自缓存)
+          const { data: userCache, error: cacheError } = await supabase
+            .from('user_case_cache')
+            .select('case_ids, total_count')
+            .eq('query', queryHash) // ✅ 使用queryHash而不是searchQuery
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (cacheError || !userCache || !userCache.case_ids || userCache.case_ids.length === 0) {
+            console.error('Failed to get cached case_ids for sorting:', cacheError)
+            return
+          }
+
+          // 3. 使用完整的case_ids列表进行排序查询
+          const ascending = this.sortBy === 'date-asc'
+          const { data: sortedCases, error } = await supabase
+            .from('case_cache')
+            .select('*')
+            .in('case_id', userCache.case_ids) // 使用完整的缓存case_ids
+            .order('trial_date', { ascending: ascending })
+            .limit(this.pageSize) // 只返回当前页需要的数量
+
+          if (!error && sortedCases) {
+            // 重新映射结果
+            this.results = sortedCases.map(c => ({
+              id: c.case_id,
+              title: c.case_title,
+              caseNumber: c.case_no,
+              court: c.court_name,
+              date: c.trial_date,
+              procedure: c.trial_program,
+              caseType: c.case_type,
+              category: c.refer_level || '普通案例',
+              verdictContent: c.court_think,
+              judgmentContent: c.verdict,
+              relatedLaws: c.related_laws,
+              activeTab: 'verdict'
+            }))
+
+            // 更新总数
+            this.totalResults = userCache.total_count || this.totalResults
+
+            // 重置页码为1,因为排序后应该从第一页开始
+            this.currentPage = 1
+          }
         }
+      } finally {
+        this.isLoading = false
+        this.isSortLoading = false
+      }
     },
-    methods: {
-        /**
-         * 搜索案例
-         */
-        async searchCases() {
-            if (!this.searchQuery.trim()) return;
-
-            this.isLoading = true;
-            this.loadError = null;
-
-            try {
-                // 步骤1: 关键词提取
-                this.loadingStep = 1;
-                const { llmService } = await import('@/services/llmService.js');
-                const extracted = await llmService.extractKeywords(this.searchQuery);
-
-                console.log('Extracted data:', extracted);
-
-                // 步骤2: 案例检索
-                this.loadingStep = 2;
-                const response = await faruiCaseService.searchCases({
-                    query: this.searchQuery,
-                    pageNumber: this.currentPage,
-                    pageSize: this.pageSize,
-                    sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
-                    filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
-                    referLevel: this.selectedReferLevel || null,
-                    queryKeywords: extracted.keywords
-                });
-
-                // 步骤3: 结果分析
-                this.loadingStep = 3;
-                await new Promise(resolve => setTimeout(resolve, 300)); // 短暂延迟以显示步骤3
-
-                this.results = response.results || [];
-                this.totalResults = response.totalCount || 0;
-                this.keywords = extracted.keywords?.length > 0 ? extracted.keywords : this.keywords;
-
-            } catch (error) {
-                console.error('搜索失败:', error);
-                this.loadError = error.message || '搜索失败，请稍后重试';
-            } finally {
-                this.isLoading = false;
-                this.loadingStep = 0;
-            }
-        },
-        /**
-         * 加载更多案例
-         */
-        async loadMore() {
-            if (this.isLoadingMore || !this.searchQuery.trim()) return;
-            if (this.results.length >= this.totalResults) return; // 已加载全部
-
-            this.isLoadingMore = true;
-            this.currentPage += 1;
-
-            try {
-                const response = await faruiCaseService.searchCases({
-                    query: this.searchQuery,
-                    pageNumber: this.currentPage,
-                    pageSize: this.pageSize,
-                    sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
-                    filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
-                    referLevel: this.selectedReferLevel || null
-                });
-
-                // 追加新结果到现有结果
-                this.results = [...this.results, ...(response.results || [])];
-                this.totalResults = response.totalCount || this.totalResults;
-
-            } catch (error) {
-                console.error('加载更多失败:', error);
-                this.currentPage -= 1; // 回退页码
-            } finally {
-                this.isLoadingMore = false;
-            }
-        },
-        /**
-         * 从历史记录加载（直接从Supabase读取，不调用API）
-         */
-        async loadFromCache(isSort = false) {
-            this.isLoading = true;
-            if (!isSort) {
-                this.isHistoryLoading = true;
-            }
-            this.loadError = null;
-
-            try {
-                const { getSupabaseClient } = await import('@/config/supabase.js');
-                const supabase = getSupabaseClient();
-                const { caseCache } = await import('@/services/caseCache.js');
-
-                // 生成queryHash (与保存时保持一致)
-                const paramsForCache = {
-                    query: this.searchQuery,
-                    queryKeywords: this.keywords || [],
-                    filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
-                    sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
-                    referLevel: this.selectedReferLevel || null
-                };
-                const queryHash = caseCache.generateQueryHash(paramsForCache);
-
-                // 1. 从user_case_cache表查询用户的缓存数据
-                const { data: userCache, error: cacheError } = await supabase
-                    .from('user_case_cache')
-                    .select('*')
-                    .eq('query', queryHash)  // ✅ 使用queryHash
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .single();
-
-                if (cacheError || !userCache || !userCache.case_ids || userCache.case_ids.length === 0) {
-                    console.log('No user cache found for queryHash:', queryHash);
-                    this.loadError = '未找到缓存数据';
-                    return;
-                }
-
-                // 2. 从case_cache表获取实际案例数据
-                const { data: cases, error: casesError } = await supabase
-                    .from('case_cache')
-                    .select('*')
-                    .in('case_id', userCache.case_ids)
-                    .limit(this.pageSize);
-
-                if (casesError || !cases) {
-                    console.error('Failed to load cases:', casesError);
-                    this.loadError = '加载案例数据失败';
-                    return;
-                }
-
-                // 3. 转换数据格式
-                // 关键：必须按照userCache.case_ids的顺序重新排列cases，因为Supabase的in查询不保证顺序
-                const caseMap = new Map(cases.map(c => [c.case_id, c]));
-                const orderedCases = userCache.case_ids
-                    .map(id => caseMap.get(id))
-                    .filter(c => c); // 过滤掉可能未找到的案例
-
-                this.results = orderedCases.map(c => ({
-                    id: c.case_id,
-                    title: c.case_title,
-                    caseNumber: c.case_no,
-                    court: c.court_name,
-                    date: c.trial_date,
-                    procedure: c.trial_program,
-                    caseType: c.case_type,
-                    category: c.refer_level || '普通案例',
-                    verdictContent: c.court_think,
-                    judgmentContent: c.verdict,
-                    relatedLaws: c.related_laws,
-                    activeTab: 'verdict'
-                }));
-
-                this.totalResults = userCache.total_count || this.results.length;
-                this.keywords = userCache.keywords || [];
-
-                console.log('✅ Loaded from user cache (Supabase only):', {
-                    query: userCache.query,
-                    casesLoaded: this.results.length,
-                    totalResults: this.totalResults,
-                    noApiCalls: true
-                });
-
-            } catch (error) {
-                console.error('加载历史记录失败:', error);
-                this.loadError = '加载历史记录失败：' + (error.message || '未知错误');
-            } finally {
-                this.isLoading = false;
-                if (!isSort) {
-                    this.isHistoryLoading = false;
-                }
-            }
-        },
-        /**
-         * 翻页
-         */
-        async goToPage(page) {
-            if (page < 1 || page > Math.ceil(this.totalResults / this.pageSize)) return;
-            this.currentPage = page;
-            await this.searchCases();
-        },
-        extractLegalKeywords(text) {
-            // 法律相关词汇库
-            const legalTerms = [
-                // 行政法相关
-                '违章建筑', '强制拆除', '城管执法', '行政复议', '行政赔偿', '程序违法', '书面通知',
-                '行政处罚', '行政许可', '行政强制', '征收补偿', '国有土地', '集体土地',
-                // 民事法相关
-                '合同纠纷', '买卖合同', '借款合同', '租赁合同', '违约责任', '侵权责任',
-                '人身损害', '财产损失', '精神损害', '夫妻共同财产', '离婚诉讼', '抚养权',
-                '继承权', '遗嘱', '债权债务', '担保', '抵押', '质押',
-                // 刑事法相关
-                '刑事责任', '故意伤害', '盗窃罪', '诈骗罪', '职务侵占', '贪污受贿',
-                '交通肇事', '危险驾驶', '寻衅滋事', '聚众斗殴',
-                // 劳动法相关
-                '劳动合同', '劳动争议', '工伤赔偿', '经济补偿', '违法解除', '加班费',
-                '社会保险', '竞业限制', '劳务派遣',
-                // 知识产权相关
-                '著作权', '商标权', '专利权', '侵权', '不正当竞争', '商业秘密',
-                // 程序法相关
-                '诉讼时效', '管辖权', '证据', '举证责任', '一审', '二审', '再审', '执行',
-                '调解', '和解', '仲裁', '上诉', '申诉'
-            ];
-
-            const keywords = [];
-            const textLower = text.toLowerCase();
-
-            // 1. 提取法律术语
-            legalTerms.forEach(term => {
-                if (text.includes(term)) {
-                    keywords.push(term);
-                }
-            });
-
-            // 2. 如果没有匹配到法律术语，尝试分词提取关键词
-            if (keywords.length === 0) {
-                // 简单的中文分词：提取2-4字的词组
-                const words = [];
-                for (let len = 4; len >= 2; len--) {
-                    for (let i = 0; i <= text.length - len; i++) {
-                        const word = text.substring(i, i + len);
-                        // 过滤掉常见的停用词
-                        if (!['可以', '如何', '怎么', '什么', '哪些', '因为', '所以', '但是', '然后', '我的', '我家'].includes(word)) {
-                            words.push(word);
-                        }
-                    }
-                }
-                // 去重并限制数量
-                const uniqueWords = [...new Set(words)];
-                keywords.push(...uniqueWords.slice(0, 7));
-            }
-
-            // 去重并限制最多7个关键词
-            return [...new Set(keywords)].slice(0, 7);
-        },
-        goBack() {
-            router.back();
-        },
-        newSearch() {
-            router.push('/legal-research');
-        },
-        switchCategory(category) {
-            this.activeCategory = category;
-        },
-        toggleSortDropdown() {
-            this.showSortDropdown = !this.showSortDropdown;
-        },
-        changeSortBy(sort) {
-            this.sortBy = sort;
-            this.showSortDropdown = false;
-            // 应用排序
-            this.applySort();
-        },
-        /**
-         * 应用排序
-         */
-        async applySort() {
-            this.isLoading = true;
-            this.isSortLoading = true;
-            try {
-                if (this.sortBy === 'relevance') {
-                    // 相关度排序：不再调用API，而是从缓存重新加载（因为缓存中的顺序就是默认的相关度顺序）
-                    // 传入true表示这是一个排序操作，不显示历史记录加载动画，而是显示排序动画
-                    await this.loadFromCache(true);
-                } else {
-                    // 日期排序:从user_case_cache获取完整的case_ids列表,然后按trial_date排序
-                    const supabase = (await import('@/config/supabase.js')).getSupabaseClient();
-                    const { caseCache } = await import('@/services/caseCache.js');
-
-                    // 1. 生成queryHash (与保存时保持一致)
-                    const paramsForCache = {
-                        query: this.searchQuery,
-                        queryKeywords: this.keywords || [],
-                        filterCondition: this.buildFilterCondition ? this.buildFilterCondition() : {},
-                        sortKeyAndDirection: this.buildSortParams ? this.buildSortParams() : {},
-                        referLevel: this.selectedReferLevel || null
-                    };
-                    const queryHash = caseCache.generateQueryHash(paramsForCache);
-
-                    // 2. 使用queryHash获取当前搜索的完整case_ids列表(来自缓存)
-                    const { data: userCache, error: cacheError } = await supabase
-                        .from('user_case_cache')
-                        .select('case_ids, total_count')
-                        .eq('query', queryHash)  // ✅ 使用queryHash而不是searchQuery
-                        .order('updated_at', { ascending: false })
-                        .limit(1)
-                        .single();
-
-                    if (cacheError || !userCache || !userCache.case_ids || userCache.case_ids.length === 0) {
-                        console.error('Failed to get cached case_ids for sorting:', cacheError);
-                        return;
-                    }
-
-                    // 3. 使用完整的case_ids列表进行排序查询
-                    const ascending = this.sortBy === 'date-asc';
-                    const { data: sortedCases, error } = await supabase
-                        .from('case_cache')
-                        .select('*')
-                        .in('case_id', userCache.case_ids)  // 使用完整的缓存case_ids
-                        .order('trial_date', { ascending: ascending })
-                        .limit(this.pageSize);  // 只返回当前页需要的数量
-
-                    if (!error && sortedCases) {
-                        // 重新映射结果
-                        this.results = sortedCases.map(c => ({
-                            id: c.case_id,
-                            title: c.case_title,
-                            caseNumber: c.case_no,
-                            court: c.court_name,
-                            date: c.trial_date,
-                            procedure: c.trial_program,
-                            caseType: c.case_type,
-                            category: c.refer_level || '普通案例',
-                            verdictContent: c.court_think,
-                            judgmentContent: c.verdict,
-                            relatedLaws: c.related_laws,
-                            activeTab: 'verdict'
-                        }));
-
-                        // 更新总数
-                        this.totalResults = userCache.total_count || this.totalResults;
-
-                        // 重置页码为1,因为排序后应该从第一页开始
-                        this.currentPage = 1;
-                    }
-                }
-            } finally {
-                this.isLoading = false;
-                this.isSortLoading = false;
-            }
-        },
-        toggleAdvancedFilter() {
-            this.showAdvancedFilter = !this.showAdvancedFilter;
-        },
-        switchCaseTab(caseItem, tab) {
-            caseItem.activeTab = tab;
-        },
-        viewCaseDetail(caseId) {
-            // 找到对应的案例
-            const caseData = this.results.find(r => r.id === caseId);
-            if (caseData) {
-                this.selectedCase = {
-                    ...caseData,
-                    fullText: this.generateFullText(caseData)
-                };
-                this.showCaseDetailModal = true;
-            }
-        },
-        closeCaseDetailModal() {
-            this.showCaseDetailModal = false;
-            this.selectedCase = null;
-        },
-        downloadCase() {
-            if (!this.selectedCase) return;
-            const content = `${this.selectedCase.title}\n\n${this.selectedCase.fullText}`;
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${this.selectedCase.caseNumber}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        },
-        generateFullText(caseData) {
-            // 生成完整的判决书文本
-            return `${caseData.court}
+    toggleAdvancedFilter() {
+      this.showAdvancedFilter = !this.showAdvancedFilter
+    },
+    switchCaseTab(caseItem, tab) {
+      caseItem.activeTab = tab
+    },
+    viewCaseDetail(caseId) {
+      // 找到对应的案例
+      const caseData = this.results.find(r => r.id === caseId)
+      if (caseData) {
+        this.selectedCase = {
+          ...caseData,
+          fullText: this.generateFullText(caseData)
+        }
+        this.showCaseDetailModal = true
+      }
+    },
+    closeCaseDetailModal() {
+      this.showCaseDetailModal = false
+      this.selectedCase = null
+    },
+    downloadCase() {
+      if (!this.selectedCase) return
+      const content = `${this.selectedCase.title}\n\n${this.selectedCase.fullText}`
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${this.selectedCase.caseNumber}.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    },
+    generateFullText(caseData) {
+      // 生成完整的判决书文本
+      return `${caseData.court}
 
 ${caseData.docType || '行政判决书'}
 
@@ -579,10 +656,10 @@ ${caseData.judgmentContent || ''}
 审判员  张伟
 
 ${caseData.date}
-书记员  刘洋`;
-        }
-    },
-    template: `
+书记员  刘洋`
+    }
+  },
+  template: `
         <div class="smart-page" style="background: #fff;">
             <div class="smart-container" style="max-width: 1200px;">
                 <!-- 顶部搜索栏 -->
@@ -1092,4 +1169,4 @@ ${caseData.date}
             </div>
         </div>
     `
-};
+}

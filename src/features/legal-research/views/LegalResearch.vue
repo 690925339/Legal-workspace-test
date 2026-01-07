@@ -6,22 +6,22 @@
         <div class="smart-header-title-row">
           <div class="smart-header-actions">
             <button class="smart-btn-secondary" @click="openHistory">
-              <i class="fas fa-history"></i> 历史记录
+              <i class="fas fa-history" /> 历史记录
             </button>
           </div>
           <h1>法律检索，智能化检索法规和案例</h1>
         </div>
         <p>输入搜索内容检索相关司法案例、法律法规</p>
-        
+
         <!-- 标签切换 -->
         <div class="smart-tabs">
-          <button 
+          <button
             :class="['smart-tab-btn', { active: activeTab === 'cases' }]"
             @click="switchTab('cases')"
           >
             案例检索
           </button>
-          <button 
+          <button
             :class="['smart-tab-btn', { active: activeTab === 'regulations' }]"
             @click="switchTab('regulations')"
           >
@@ -32,51 +32,66 @@
 
       <!-- 搜索卡片 -->
       <div class="smart-card search-card">
-        <textarea 
-          class="smart-textarea" 
-          placeholder="请输入需要检索的内容，例如：合同纠纷、劳动争议、知识产权侵权等..."
+        <textarea
           v-model="searchQuery"
+          class="smart-textarea"
+          placeholder="请输入需要检索的内容，例如：合同纠纷、劳动争议、知识产权侵权等..."
           @keydown.enter.exact.prevent="handleSearch"
-        ></textarea>
-        
+        />
+
         <!-- 筛选条件面板 - 案例检索 -->
         <div v-if="showFilters && activeTab === 'cases'" class="filter-panel">
           <div class="smart-form-grid filter-grid">
             <div class="smart-form-group">
               <label class="smart-label">关键词</label>
-              <input type="text" v-model="caseFilters.keywords" class="smart-input" placeholder="请输入关键词">
+              <input
+                v-model="caseFilters.keywords"
+                type="text"
+                class="smart-input"
+                placeholder="请输入关键词"
+              />
             </div>
             <div class="smart-form-group">
               <label class="smart-label">法院层级</label>
               <div class="smart-select-wrapper">
                 <select v-model="caseFilters.courtLevel" class="smart-select">
                   <option value="">全部</option>
-                  <option v-for="opt in courtLevelOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in courtLevelOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
             <div class="smart-form-group region-dropdown-container">
               <label class="smart-label">地域与法院</label>
               <div class="smart-select-wrapper" @click="toggleRegionDropdown">
-                <input 
-                  type="text" 
-                  v-model="regionSearchQuery" 
-                  class="smart-input dropdown-input" 
-                  :placeholder="caseFilters.regions.length > 0 ? caseFilters.regions.join(', ') : '请选择'"
+                <input
+                  v-model="regionSearchQuery"
+                  type="text"
+                  class="smart-input dropdown-input"
+                  :placeholder="
+                    caseFilters.regions.length > 0 ? caseFilters.regions.join(', ') : '请选择'
+                  "
                   @focus="showRegionDropdown = true"
                   @click.stop
-                >
-                <i class="fas fa-search dropdown-icon"></i>
+                />
+                <i class="fas fa-search dropdown-icon" />
               </div>
               <div v-if="showRegionDropdown" class="dropdown-panel">
-                <div 
-                  v-for="opt in filteredRegionOptions" 
+                <div
+                  v-for="opt in filteredRegionOptions"
                   :key="opt.value"
-                  @click.stop="toggleRegion(opt)"
                   class="dropdown-item"
                   :class="{ selected: caseFilters.regions.includes(opt.value) }"
+                  @click.stop="toggleRegion(opt)"
                 >
-                  <i :class="caseFilters.regions.includes(opt.value) ? 'fas fa-check-square' : 'far fa-square'"></i>
+                  <i
+                    :class="
+                      caseFilters.regions.includes(opt.value)
+                        ? 'fas fa-check-square'
+                        : 'far fa-square'
+                    "
+                  />
                   <span>{{ opt.label }}</span>
                 </div>
                 <div v-if="filteredRegionOptions.length === 0" class="dropdown-empty">
@@ -90,14 +105,18 @@
                 <div class="smart-select-wrapper">
                   <select v-model="caseFilters.yearStart" class="smart-select">
                     <option value="">开始年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
                 <span class="range-separator">-</span>
                 <div class="smart-select-wrapper">
                   <select v-model="caseFilters.yearEnd" class="smart-select">
                     <option value="">结束年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -105,25 +124,33 @@
             <div class="smart-form-group procedure-dropdown-container">
               <label class="smart-label">审判程序</label>
               <div class="smart-select-wrapper" @click="toggleProcedureDropdown">
-                <input 
-                  type="text" 
-                  v-model="procedureSearchQuery" 
-                  class="smart-input dropdown-input" 
-                  :placeholder="caseFilters.procedures.length > 0 ? caseFilters.procedures.join(', ') : '请选择'"
+                <input
+                  v-model="procedureSearchQuery"
+                  type="text"
+                  class="smart-input dropdown-input"
+                  :placeholder="
+                    caseFilters.procedures.length > 0 ? caseFilters.procedures.join(', ') : '请选择'
+                  "
                   @focus="showProcedureDropdown = true"
                   @click.stop
-                >
-                <i class="fas fa-search dropdown-icon"></i>
+                />
+                <i class="fas fa-search dropdown-icon" />
               </div>
               <div v-if="showProcedureDropdown" class="dropdown-panel">
-                <div 
-                  v-for="opt in filteredProcedureOptions" 
+                <div
+                  v-for="opt in filteredProcedureOptions"
                   :key="opt.value"
-                  @click.stop="toggleProcedure(opt)"
                   class="dropdown-item"
                   :class="{ selected: caseFilters.procedures.includes(opt.value) }"
+                  @click.stop="toggleProcedure(opt)"
                 >
-                  <i :class="caseFilters.procedures.includes(opt.value) ? 'fas fa-check-square' : 'far fa-square'"></i>
+                  <i
+                    :class="
+                      caseFilters.procedures.includes(opt.value)
+                        ? 'fas fa-check-square'
+                        : 'far fa-square'
+                    "
+                  />
                   <span>{{ opt.label }}</span>
                 </div>
                 <div v-if="filteredProcedureOptions.length === 0" class="dropdown-empty">
@@ -136,26 +163,35 @@
               <div class="smart-select-wrapper">
                 <select v-model="caseFilters.docType" class="smart-select">
                   <option value="">全部</option>
-                  <option v-for="opt in docTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in docTypeOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- 筛选条件面板 - 法规检索 -->
         <div v-if="showFilters && activeTab === 'regulations'" class="filter-panel">
           <div class="smart-form-grid filter-grid">
             <div class="smart-form-group">
               <label class="smart-label">关键词</label>
-              <input type="text" v-model="regulationFilters.keywords" class="smart-input" placeholder="请输入">
+              <input
+                v-model="regulationFilters.keywords"
+                type="text"
+                class="smart-input"
+                placeholder="请输入"
+              />
             </div>
             <div class="smart-form-group">
               <label class="smart-label">效力级别</label>
               <div class="smart-select-wrapper">
                 <select v-model="regulationFilters.effectiveLevel" class="smart-select">
                   <option value="">请选择</option>
-                  <option v-for="opt in effectiveLevelOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in effectiveLevelOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -164,7 +200,9 @@
               <div class="smart-select-wrapper">
                 <select v-model="regulationFilters.issuingAuthority" class="smart-select">
                   <option value="">请选择</option>
-                  <option v-for="opt in departmentOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in departmentOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -174,14 +212,18 @@
                 <div class="smart-select-wrapper">
                   <select v-model="regulationFilters.publishYearStart" class="smart-select">
                     <option value="">开始年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
                 <span class="range-separator">-</span>
                 <div class="smart-select-wrapper">
                   <select v-model="regulationFilters.publishYearEnd" class="smart-select">
                     <option value="">结束年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -192,14 +234,18 @@
                 <div class="smart-select-wrapper">
                   <select v-model="regulationFilters.effectiveYearStart" class="smart-select">
                     <option value="">开始年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
                 <span class="range-separator">-</span>
                 <div class="smart-select-wrapper">
                   <select v-model="regulationFilters.effectiveYearEnd" class="smart-select">
                     <option value="">结束年份</option>
-                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                    <option v-for="year in years" :key="year" :value="year">
+                      {{ year }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -209,25 +255,23 @@
               <div class="smart-select-wrapper">
                 <select v-model="regulationFilters.timeliness" class="smart-select">
                   <option value="">请选择</option>
-                  <option v-for="opt in timelinessOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in timelinessOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="smart-card-footer">
           <div class="smart-search-actions">
-            <button 
-              class="smart-btn-pill" 
-              @click="toggleFilters" 
-              :class="{ active: showFilters }"
-            >
-              <i class="fas fa-filter"></i> 筛选条件
+            <button class="smart-btn-pill" :class="{ active: showFilters }" @click="toggleFilters">
+              <i class="fas fa-filter" /> 筛选条件
             </button>
           </div>
-          <button class="smart-btn-primary" @click="handleSearch" :disabled="!searchQuery.trim()">
-            <i class="fas fa-search"></i> 开始检索
+          <button class="smart-btn-primary" :disabled="!searchQuery.trim()" @click="handleSearch">
+            <i class="fas fa-search" /> 开始检索
           </button>
         </div>
       </div>
@@ -237,12 +281,12 @@
         <div class="smart-suggestions-header">
           <span>试试这么问：</span>
           <button class="smart-btn-secondary" @click="refreshSuggestions">
-            <i class="fas fa-sync-alt"></i> 换一批
+            <i class="fas fa-sync-alt" /> 换一批
           </button>
         </div>
         <div class="smart-suggestions-grid">
-          <div 
-            v-for="(suggestion, index) in suggestions" 
+          <div
+            v-for="(suggestion, index) in suggestions"
             :key="index"
             class="smart-suggestion-item"
             @click="useSuggestion(suggestion)"
@@ -254,11 +298,11 @@
 
       <!-- 底部提示 -->
       <div class="smart-footer-info">
-        <i class="fas fa-info-circle"></i>
+        <i class="fas fa-info-circle" />
         <span>检索结果基于最新法律法规数据库，仅供参考</span>
       </div>
     </div>
-    
+
     <!-- 历史记录模态框 -->
     <HistoryModal
       v-model:visible="showHistoryModal"
@@ -279,11 +323,11 @@ import HistoryModal from '@/components/HistoryModal.vue'
 
 export default {
   name: 'LegalResearch',
-  
+
   components: {
     HistoryModal
   },
-  
+
   data() {
     return {
       activeTab: 'cases',
@@ -332,17 +376,7 @@ export default {
       historyRecords: []
     }
   },
-  
-  async mounted() {
-    this.loadFilterOptions()
-    this.loadSuggestionsPool()
-    document.addEventListener('click', this.handleClickOutside)
-  },
-  
-  beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside)
-  },
-  
+
   computed: {
     years() {
       const currentYear = new Date().getFullYear()
@@ -359,7 +393,17 @@ export default {
       return this.procedureOptions.filter(opt => opt.label.toLowerCase().includes(query))
     }
   },
-  
+
+  async mounted() {
+    this.loadFilterOptions()
+    this.loadSuggestionsPool()
+    document.addEventListener('click', this.handleClickOutside)
+  },
+
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
+  },
+
   methods: {
     async loadFilterOptions() {
       this.filtersLoading = true
@@ -373,7 +417,8 @@ export default {
           this.docTypeOptions = grouped['doc_type'] || []
         }
 
-        const { data: regOptions, error: regError } = await filterService.getRegulationFilterOptions()
+        const { data: regOptions, error: regError } =
+          await filterService.getRegulationFilterOptions()
         if (!regError && regOptions) {
           const grouped = filterService.groupByFilterKey(regOptions)
           this.effectiveLevelOptions = grouped['effective_level'] || []
@@ -386,7 +431,7 @@ export default {
         this.filtersLoading = false
       }
     },
-    
+
     handleClickOutside(event) {
       const regionDropdown = this.$el?.querySelector('.region-dropdown-container')
       const procedureDropdown = this.$el?.querySelector('.procedure-dropdown-container')
@@ -395,22 +440,26 @@ export default {
         this.showRegionDropdown = false
         this.regionSearchQuery = ''
       }
-      if (this.showProcedureDropdown && procedureDropdown && !procedureDropdown.contains(event.target)) {
+      if (
+        this.showProcedureDropdown &&
+        procedureDropdown &&
+        !procedureDropdown.contains(event.target)
+      ) {
         this.showProcedureDropdown = false
         this.procedureSearchQuery = ''
       }
     },
-    
+
     switchTab(tab) {
       this.activeTab = tab
       this.showFilters = false
     },
-    
+
     toggleRegionDropdown() {
       this.showRegionDropdown = !this.showRegionDropdown
       this.showProcedureDropdown = false
     },
-    
+
     toggleRegion(opt) {
       const index = this.caseFilters.regions.indexOf(opt.value)
       if (index === -1) {
@@ -419,12 +468,12 @@ export default {
         this.caseFilters.regions.splice(index, 1)
       }
     },
-    
+
     toggleProcedureDropdown() {
       this.showProcedureDropdown = !this.showProcedureDropdown
       this.showRegionDropdown = false
     },
-    
+
     toggleProcedure(opt) {
       const index = this.caseFilters.procedures.indexOf(opt.value)
       if (index === -1) {
@@ -433,40 +482,49 @@ export default {
         this.caseFilters.procedures.splice(index, 1)
       }
     },
-    
+
     handleSearch() {
       if (!this.searchQuery.trim()) return
-      
+
       if (this.activeTab === 'cases') {
         const params = new URLSearchParams()
         params.set('q', this.searchQuery)
         if (this.caseFilters.keywords) params.set('keywords', this.caseFilters.keywords)
         if (this.caseFilters.courtLevel) params.set('courtLevel', this.caseFilters.courtLevel)
-        if (this.caseFilters.regions.length > 0) params.set('regions', this.caseFilters.regions.join(','))
+        if (this.caseFilters.regions.length > 0)
+          params.set('regions', this.caseFilters.regions.join(','))
         if (this.caseFilters.yearStart) params.set('yearStart', this.caseFilters.yearStart)
         if (this.caseFilters.yearEnd) params.set('yearEnd', this.caseFilters.yearEnd)
-        if (this.caseFilters.procedures.length > 0) params.set('procedures', this.caseFilters.procedures.join(','))
+        if (this.caseFilters.procedures.length > 0)
+          params.set('procedures', this.caseFilters.procedures.join(','))
         if (this.caseFilters.docType) params.set('docType', this.caseFilters.docType)
         router.push(`/case-search-results?${params.toString()}`)
       } else if (this.activeTab === 'regulations') {
         const params = new URLSearchParams()
         params.set('q', this.searchQuery)
         if (this.regulationFilters.keywords) params.set('keywords', this.regulationFilters.keywords)
-        if (this.regulationFilters.effectiveLevel) params.set('level', this.regulationFilters.effectiveLevel)
-        if (this.regulationFilters.issuingAuthority) params.set('issuingAuthority', this.regulationFilters.issuingAuthority)
-        if (this.regulationFilters.publishYearStart) params.set('publishYearStart', this.regulationFilters.publishYearStart)
-        if (this.regulationFilters.publishYearEnd) params.set('publishYearEnd', this.regulationFilters.publishYearEnd)
-        if (this.regulationFilters.effectiveYearStart) params.set('effectiveYearStart', this.regulationFilters.effectiveYearStart)
-        if (this.regulationFilters.effectiveYearEnd) params.set('effectiveYearEnd', this.regulationFilters.effectiveYearEnd)
-        if (this.regulationFilters.timeliness) params.set('timeliness', this.regulationFilters.timeliness)
+        if (this.regulationFilters.effectiveLevel)
+          params.set('level', this.regulationFilters.effectiveLevel)
+        if (this.regulationFilters.issuingAuthority)
+          params.set('issuingAuthority', this.regulationFilters.issuingAuthority)
+        if (this.regulationFilters.publishYearStart)
+          params.set('publishYearStart', this.regulationFilters.publishYearStart)
+        if (this.regulationFilters.publishYearEnd)
+          params.set('publishYearEnd', this.regulationFilters.publishYearEnd)
+        if (this.regulationFilters.effectiveYearStart)
+          params.set('effectiveYearStart', this.regulationFilters.effectiveYearStart)
+        if (this.regulationFilters.effectiveYearEnd)
+          params.set('effectiveYearEnd', this.regulationFilters.effectiveYearEnd)
+        if (this.regulationFilters.timeliness)
+          params.set('timeliness', this.regulationFilters.timeliness)
         router.push(`/regulation-search-results?${params.toString()}`)
       }
     },
-    
+
     toggleFilters() {
       this.showFilters = !this.showFilters
     },
-    
+
     async loadSuggestionsPool() {
       try {
         this.allSuggestions = [...this.suggestions]
@@ -479,7 +537,7 @@ export default {
         console.error('Failed to load suggestions pool:', error)
       }
     },
-    
+
     refreshSuggestions() {
       if (this.allSuggestions.length <= 4) {
         const newSuggestions = [
@@ -497,16 +555,16 @@ export default {
         this.suggestions = this.allSuggestions.sort(() => 0.5 - Math.random()).slice(0, 4)
       }
     },
-    
+
     useSuggestion(text) {
       this.searchQuery = text
     },
-    
+
     async openHistory() {
       try {
         const history = await faruiCaseService.getSearchHistory(10)
         console.log('Fetched history:', history)
-        
+
         if (Array.isArray(history)) {
           this.historyRecords = history.map(item => ({
             id: item.id,
@@ -526,15 +584,17 @@ export default {
         this.showHistoryModal = true
       }
     },
-    
+
     handleHistorySelect(record) {
       if (record.type === '案例检索') {
         router.push(`/case-search-results?q=${encodeURIComponent(record.title)}&fromHistory=true`)
       } else {
-        router.push(`/regulation-search-results?q=${encodeURIComponent(record.title)}&fromHistory=true`)
+        router.push(
+          `/regulation-search-results?q=${encodeURIComponent(record.title)}&fromHistory=true`
+        )
       }
     },
-    
+
     async handleHistoryDelete(record) {
       const previousRecords = [...this.historyRecords]
       this.historyRecords = this.historyRecords.filter(r => r.id !== record.id)
@@ -596,7 +656,7 @@ export default {
   background: white;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   max-height: 280px;
   overflow-y: auto;

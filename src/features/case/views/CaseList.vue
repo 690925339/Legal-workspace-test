@@ -48,7 +48,9 @@
             <th width="13%">操作</th>
           </tr>
         </thead>
-        <tbody>
+        <!-- 骨架屏：仅在初次加载无缓存时显示 -->
+        <CaseListSkeleton v-if="initialLoading && cases.length === 0" />
+        <tbody v-else>
           <tr
             v-for="caseItem in filteredCases"
             :key="caseItem.id"
@@ -89,11 +91,14 @@
                 <button
                   v-if="caseItem.status !== 'closed'"
                   class="action-btn"
+                  :class="{ loading: editingCaseId === caseItem.id }"
                   title="编辑"
                   aria-label="编辑案件"
-                  @click.stop="editCase(caseItem.id)"
+                  :disabled="editingCaseId === caseItem.id"
+                  @click.stop="editCase(caseItem)"
                 >
-                  <i class="fas fa-pen" />
+                  <i v-if="editingCaseId === caseItem.id" class="fas fa-spinner fa-spin" />
+                  <i v-else class="fas fa-pen" />
                 </button>
                 <button
                   v-if="caseItem.status === 'active'"
@@ -123,6 +128,7 @@
     <CaseForm
       :visible="showCaseModal"
       :edit-id="currentCaseId"
+      :initial-data="currentCaseData"
       @close="showCaseModal = false"
       @saved="onCaseSaved"
     />
@@ -142,32 +148,38 @@
 
 <script>
 import CaseForm from './CaseForm.vue'
-import { caseService } from '@/features/case/services'
-
+import { caseService, financialService, stakeholderService } from '@/features/case/services'
+import { caseListCache } from '@/features/case/services/caseListCache'
+import CaseListSkeleton from '../components/CaseListSkeleton.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 
 export default {
   name: 'CaseList',
   components: {
     CaseForm,
+    CaseListSkeleton,
     ConfirmModal
   },
   data() {
     return {
       cases: [],
       loading: false,
+      initialLoading: true, // 初次加载标志
       searchQuery: '',
       filterStatus: 'all',
       filterType: 'all',
       sortBy: 'default',
       showCaseModal: false,
       currentCaseId: null,
+      currentCaseData: null,
+      editingCaseId: null, // 编辑按钮 loading 状态
       confirmState: {
         visible: false,
         message: '',
         type: 'warning',
         resolve: null
-      }
+      },
+      pendingOperations: 0 // 乐观更新计数器，阻止后台刷新覆盖
     }
   },
   computed: {
@@ -181,7 +193,7 @@ export default {
           c =>
             c.name.toLowerCase().includes(query) ||
             c.code.toLowerCase().includes(query) ||
-            c.client.toLowerCase().includes(query)
+            (c.client && c.client.toLowerCase().includes(query))
         )
       }
 
@@ -200,15 +212,15 @@ export default {
         if (this.sortBy === 'default') {
           // Default: Status (Draft -> Active -> Closed) then CreatedAt Desc
           const statusWeight = {
-            'draft': 0,
-            'active': 1,
-            'closed': 2
+            draft: 0,
+            active: 1,
+            closed: 2
           }
           const wA = statusWeight[a.status] !== undefined ? statusWeight[a.status] : 99
           const wB = statusWeight[b.status] !== undefined ? statusWeight[b.status] : 99
-          
+
           if (wA !== wB) return wA - wB
-          
+
           // Secondary: Created Time Desc
           return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
         } else if (this.sortBy === 'update_desc') {
@@ -227,32 +239,79 @@ export default {
   },
   methods: {
     async loadCases() {
+      // 1. 先尝试从缓存加载（秒开）
+      const cached = caseListCache.get()
+      if (cached && cached.data) {
+        this.cases = cached.data
+        this.initialLoading = false
+        console.log('[CaseList] 从缓存加载，年龄:', Math.round(caseListCache.getAge() / 1000), '秒')
+
+        // 2. 如果缓存未过期，后台静默刷新
+        if (!caseListCache.isStale()) {
+          this.refreshInBackground()
+          return
+        }
+      }
+
+      // 3. 缓存不存在或已过期，显示加载状态
       this.loading = true
       try {
         const data = await caseService.getList()
-        // 映射数据库字段到前端展示格式
-        this.cases = (data || []).map(c => ({
-          id: c.id,
-          name: c.case_title,
-          code: c.case_number || `CASE-${c.id.slice(0, 8)}`,
-          type: c.case_type || '民事',
-          stage: c.stage || '',
-          category: 'civil',
-          status: c.status || 'draft',
-          statusText: this.getStatusText(c.status),
-          court: c.court || '-',
-          lastUpdate: this.formatDate(c.updated_at),
-          updatedAt: c.updated_at,
-          createdAt: c.created_at
-        }))
+        const mappedCases = this.mapCasesData(data)
+        this.cases = mappedCases
+
+        // 4. 保存到缓存
+        caseListCache.set(mappedCases)
       } catch (e) {
         console.error('加载案件列表失败:', e)
-        // 如果加载失败，显示空列表
         this.cases = []
       } finally {
         this.loading = false
+        this.initialLoading = false
       }
     },
+
+    // 后台静默刷新
+    async refreshInBackground() {
+      // 如果有乐观操作正在进行，跳过本次刷新以避免覆盖 UI
+      if (this.pendingOperations > 0) {
+        console.log('[CaseList] 跳过后台刷新：有乐观操作正在进行')
+        return
+      }
+      try {
+        const data = await caseService.getList()
+        // 再次检查，避免竞态
+        if (this.pendingOperations > 0) {
+          console.log('[CaseList] 放弃后台刷新结果：有乐观操作正在进行')
+          return
+        }
+        const mappedCases = this.mapCasesData(data)
+        this.cases = mappedCases
+        caseListCache.set(mappedCases)
+        console.log('[CaseList] 后台刷新完成')
+      } catch (e) {
+        console.error('后台刷新失败:', e)
+      }
+    },
+
+    // 映射数据库字段到前端展示格式
+    mapCasesData(data) {
+      return (data || []).map(c => ({
+        id: c.id,
+        name: c.case_title,
+        code: c.case_number || `CASE-${c.id.slice(0, 8)}`,
+        type: c.case_type || '民事',
+        stage: c.stage || '',
+        category: 'civil',
+        status: c.status || 'draft',
+        statusText: this.getStatusText(c.status),
+        court: c.court || '-',
+        lastUpdate: this.formatDate(c.updated_at),
+        updatedAt: c.updated_at,
+        createdAt: c.created_at
+      }))
+    },
+
     getStatusText(status) {
       const map = {
         draft: '草稿',
@@ -277,26 +336,55 @@ export default {
     viewCase(caseId) {
       this.$router.push('/detail/' + caseId)
     },
-    editCase(caseId) {
-      this.currentCaseId = caseId
-      this.showCaseModal = true
+    async editCase(caseItem) {
+      // 显示 loading 状态
+      this.editingCaseId = caseItem.id
+
+      try {
+        // 并行预加载所有数据
+        const [caseData, financials, stakeholders] = await Promise.all([
+          caseService.getById(caseItem.id),
+          financialService.get(caseItem.id).catch(() => null),
+          stakeholderService.getList(caseItem.id).catch(() => [])
+        ])
+
+        // 数据准备完成，打开模态框
+        this.currentCaseId = caseItem.id
+        this.currentCaseData = { caseData, financials, stakeholders }
+        this.showCaseModal = true
+      } catch (e) {
+        console.error('加载案件数据失败:', e)
+        alert('加载失败，请重试')
+      } finally {
+        this.editingCaseId = null
+      }
     },
     async deleteCase(caseItem) {
       console.log('Button clicked: deleteCase', caseItem.id)
       const confirmed = await this.showConfirm('确定要删除这个案件吗？此操作无法撤销。', 'danger')
-      if (confirmed) {
-        try {
-          console.log('User confirmed delete, calling service...')
-          const result = await caseService.delete(caseItem.id)
-          console.log('Service returned:', result)
-          this.cases = this.cases.filter(c => c.id !== caseItem.id)
-          alert('案件已删除')
-        } catch (e) {
-          console.error('删除案件失败详情:', e)
-          const msg = e.message || e.error_description || JSON.stringify(e)
-          alert(`删除失败: ${msg}\n\n请检查控制台获取更多信息，或尝试刷新页面。`)
-        }
-      }
+      if (!confirmed) return
+
+      // 乐观更新：先从 UI 移除，同时更新缓存
+      const originalCases = [...this.cases]
+      this.cases = this.cases.filter(c => c.id !== caseItem.id)
+      caseListCache.set(this.cases)
+      this.pendingOperations++ // 标记有乐观操作进行中
+
+      // 异步执行删除，不阻塞 UI
+      caseService
+        .delete(caseItem.id)
+        .then(() => {
+          console.log('[CaseList] 删除成功:', caseItem.id)
+        })
+        .catch(e => {
+          console.error('删除失败，回滚:', e)
+          this.cases = originalCases
+          caseListCache.set(originalCases)
+          alert(`删除失败: ${e.message || '请检查网络连接'}\n\n数据已恢复。`)
+        })
+        .finally(() => {
+          this.pendingOperations-- // 完成后减少计数
+        })
     },
     createCase() {
       this.currentCaseId = null
@@ -304,7 +392,8 @@ export default {
     },
     async onCaseSaved(caseData) {
       console.log('Case saved:', caseData)
-      // 重新加载列表
+      // 清除缓存并重新加载列表
+      caseListCache.clear()
       await this.loadCases()
       this.showCaseModal = false
     },
@@ -317,28 +406,48 @@ export default {
         alert('只有进行中的案件才能结案')
         return
       }
-      
-      const confirmed = await this.showConfirm('确定要结案吗？\n\n注意：结案后案件信息将无法修改。', 'warning')
-      if (confirmed) {
-        try {
-          console.log('User confirmed close, calling service...')
-          await caseService.update(caseItem.id, { status: 'closed' })
-          console.log('Service update successful')
-          caseItem.status = 'closed'
-          caseItem.statusText = '已结案'
-          caseItem.lastUpdate = '刚刚'
-          caseItem.updatedAt = new Date().toISOString()
-          alert('案件已结案')
-        } catch (e) {
-          console.error('结案失败详情:', e)
-          const msg = e.message || e.error_description || JSON.stringify(e)
-          alert(`结案失败: ${msg}\n\n请 check 权限或网络连接。`)
-        }
-      }
+
+      const confirmed = await this.showConfirm(
+        '确定要结案吗？\n\n注意：结案后案件信息将无法修改。',
+        'warning'
+      )
+      if (!confirmed) return
+
+      // 乐观更新：先更新 UI 状态，再异步请求后端
+      const originalStatus = caseItem.status
+      const originalStatusText = caseItem.statusText
+      const originalLastUpdate = caseItem.lastUpdate
+      const originalUpdatedAt = caseItem.updatedAt
+
+      caseItem.status = 'closed'
+      caseItem.statusText = '已结案'
+      caseItem.lastUpdate = '刚刚'
+      caseItem.updatedAt = new Date().toISOString()
+      caseListCache.set(this.cases)
+      this.pendingOperations++ // 标记有乐观操作进行中
+
+      // 异步执行更新，不阻塞 UI
+      caseService
+        .update(caseItem.id, { status: 'closed' })
+        .then(() => {
+          console.log('[CaseList] 结案成功:', caseItem.id)
+        })
+        .catch(e => {
+          console.error('结案失败，回滚:', e)
+          caseItem.status = originalStatus
+          caseItem.statusText = originalStatusText
+          caseItem.lastUpdate = originalLastUpdate
+          caseItem.updatedAt = originalUpdatedAt
+          caseListCache.set(this.cases)
+          alert(`结案失败: ${e.message || '请检查网络连接'}\n\n状态已恢复。`)
+        })
+        .finally(() => {
+          this.pendingOperations-- // 完成后减少计数
+        })
     },
     // Custom Confirm Modal Logic
     showConfirm(message, type = 'warning') {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this.confirmState = {
           visible: true,
           message,
@@ -415,7 +524,7 @@ export default {
   border-radius: 12px;
   padding: 32px;
   width: 400px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -496,12 +605,22 @@ export default {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

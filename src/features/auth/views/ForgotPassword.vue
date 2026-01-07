@@ -4,20 +4,10 @@
       <div class="brand-pattern" />
       <div class="brand-content">
         <div class="brand-logo">
-          <div
-            v-if="brand.logoUrl"
-            class="logo-img"
-          >
-            <img
-              :src="brand.logoUrl"
-              alt="Logo"
-              style="max-height: 48px;"
-            >
+          <div v-if="brand.logoUrl" class="logo-img">
+            <img :src="brand.logoUrl" alt="Logo" style="max-height: 48px" />
           </div>
-          <div
-            v-else
-            class="logo-box"
-          >
+          <div v-else class="logo-box">
             {{ brand.logoText }}
           </div>
           <div class="brand-text">
@@ -41,28 +31,18 @@
     <div class="form-section">
       <div class="form-container">
         <div class="form-header">
-          <div class="form-title">
-            忘记密码
-          </div>
-          <div class="form-subtitle">
-            输入您的邮箱以重置密码
-          </div>
+          <div class="form-title">忘记密码</div>
+          <div class="form-subtitle">输入您的邮箱以重置密码</div>
         </div>
 
         <form @submit.prevent="handleResetPassword">
           <!-- 错误提示 -->
-          <div
-            v-if="errorMessage"
-            class="error-message"
-          >
+          <div v-if="errorMessage" class="error-message">
             <i class="fas fa-exclamation-circle" /> {{ errorMessage }}
           </div>
 
           <!-- 成功提示 -->
-          <div
-            v-if="successMessage"
-            class="success-message"
-          >
+          <div v-if="successMessage" class="success-message">
             <i class="fas fa-check-circle" /> {{ successMessage }}
           </div>
 
@@ -70,34 +50,25 @@
             <label class="form-label">邮箱地址</label>
             <div class="input-wrapper">
               <i class="far fa-envelope input-icon" />
-              <input 
-                v-model="email" 
-                type="email" 
+              <input
+                v-model="email"
+                type="email"
                 class="form-input"
                 placeholder="name@company.com"
                 :disabled="isLoading"
                 required
-              >
+              />
             </div>
           </div>
 
-          <button
-            type="submit"
-            class="submit-btn"
-            :disabled="isLoading"
-          >
+          <button type="submit" class="submit-btn" :disabled="isLoading">
             <span v-if="!isLoading">发送重置链接</span>
             <span v-else><i class="fas fa-spinner fa-spin" /> 发送中...</span>
           </button>
         </form>
 
         <div class="form-footer">
-          <a
-            href="#"
-            @click.prevent="goToLogin"
-          >
-            <i class="fas fa-arrow-left" /> 返回登录
-          </a>
+          <a href="#" @click.prevent="goToLogin"> <i class="fas fa-arrow-left" /> 返回登录 </a>
         </div>
       </div>
     </div>
@@ -150,7 +121,7 @@ export default {
       this.successMessage = ''
 
       try {
-        const { data, error } = await authService.resetPassword(this.email)
+        const { error } = await authService.resetPassword(this.email)
 
         if (error) {
           console.error('Password reset error:', error)

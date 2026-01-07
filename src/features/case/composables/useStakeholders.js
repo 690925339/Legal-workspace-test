@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { stakeholderService } from '@/features/case/services'
+import { stakeholderCache } from '@/features/case/services/stakeholderCache'
 
 /**
  * 当事人管理 Composable
@@ -8,6 +9,7 @@ import { stakeholderService } from '@/features/case/services'
  * - 管理当事人列表（原告/被告/第三人）
  * - 提供增删改查操作
  * - 支持从数据库加载和保存数据
+ * - 使用缓存实现秒开
  */
 export function useStakeholders(initialData = {}) {
   const stakeholders = ref({
@@ -21,22 +23,33 @@ export function useStakeholders(initialData = {}) {
   const loading = ref(false)
 
   /**
-   * 从数据库加载当事人数据
+   * 从数据库加载当事人数据（支持缓存）
    * @param {string} caseId - 案件 ID
    */
   const loadStakeholders = async caseId => {
     if (!caseId) return
+
+    // 先尝试从缓存获取
+    const cached = stakeholderCache.get(caseId)
+    if (cached) {
+      stakeholders.value = cached
+      return
+    }
 
     loading.value = true
     try {
       const data = await stakeholderService.getList(caseId)
 
       // 按类型分组
-      stakeholders.value = {
+      const grouped = {
         plaintiffs: data.filter(s => s.type === 'plaintiff').map(mapFromDb),
         defendants: data.filter(s => s.type === 'defendant').map(mapFromDb),
         thirdParties: data.filter(s => s.type === 'third_party').map(mapFromDb)
       }
+
+      stakeholders.value = grouped
+      // 存入缓存
+      stakeholderCache.set(caseId, grouped)
     } catch (e) {
       console.error('加载当事人失败:', e)
     } finally {
@@ -138,6 +151,8 @@ export function useStakeholders(initialData = {}) {
     }
 
     stakeholders.value[listName] = stakeholders.value[listName].filter(item => item.id !== id)
+    // 使缓存失效
+    if (caseId) stakeholderCache.invalidate(caseId)
   }
 
   /**
@@ -197,6 +212,9 @@ export function useStakeholders(initialData = {}) {
       currentStakeholder.value.id = currentStakeholder.value.id || Date.now()
       stakeholders.value[listName].push(currentStakeholder.value)
     }
+
+    // 使缓存失效（保存后重新加载时获取最新数据）
+    if (caseId) stakeholderCache.invalidate(caseId)
   }
 
   /**
