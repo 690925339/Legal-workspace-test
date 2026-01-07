@@ -1122,15 +1122,5 @@ export default {
             </div>
         </div>
         
-        <style>
-        @keyframes tipFadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes resultFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        </style>
     `
 }
