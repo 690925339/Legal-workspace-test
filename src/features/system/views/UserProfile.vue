@@ -250,7 +250,7 @@
 </template>
 
 <script>
-import { authService, getSupabaseClient } from '@/config/supabase.js'
+import { authService, profileService, getSupabaseClient } from '@/config/supabase.js'
 import { authStore } from '@/stores/auth.js'
 
 export default {
@@ -298,49 +298,62 @@ export default {
   },
 
   methods: {
+    /**
+     * 将 profile 数据填充到表单
+     */
+    populateFormData(profile) {
+      if (!profile) return
+
+      this.user.name = profile.full_name || ''
+      this.user.title = profile.title || ''
+      this.user.email = authStore.state.user?.email || ''
+      this.user.phone = profile.phone || ''
+      this.user.department = profile.department || ''
+      this.user.location = profile.location || ''
+      this.user.bio = profile.bio || ''
+      this.user.avatar = profile.avatar_url || null
+
+      if (profile.avatar_url) {
+        authStore.setAvatarUrl(profile.avatar_url)
+      }
+      if (profile.title) {
+        authStore.setTitle(profile.title)
+      }
+
+      this.preferences.emailNotifications = profile.email_notifications ?? true
+      this.preferences.smsNotifications = profile.sms_notifications ?? false
+      this.preferences.theme = profile.theme || 'light'
+      this.preferences.language = profile.language || 'zh-CN'
+    },
+
+    /**
+     * 加载用户资料（缓存优先，避免闪烁）
+     */
     async loadProfile() {
-      this.isLoading = true
+      const userId = authStore.state?.user?.id
+
+      if (!userId) {
+        console.error('No user logged in')
+        this.isLoading = false
+        return
+      }
+
       try {
-        const supabase = getSupabaseClient()
-        const userId = authStore.state?.user?.id
-
-        if (!userId) {
-          console.error('No user logged in')
-          return
-        }
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
+        // 使用 profileService 缓存优先加载
+        const { data: profile, error, fromCache } = await profileService.getProfile(userId)
 
         if (error) {
           console.error('Error loading profile:', error)
+          // 回退到 authStore 中的基础信息
           this.user.email = authStore.state.user?.email || ''
           this.user.name = authStore.state.user?.user_metadata?.full_name || ''
           this.user.title = authStore.state.user?.user_metadata?.title || '律师'
         } else if (profile) {
-          this.user.name = profile.full_name || ''
-          this.user.title = profile.title || ''
-          this.user.email = authStore.state.user?.email || ''
-          this.user.phone = profile.phone || ''
-          this.user.department = profile.department || ''
-          this.user.location = profile.location || ''
-          this.user.bio = profile.bio || ''
-          this.user.avatar = profile.avatar_url || null
+          this.populateFormData(profile)
+        }
 
-          if (profile.avatar_url) {
-            authStore.setAvatarUrl(profile.avatar_url)
-          }
-          if (profile.title) {
-            authStore.setTitle(profile.title)
-          }
-
-          this.preferences.emailNotifications = profile.email_notifications ?? true
-          this.preferences.smsNotifications = profile.sms_notifications ?? false
-          this.preferences.theme = profile.theme || 'light'
-          this.preferences.language = profile.language || 'zh-CN'
+        if (fromCache) {
+          console.log('Profile loaded from cache (instant)')
         }
       } catch (err) {
         console.error('Failed to load profile:', err)
@@ -355,7 +368,6 @@ export default {
       }
 
       try {
-        const supabase = getSupabaseClient()
         const userId = authStore.state?.user?.id
 
         if (!userId) {
@@ -363,8 +375,8 @@ export default {
           return
         }
 
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: userId,
+        // 准备更新数据
+        const profileData = {
           full_name: this.user.name,
           title: this.user.title,
           phone: this.user.phone,
@@ -375,7 +387,10 @@ export default {
           sms_notifications: this.preferences.smsNotifications,
           theme: this.preferences.theme,
           language: this.preferences.language
-        })
+        }
+
+        // 使用 profileService 保存（自动更新缓存）
+        const { error: profileError } = await profileService.updateProfile(userId, profileData)
 
         if (profileError) {
           console.error('Error updating profile:', profileError)
@@ -383,6 +398,7 @@ export default {
           return
         }
 
+        // 同步更新 auth 元数据
         const { error: authError } = await authService.updateUser({
           data: {
             full_name: this.user.name,

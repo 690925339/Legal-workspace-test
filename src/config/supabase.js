@@ -61,7 +61,8 @@ export const authService = {
     const supabase = getSupabaseClient()
     if (!supabase) return { error: { message: 'Supabase client not initialized' } }
 
-    const { error } = await supabase.auth.signOut()
+    // 使用 'global' scope 确保服务器端会话也被清除
+    const { error } = await supabase.auth.signOut({ scope: 'global' })
     return { error }
   },
 
@@ -241,9 +242,152 @@ export const brandService = {
   }
 }
 
+// 用户资料服务（带缓存，避免闪烁）
+export const profileService = {
+  _cache: null,
+  _cacheTime: null,
+  _storageKey: 'user_profile_v1',
+  _cacheDuration: 30 * 60 * 1000, // 30分钟缓存
+
+  /**
+   * 获取用户资料（缓存优先）
+   * @param {string} userId - 用户ID
+   * @returns {Promise<{data: object|null, error: object|null, fromCache: boolean}>}
+   */
+  async getProfile(userId) {
+    if (!userId) return { data: null, error: { message: 'No user ID' }, fromCache: false }
+
+    const cacheKey = `${this._storageKey}_${userId}`
+
+    // 1. 检查内存缓存
+    if (this._cache && this._cacheTime && Date.now() - this._cacheTime < this._cacheDuration) {
+      return { data: this._cache, error: null, fromCache: true }
+    }
+
+    // 2. 检查 localStorage 缓存（实现秒开）
+    try {
+      const stored = localStorage.getItem(cacheKey)
+      if (stored) {
+        const { data, timestamp } = JSON.parse(stored)
+        if (data && timestamp && Date.now() - timestamp < this._cacheDuration) {
+          this._cache = data
+          this._cacheTime = timestamp
+          // 返回缓存数据，后台静默更新
+          this._silentRefresh(userId, cacheKey)
+          return { data: this._cache, error: null, fromCache: true }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load profile from localStorage:', e)
+    }
+
+    // 3. 从远程加载
+    return await this._fetchFromRemote(userId, cacheKey)
+  },
+
+  /**
+   * 后台静默刷新数据
+   */
+  async _silentRefresh(userId, cacheKey) {
+    try {
+      await this._fetchFromRemote(userId, cacheKey)
+    } catch (e) {
+      console.warn('Silent refresh failed:', e)
+    }
+  },
+
+  /**
+   * 从 Supabase 获取数据并更新缓存
+   */
+  async _fetchFromRemote(userId, cacheKey) {
+    const supabase = getSupabaseClient()
+    if (!supabase)
+      return { data: null, error: { message: 'Supabase not initialized' }, fromCache: false }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (!error && profile) {
+      this._cache = profile
+      this._cacheTime = Date.now()
+
+      // 更新 localStorage
+      try {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            data: profile,
+            timestamp: this._cacheTime
+          })
+        )
+      } catch (e) {
+        console.warn('Failed to save profile to localStorage:', e)
+      }
+    }
+
+    return { data: profile, error, fromCache: false }
+  },
+
+  /**
+   * 更新用户资料（同步更新缓存）
+   * @param {string} userId - 用户ID
+   * @param {object} updates - 更新内容
+   */
+  async updateProfile(userId, updates) {
+    const supabase = getSupabaseClient()
+    if (!supabase) return { error: { message: 'Supabase not initialized' } }
+
+    const { error } = await supabase.from('profiles').upsert({
+      id: userId,
+      ...updates
+    })
+
+    if (!error) {
+      // 立即更新缓存
+      const cacheKey = `${this._storageKey}_${userId}`
+      this._cache = { ...this._cache, ...updates, id: userId }
+      this._cacheTime = Date.now()
+
+      try {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            data: this._cache,
+            timestamp: this._cacheTime
+          })
+        )
+      } catch (e) {
+        console.warn('Failed to update profile cache:', e)
+      }
+    }
+
+    return { error }
+  },
+
+  /**
+   * 清除缓存
+   * @param {string} userId - 用户ID（可选）
+   */
+  clearCache(userId) {
+    this._cache = null
+    this._cacheTime = null
+    if (userId) {
+      try {
+        localStorage.removeItem(`${this._storageKey}_${userId}`)
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
+}
+
 export default {
   getSupabaseClient,
   authService,
   filterService,
-  brandService
+  brandService,
+  profileService
 }

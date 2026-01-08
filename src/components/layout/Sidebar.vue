@@ -201,14 +201,25 @@ export default {
           console.error('Logout error:', error)
         }
 
-        authStore.clearAuth()
-        this.$router.push('/login')
+        // 手动清除 Supabase localStorage 键（防止 signOut 未完全清除）
+        const supabaseKeys = Object.keys(localStorage).filter(
+          key => key.startsWith('sb-') && key.includes('-auth-token')
+        )
+        supabaseKeys.forEach(key => {
+          console.log('Clearing localStorage key:', key)
+          localStorage.removeItem(key)
+        })
 
-        console.log('Logout successful')
+        authStore.clearAuth()
+        console.log('Logout successful, reloading page...')
+
+        // 强制页面刷新以确保所有状态被清除（使用 hash 路由格式）
+        window.location.href = window.location.origin + window.location.pathname + '#/login'
       } catch (err) {
         console.error('Logout failed:', err)
         authStore.clearAuth()
-        this.$router.push('/login')
+        // 即使出错也强制刷新
+        window.location.href = window.location.origin + window.location.pathname + '#/login'
       }
     }
   }

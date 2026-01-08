@@ -15,7 +15,9 @@
     "help:dev": "vitepress dev help --port 5174",
     "help:build": "vitepress build help",
     "help:preview": "vitepress preview help",
-    "mock:server": "cd tools/mock-server && npm start",
+    "mock:server": "cd tools/mock-server && node index.js",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Env staging",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Env production",
     "prepare": "husky"
   },
   "dependencies": {
