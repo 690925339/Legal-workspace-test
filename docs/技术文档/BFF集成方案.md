@@ -1,122 +1,105 @@
 # Supabase + BFF 集成实施方案
 
-> **状态**: 建议草案
-> **目标**: 在现有 Supabase BaaS 架构基础上，平滑引入 BFF (Backend for Frontend) 层，以增强业务逻辑控制、安全性及第三方服务聚合能力。
+> **状态**: ✅ 已实施 (Phase 1)
+> **最后更新**: 2026-01-08
+> **适用版本**: v3.14+
 
 ## 1. 核心理念
 
-在引入 BFF 后，Supabase 的角色将从 **"直接面向前端的 BaaS"** 转变为 **"高性能数据存储与认证服务"**。
+本项目采用 **"BaaF (Backend as a Frontend)"** 架构的演进路线。在 Phase 1 阶段，我们通过引入统一的 `ApiClient` 和 BFF 代理层，实现了从"直接连接 BaaS"到"通过服务层中转"的架构平滑过渡。
 
-- **前端 (Frontend)**: 不再直接连接 Supabase DB，而是调用 BFF 提供的 RESTful API。
-- **BFF 层**: 承担"业务管家"角色，负责参数校验、权限控制、数据聚合（Supabase + AI + 第三方）、格式转换。
-- **Supabase**: 继续处理底层数据存储 (PostgreSQL)、认证 (Auth) 和 文件存储 (Storage)。
+- **前端层 (Frontend)**: 统一通过 `src/services/api-client.js` 发起请求，支持通过配置切换直连模式或 BFF 模式。
+- **BFF 层 (Mock/Proxy)**: 目前由 Express 搭建的轻量级代理服务 (`tools/mock-server`) 承担，负责验证 Supabase Token 并透传 RLS 规则。
+- **数据层 (Supabase)**: 继续负责核心数据存储、认证和行级安全 (RLS)。
 
 ## 2. 架构拓扑
 
 ```mermaid
 graph LR
-    Client[Vue Frontend] -- REST API (JWT) --> BFF[NestJS BFF Service]
+    Client[Vue Frontend] -- REST API (JWT) --> BFF[BFF Layer]
 
-    subgraph "Backend Services"
-        BFF -- Supabase SDK (Admin Key) --> Supabase[(Supabase DB & Auth)]
-        BFF -- HTTP/gRPC --> AIService[AI Service]
-        BFF -- HTTP --> ThirdParty[第三方 API]
+    subgraph "Mode 1: Direct (Current Default)"
+        Client -. Supabase SDK .-> Supabase[(Supabase DB & Auth)]
+    end
+
+    subgraph "Mode 2: BFF Proxy (Mock/Prod)"
+        BFF -- Proxy (User Token) --> Supabase
+        BFF -- HTTP --> AIService[AI Service]
     end
 ```
 
-## 3. 具体实施步骤
+## 3. 已实施内容 (Phase 1)
 
-### 3.1 步骤一：BFF 服务初始化
+### 3.1 前端架构改造 (完成)
 
-1.  **创建 NestJS 项目**:
-    ```bash
-    nest new legal-bff
-    ```
-2.  **配置依赖**:
-    - `@supabase/supabase-js`: 用于连接 Supabase。
-    - `@nestjs/config`: 管理环境变量。
-    - `passport-jwt`: 解析 Supabase 颁发的 JWT。
+前端已彻底剥离对 `supabase-js` 的直接依赖（除 Auth 外），所有业务请求通过统一的 `ApiClient` 发送。
 
-### 3.2 步骤二：认证对接 (关键)
+**核心组件**: `src/services/api-client.js`
 
-前端继续使用 Supabase Auth 进行登录，获取 `access_token`。**BFF 负责验证这个 Token。**
+- **统一拦截器**: 支持 Request/Response 拦截，统一处理 Token 注入和错误格式化。
+- **双模式支持**:
+  - `VITE_USE_BFF=false`: Service 层直接调用 Supabase SDK（保持兼容）。
+  - `VITE_USE_BFF=true`: Service 层通过 HttpClient 调用 BFF 接口。
+- **高级特性**:
+  - **自动 Token 注入**: 自动从 Supabase Session 获取 JWT 并添加到 `Authorization` 头。
+  - **请求取消**: 集成 `AbortController`，支持页面切换自动取消请求。
+  - **SSE 流式支持**: 原生支持 AI 对话的 Server-Sent Events 流式响应。
+  - **智能缓存**: 内置内存缓存 (`cachedGet`)，优化高频读操作。
 
-**前端工作**:
+### 3.2 BFF 服务端 (Mock Ready)
 
-- 登录逻辑不变。
-- API 请求头携带 Token: `Authorization: Bearer <access_token>` (已在 M6 完成)。
+为了验证 BFF 模式，我们实现了一个基于 Express 的完整 Mock Server。
 
-**BFF 工作**:
+**位置**: `tools/mock-server/`
 
-- 实现 JWT Strategy，使用 Supabase 的 `JWT Secret` 验证签名。
-- 解析出 `user_id` 和 `role`，注入到 Request 上下文中。
+- **技术栈**: Express + Supabase Client (Node.js) + Cors
+- **鉴权机制**: 实现了 `supabaseMiddleware`，解析前端传递的 Bearer Token，创建 Scoped Supabase Client。
+- **代理模式**: 采用 "透传模式 (Proxy Mode)"，BFF 直接使用用户的 JWT 操作数据库，复用 Supabase RLS 规则，无需重复编写权限代码。
+- **已实现接口**:
+  - `GET/POST/PUT/DELETE /api/v1/cases` (案件管理)
+  - `GET/PUT /api/v1/cases/:id/financials` (财务信息，含去重逻辑)
+  - `GET/POST/PUT/DELETE /api/v1/stakeholders` (当事人管理)
 
-### 3.3 步骤三：数据访问模式迁移
+### 3.3 环境变量配置
 
-**模式 A: 代理模式 (透传 RLS)**
+支持通过 `.env` 灵活切换模式：
 
-- BFF 接收前端 Token，创建 Scoped Supabase Client。
-- **优点**: 复用 Supabase 现有的 RLS (Row Level Security) 规则，无需在 BFF 重写权限逻辑。
-- **适用**: 简单的 CRUD 操作。
+```ini
+# --- 模式 1: 直连 Supabase (生产默认) ---
+VITE_USE_BFF=false
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
 
-```typescript
-// NestJS Service 示例
-async findAll(userToken: string) {
-  // 使用用户的 Token 创建 Client，受 RLS 限制
-  const client = createClient(url, key, {
-    global: { headers: { Authorization: `Bearer ${userToken}` } }
-  });
-  return client.from('cases').select('*');
-}
+# --- 模式 2: 本地 BFF 开发 ---
+VITE_USE_BFF=true
+VITE_API_BASE_URL=http://localhost:3000/api/v1
 ```
 
-**模式 B: 管理员模式 (Bypass RLS)**
+## 4. 验证与测试
 
-- BFF 使用 `SUPABASE_SERVICE_ROLE_KEY` (超级管理员权限)。
-- **优点**: 拥有完全的数据访问权限，适合跨用户聚合数据、执行复杂业务逻辑、处理敏感数据。
-- **注意**: 必须在 BFF 代码中严格实现权限检查！
+### 4.1 启动 Mock BFF
 
-```typescript
-// NestJS Service 示例
-async generateReport(userId: string) {
-  // 使用 Service Role Key，无视 RLS
-  const adminClient = createClient(url, serviceRoleKey);
-  // 手动检查权限...
-  // 执行复杂查询...
-  return data;
-}
+```bash
+# 启动 Mock服务器 (运行在 :3000)
+npm run mock:server
 ```
 
-### 3.4 步骤四：AI 服务集成
+### 4.2 验证 BFF 模式
 
-这是引入 BFF 的最大动力之一。
-
-1.  前端发起请求: `POST /api/ai/analyze`
-2.  BFF 接收请求，校验用户额度。
-3.  BFF 调用 Python AI Service (或直接调大模型 API)。
-4.  BFF 将结果（支持 SSE 流式）返回前端。
-    - _前端已在 M6 完成 SSE 支持，无缝对接。_
-
-## 4. 推荐推进路线 (MVP)
-
-1.  **搭建空壳 BFF**: 初始化 NestJS，跑通 "Hello World" 和 JWT 验证。
-2.  **迁移一个高频接口**: 选择 `GET /cases` (案件列表)。
-    - 在 BFF 实现该接口，代理 Supabase 查询。
-    - 前端切换 `USE_BFF=true`，验证列表加载。
-3.  **迁移 AI 接口**: 将 AI 调用逻辑从前端移入 BFF (隐藏 API Key)。
-4.  **逐步铺开**: 随着业务迭代，逐步迁移剩余接口。
+1. 修改 `.env` 设置 `VITE_USE_BFF=true`。
+2. 启动前端 `npm run dev`。
+3. 访问案件列表，观察 Network 请求：
+   - 请求 URL 应变为 `http://localhost:3000/api/v1/cases`。
+   - 请求头应包含 `Authorization: Bearer <JWT>`。
+4. 验证数据读写是否正常（Mock Server 会打印详细日志）。
 
 ## 5. 常见问题 (FAQ)
 
-**Q: 是否需要完全重写所有 API？**
-A: **不需要。** 可以在很长一段时间内保持"混合模式"。
+**Q: 为什么保留双模式？**
+A: 为了降低架构风险。生产环境目前仍稳定运行在直连模式下，BFF 模式可用于开发复杂功能（如 AI 聚合、跨系统集成），成熟一个模块迁移一个。
 
-- 复杂/敏感业务（Case Create, AI, Payment）走 BFF。
-- 简单/高频读操作（字典表、只读数据）可继续直连 Supabase (如有必要)。
-- _但在本项目中，为了架构统一，建议最终全量迁移。_
+**Q: Mock Server 能用于生产吗？**
+A: **不能。** Mock Server 仅用于本地联调和验证接口契约。生产环境应将其逻辑迁移到 NestJS 或 Serverless Functions 中，以获得更好的性能、日志监控和类型安全。
 
-**Q: RLS 规则还需要写吗？**
-A: **建议保留。** 即使有 BFF，DB 层的 RLS 是最后一道防线。尽量采用 "模式 A (透传 Token)"，让 Supabase 帮你做权限控制，BFF 只做业务组装。
-
-**Q: 如何本地开发联调？**
-A: 本地启动 NestJS 服务 (端口 3000)，前端配置 `.env` 中的 `VITE_API_BASE_URL=http://localhost:3000/api`。
+**Q: 现有 RLS 规则是否有效？**
+A: **有效且关键。** BFF 的 Proxy 模式依赖数据库层的 RLS 进行最后一道权限拦截。切勿在 BFF 中使用 `service_role key` 除非你明确知道自己在绕过权限系统。
