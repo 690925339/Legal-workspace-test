@@ -65,12 +65,7 @@
           个人资料
         </a>
 
-        <a
-          href="http://localhost:5174/getting-started"
-          target="_blank"
-          class="menu-item"
-          @click="showUserMenu = false"
-        >
+        <a :href="helpCenterUrl" target="_blank" class="menu-item" @click="showUserMenu = false">
           <i class="fas fa-question-circle" />
           帮助文档
         </a>
@@ -147,6 +142,19 @@ export default {
     },
     userAvatar() {
       return authStore.state?.avatarUrl || null
+    },
+    helpCenterUrl() {
+      // 优先使用环境变量配置的地址
+      if (import.meta.env.VITE_HELP_CENTER_URL) {
+        return import.meta.env.VITE_HELP_CENTER_URL
+      }
+      // 开发环境默认使用独立端口
+      if (import.meta.env.DEV) {
+        return 'http://localhost:5174/help/getting-started.html'
+      }
+      // 生产环境使用同源 base 路径下的 /help 子目录
+      const basePath = import.meta.env.BASE_URL || '/'
+      return `${window.location.origin}${basePath}help/getting-started.html`
     }
   },
   async mounted() {

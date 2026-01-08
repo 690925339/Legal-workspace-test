@@ -1,21 +1,21 @@
 // ========================================
-// SCSS Main Entry Point
+// SCSS Main Entry Point (Modern Module System)
 // ========================================
 
-// 1. Variables and Configuration
-@import 'variables';
-@import 'mixins';
+// 1. Variables and Configuration (使用 @use as * 避免命名空间前缀)
+@use 'variables' as vars;
+@use 'mixins';
 
 // 2. Base Styles
-@import 'base/reset';
-@import 'base/typography';
-@import 'base/layout';
-@import 'animations';
+@use 'base/reset';
+@use 'base/typography';
+@use 'base/layout';
+@use 'animations';
 
 // 3. Component Styles
-@import 'components/buttons';
-@import 'components/forms';
-@import 'components/cards';
+@use 'components/buttons';
+@use 'components/forms';
+@use 'components/cards';
 
 // 4. Global Application Styles
 body {
@@ -61,5 +61,5 @@ body {
 }
 
 .sr-only {
-    @include sr-only;
+    @include mixins.sr-only;
 }

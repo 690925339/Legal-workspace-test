@@ -27,6 +27,7 @@ function Write-Error { param($Message) Write-Host "[ERROR] $Message" -Foreground
 
 # 配置
 $DeployDir = "dist"
+$HelpDir = "help\.vitepress\dist"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $BackupDir = "backups\deploy_$Timestamp"
 
@@ -126,6 +127,22 @@ function Build-Project {
     }
 }
 
+# 构建帮助中心
+function Build-HelpCenter {
+    Write-Info "构建帮助中心..."
+    
+    npm run help:build
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "帮助中心构建失败，但继续部署主应用"
+        return
+    }
+    
+    if (Test-Path $HelpDir) {
+        Write-Success "帮助中心构建完成"
+    }
+}
+
 # 部署后验证
 function Test-Deployment {
     Write-Info "执行部署后验证..."
@@ -157,19 +174,33 @@ function Deploy-ToServer {
     # 创建远程目录（如果不存在）
     Write-Info "确保远程目录存在..."
     ssh $sshHost "mkdir -p $remotePath"
+    ssh $sshHost "mkdir -p $remotePath/help"
     
-    # 使用 scp 上传文件
-    Write-Info "上传构建文件到服务器..."
+    # 使用 scp 上传主应用文件
+    Write-Info "上传主应用文件到服务器..."
     scp -r "$DeployDir\*" "${sshHost}:${remotePath}/"
     
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "文件上传成功！"
-        Write-Success "部署地址: http://$($ServerConfig.Host)/legal-workspace-v3/"
-    }
-    else {
-        Write-Error "文件上传失败"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "主应用文件上传失败"
         exit 1
     }
+    Write-Success "主应用文件上传成功！"
+    
+    # 上传帮助中心文件
+    if (Test-Path $HelpDir) {
+        Write-Info "上传帮助中心文件到服务器..."
+        scp -r "$HelpDir\*" "${sshHost}:${remotePath}/help/"
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "帮助中心文件上传成功！"
+        }
+        else {
+            Write-Warning "帮助中心文件上传失败，但主应用已部署"
+        }
+    }
+    
+    Write-Success "部署地址: http://$($ServerConfig.Host)/legal-workspace-v3/"
+    Write-Success "帮助中心: http://$($ServerConfig.Host)/legal-workspace-v3/help/"
 }
 
 # 清理旧备份
@@ -208,6 +239,7 @@ function Main {
     # Invoke-Tests  # 如需运行测试，取消此行注释
     New-Backup
     Build-Project
+    Build-HelpCenter
     Test-Deployment
     Deploy-ToServer
     Clear-OldBackups

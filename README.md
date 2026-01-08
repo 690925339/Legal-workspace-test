@@ -164,6 +164,9 @@ npm run dev
 http://localhost:8080
 ```
 
+> [!TIP]
+> 项目已配置 `host: true`，支持局域网内其他设备访问。启动后终端会显示 `Network: http://192.168.x.x:8080/...`，其他成员可使用该地址访问。
+
 ### 其他命令
 
 ```bash
@@ -310,27 +313,38 @@ legal-workspace-vue/
 │       ├── index.js              # Express服务器
 │       ├── package.json          # Mock服务器依赖
 │       └── README.md             # Mock服务器文档
+├── scripts/                      # 脚本工具 ⚡NEW
+│   ├── deploy.ps1                # PowerShell部署脚本(含帮助中心)
+│   ├── deploy.sh                 # Bash部署脚本
+│   ├── sync-lpr-to-supabase.js   # LPR利率同步脚本
+│   └── test-tushare.js           # Tushare接口测试
+├── supabase/                     # Supabase 配置 ⚡NEW
+│   └── functions/                # Edge Functions
 ├── docs/                         # 项目文档
-│   ├── 产品文档/                 # 产品相关文档 ⚡NEW
+│   ├── 产品文档/                 # 产品相关文档
 │   │   ├── PRD.md                # 产品需求文档
 │   │   ├── 需求确认文档.md       # 需求调研
 │   │   └── 竞品调研报告.md       # 竞品分析
-│   ├── 技术文档/                 # 技术文档 ⚡NEW
+│   ├── 技术文档/                 # 技术文档
 │   │   ├── 架构设计文档.md       # 系统架构设计
-│   │   ├── BFF集成方案.md        # BFF集成文档 ⚡
+│   │   ├── BFF集成方案.md        # BFF集成文档
 │   │   ├── 前端开发规范.md       # 开发规范
-│   │   ├── AI可行性报告实施逻辑.md # AI功能实施
-│   │   └── 架构缺陷及改进计划.md # 架构优化计划
-│   ├── 测试文档/                 # 测试文档 ⚡NEW
+│   │   ├── 要素式文书功能实施方案.md # 要素式文书 ⚡NEW
+│   │   ├── 利息计算器设计与算法逻辑.md # 利息计算器
+│   │   ├── 迟延履行利息计算器设计与算法逻辑.md # 迟延利息
+│   │   ├── RAGflow集成实现方案.md # RAGflow集成
+│   │   └── ...                   # 更多技术文档
+│   ├── 测试文档/                 # 测试文档
 │   │   └── testing-guide.md      # 测试指南
 │   └── api/                      # API对接文档
 │       ├── RAGflowAPI.md         # RAGflow API文档
 │       ├── 通义法睿-合同审查API对接文档.md
 │       ├── 通义法睿-案例检索API对接文档.md
 │       └── 通义法睿-法规检索API对接文档.md
-├── help/                         # 用户帮助中心
+├── help/                         # 用户帮助中心 (VitePress)
 │   ├── .vitepress/
-│   │   └── config.mjs            # VitePress 配置
+│   │   ├── config.mjs            # VitePress 配置 (base: /help/)
+│   │   └── dist/                 # 构建输出目录
 │   ├── index.md                  # 帮助中心首页
 │   ├── getting-started.md        # 快速入门
 │   └── features/                 # 功能指南
@@ -386,7 +400,19 @@ legal-workspace-vue/
 
 ## 🔄 版本历史
 
-### v3.15 (2026-01-07) - 性能优化 (Current) ⚡
+### v3.16 (2026-01-08) - 要素式文书规划 (Current) 📄
+
+**新功能规划与基础设施优化**:
+
+- ✅ **要素式文书功能设计**：完成买卖合同纠纷民事起诉状的详细实施方案
+- ✅ **局域网访问支持**：Vite 配置新增 `host: true`，支持团队成员通过 IP 访问开发服务器
+- ✅ **帮助中心部署集成**：
+  - VitePress 配置 `base: '/help/'`，支持部署到子目录
+  - Sidebar 帮助链接动态适配开发/生产环境
+  - 部署脚本自动构建并上传帮助中心到 `/help` 子目录
+- 📋 **技术文档**：新增 `docs/技术文档/要素式文书功能实施方案.md`
+
+### v3.15 (2026-01-07) - 性能优化 ⚡
 
 **案件编辑与列表体验优化**:
 
@@ -583,14 +609,25 @@ legal-workspace-vue/
 
 ## 🚧 开发计划
 
-### 近期计划 (v3.3)
+### 近期计划 (v3.17+)
+
+**要素式文书功能** ✨:
+
+- [ ] 文书列表入口页 (`StructuredDocList.vue`)
+- [ ] 买卖合同纠纷起诉状表单 (`SalesContractComplaint.vue`)
+- [ ] 当事人信息板块 (支持多原告/被告)
+- [ ] 诉讼请求板块 (金额、利息计算联动)
+- [ ] 事实与理由板块 (25项要素)
+- [ ] OnlyOffice 在线预览集成
+- [ ] Word 文档导出功能
+
+**其他优化**:
 
 - [ ] 用户资料扩展（profiles 表）
 - [ ] 路由守卫和权限控制
-- [ ] 忘记密码功能
 - [ ] 文件预览功能
 - [ ] 证据时间轴编辑器
-- [ ] AI 案情梳理 (AI Case Facts Generation) ✨
+- [ ] AI 案情梳理 (AI Case Facts Generation)
 
 ### 中期计划 (v4.0)
 
@@ -657,8 +694,8 @@ legal-workspace-vue/
 ---
 
 **开发团队**: Alpha&Leader Legal Tech  
-**最后更新**: 2026-01-07 10:30  
-**版本**: v3.15
+**最后更新**: 2026-01-08 16:30  
+**版本**: v3.16
 
 ---
 

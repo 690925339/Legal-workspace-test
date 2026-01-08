@@ -1,24 +1,26 @@
 // ========================================
 // Form Styles
 // ========================================
+@use '../variables' as vars;
+@use '../mixins';
 
 // Form groups
 .form-group {
-    margin-bottom: $spacing-md;
+    margin-bottom: vars.$spacing-md;
 }
 
 // Labels
 .form-label {
     display: block;
-    margin-bottom: $spacing-xs;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    color: $text-primary;
+    margin-bottom: vars.$spacing-xs;
+    font-size: vars.$font-size-sm;
+    font-weight: vars.$font-weight-medium;
+    color: vars.$text-primary;
 }
 
 // Input fields
 .form-control {
-    @include form-control;
+    @include mixins.form-control;
 }
 
 // Textarea
@@ -32,40 +34,40 @@ select.form-control {
     appearance: none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
-    background-position: right $spacing-sm center;
+    background-position: right vars.$spacing-sm center;
     background-size: 16px 12px;
-    padding-right: $spacing-xl;
+    padding-right: vars.$spacing-xl;
 }
 
 // Form validation
 .form-control.is-invalid {
-    border-color: $error-color;
+    border-color: vars.$error-color;
 
     &:focus {
-        box-shadow: 0 0 0 3px rgba($error-color, 0.1);
+        box-shadow: 0 0 0 3px rgba(vars.$error-color, 0.1);
     }
 }
 
 .form-control.is-valid {
-    border-color: $success-color;
+    border-color: vars.$success-color;
 
     &:focus {
-        box-shadow: 0 0 0 3px rgba($success-color, 0.1);
+        box-shadow: 0 0 0 3px rgba(vars.$success-color, 0.1);
     }
 }
 
 // Error message
 .form-error {
     display: block;
-    margin-top: $spacing-xs;
-    font-size: $font-size-xs;
-    color: $error-color;
+    margin-top: vars.$spacing-xs;
+    font-size: vars.$font-size-xs;
+    color: vars.$error-color;
 }
 
 // Help text
 .form-help {
     display: block;
-    margin-top: $spacing-xs;
-    font-size: $font-size-xs;
-    color: $text-secondary;
+    margin-top: vars.$spacing-xs;
+    font-size: vars.$font-size-xs;
+    color: vars.$text-secondary;
 }

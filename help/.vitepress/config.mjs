@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
     title: "安华理达AI法律助手 帮助中心",
     description: "安华理达AI法律助手 用户使用指南",
+    base: '/help/',  // 子目录部署路径
     themeConfig: {
         nav: [
             { text: '快速入门', link: '/getting-started' }

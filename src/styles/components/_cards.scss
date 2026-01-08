@@ -1,45 +1,47 @@
 // ========================================
 // Card Styles
 // ========================================
+@use '../variables' as vars;
+@use '../mixins';
 
 .card {
-    @include card;
+    @include mixins.card;
 }
 
 // Card with hover effect
 .card-hover {
-    @include card;
-    @include card-hover;
+    @include mixins.card;
+    @include mixins.card-hover;
 }
 
 // Card header
 .card-header {
-    padding: $spacing-md $spacing-lg;
-    border-bottom: 1px solid $border-color;
-    background-color: $bg-secondary;
+    padding: vars.$spacing-md vars.$spacing-lg;
+    border-bottom: 1px solid vars.$border-color;
+    background-color: vars.$bg-secondary;
 
     .card-title {
         margin: 0;
-        font-size: $font-size-lg;
-        font-weight: $font-weight-semibold;
+        font-size: vars.$font-size-lg;
+        font-weight: vars.$font-weight-semibold;
     }
 }
 
 // Card body
 .card-body {
-    padding: $spacing-lg;
+    padding: vars.$spacing-lg;
 }
 
 // Card footer
 .card-footer {
-    padding: $spacing-md $spacing-lg;
-    border-top: 1px solid $border-color;
-    background-color: $bg-secondary;
+    padding: vars.$spacing-md vars.$spacing-lg;
+    border-top: 1px solid vars.$border-color;
+    background-color: vars.$bg-secondary;
 }
 
 // Card variants
 .card-bordered {
-    border: 1px solid $border-color;
+    border: 1px solid vars.$border-color;
     box-shadow: none;
 }
 

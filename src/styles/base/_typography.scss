@@ -1,6 +1,7 @@
 // ========================================
 // Typography Styles
 // ========================================
+@use '../variables' as vars;
 
 // Headings
 h1,
@@ -9,50 +10,50 @@ h3,
 h4,
 h5,
 h6 {
-    margin: 0 0 $spacing-md 0;
-    font-weight: $font-weight-semibold;
-    line-height: $line-height-tight;
-    color: $text-primary;
+    margin: 0 0 vars.$spacing-md 0;
+    font-weight: vars.$font-weight-semibold;
+    line-height: vars.$line-height-tight;
+    color: vars.$text-primary;
 }
 
 h1 {
-    font-size: $font-size-2xl;
+    font-size: vars.$font-size-2xl;
 }
 
 h2 {
-    font-size: $font-size-xl;
+    font-size: vars.$font-size-xl;
 }
 
 h3 {
-    font-size: $font-size-lg;
+    font-size: vars.$font-size-lg;
 }
 
 h4 {
-    font-size: $font-size-base;
+    font-size: vars.$font-size-base;
 }
 
 h5,
 h6 {
-    font-size: $font-size-sm;
+    font-size: vars.$font-size-sm;
 }
 
 // Paragraphs
 p {
-    margin: 0 0 $spacing-md 0;
-    line-height: $line-height-normal;
+    margin: 0 0 vars.$spacing-md 0;
+    line-height: vars.$line-height-normal;
 }
 
 // Text utilities
 .text-primary {
-    color: $text-primary;
+    color: vars.$text-primary;
 }
 
 .text-secondary {
-    color: $text-secondary;
+    color: vars.$text-secondary;
 }
 
 .text-disabled {
-    color: $text-disabled;
+    color: vars.$text-disabled;
 }
 
 .text-center {
@@ -64,9 +65,9 @@ p {
 }
 
 .font-bold {
-    font-weight: $font-weight-bold;
+    font-weight: vars.$font-weight-bold;
 }
 
 .font-medium {
-    font-weight: $font-weight-medium;
+    font-weight: vars.$font-weight-medium;
 }

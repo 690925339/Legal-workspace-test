@@ -1,60 +1,62 @@
 // ========================================
 // Button Styles
 // ========================================
+@use '../variables' as vars;
+@use '../mixins';
 
 .btn {
-    @include button-base;
+    @include mixins.button-base;
 }
 
 // Button variants
 .btn-primary {
-    @include button-variant($primary-color);
+    @include mixins.button-variant(vars.$primary-color);
 }
 
 .btn-secondary {
-    @include button-variant($secondary-color);
+    @include mixins.button-variant(vars.$secondary-color);
 }
 
 .btn-success {
-    @include button-variant($success-color);
+    @include mixins.button-variant(vars.$success-color);
 }
 
 .btn-warning {
-    @include button-variant($warning-color);
+    @include mixins.button-variant(vars.$warning-color);
 }
 
 .btn-error {
-    @include button-variant($error-color);
+    @include mixins.button-variant(vars.$error-color);
 }
 
 // Button sizes
 .btn-sm {
-    padding: $spacing-xs $spacing-sm;
-    font-size: $font-size-xs;
+    padding: vars.$spacing-xs vars.$spacing-sm;
+    font-size: vars.$font-size-xs;
 }
 
 .btn-lg {
-    padding: $spacing-md $spacing-lg;
-    font-size: $font-size-base;
+    padding: vars.$spacing-md vars.$spacing-lg;
+    font-size: vars.$font-size-base;
 }
 
 // Button styles
 .btn-outline {
     background-color: transparent;
-    border: 1px solid $border-color;
-    color: $text-primary;
+    border: 1px solid vars.$border-color;
+    color: vars.$text-primary;
 
     &:hover:not(:disabled) {
-        background-color: $bg-hover;
+        background-color: vars.$bg-hover;
     }
 }
 
 .btn-ghost {
     background-color: transparent;
     border: none;
-    color: $primary-color;
+    color: vars.$primary-color;
 
     &:hover:not(:disabled) {
-        background-color: rgba($primary-color, 0.1);
+        background-color: rgba(vars.$primary-color, 0.1);
     }
 }

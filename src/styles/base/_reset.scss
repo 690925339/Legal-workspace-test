@@ -1,6 +1,7 @@
 // ========================================
 // CSS Reset - Modern Normalize
 // ========================================
+@use '../variables' as vars;
 
 *,
 *::before,
@@ -18,12 +19,12 @@ html {
 
 body {
     margin: 0;
-    font-family: $font-family-base;
-    font-size: $font-size-base;
-    font-weight: $font-weight-normal;
-    line-height: $line-height-normal;
-    color: $text-primary;
-    background-color: $bg-primary;
+    font-family: vars.$font-family-base;
+    font-size: vars.$font-size-base;
+    font-weight: vars.$font-weight-normal;
+    line-height: vars.$line-height-normal;
+    color: vars.$text-primary;
+    background-color: vars.$bg-primary;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

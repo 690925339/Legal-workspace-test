@@ -1,0 +1,9 @@
+cd /www/wwwroot/legal-workspace-vue
+lcd e:\工作台\odoo\legal-workspace-vue\dist
+put index.html
+put .nojekyll
+mkdir assets
+cd assets
+lcd assets
+put *
+bye
