@@ -96,8 +96,8 @@
 1. **克隆仓库**
 
 ```bash
-git clone https://github.com/690925339/Legal-workspace-test.git
-cd Legal-workspace-test
+git clone https://git.intl-alphaleader.cn:3721/ai-team/ai-legal-assistant.git
+cd ai-legal-assistant
 ```
 
 2. **安装依赖**
@@ -133,7 +133,11 @@ VITE_TUSHARE_TOKEN=
 如果您需要联调 BFF 模式又没有后端，可运行内置 Mock 服务：
 
 ```bash
-cd tools/mock-server && npm install && npm start
+# 方式1: 使用 npm 脚本 (推荐)
+npm run mock:server
+
+# 方式2: 直接进入目录运行
+cd tools/mock-server && npm install && node index.js
 ```
 
 **获取 Supabase 配置**:
@@ -170,13 +174,30 @@ http://localhost:8080
 ### 其他命令
 
 ```bash
-npm run build        # 生产构建
-npm run preview      # 预览生产构建
-npm run test         # 运行测试
-npm run lint         # 代码检查和修复
-npm run help:dev     # 启动帮助中心 (端口 5174)
-npm run help:build   # 构建帮助中心
-npm run mock:server  # 启动 BFF Mock 服务器 (端口 3000)
+# 构建与预览
+npm run build          # 生产构建
+npm run preview        # 预览生产构建
+
+# 测试
+npm run test           # 运行测试
+npm run test:ui        # 启动测试 UI 界面
+npm run test:coverage  # 运行测试并生成覆盖率报告
+
+# 代码质量
+npm run lint           # 代码检查和修复
+npm run format         # 代码格式化 (Prettier)
+
+# 帮助中心
+npm run help:dev       # 启动帮助中心 (端口 5174)
+npm run help:build     # 构建帮助中心
+npm run help:preview   # 预览帮助中心构建
+
+# Mock 服务
+npm run mock:server    # 启动 BFF Mock 服务器 (端口 3000)
+
+# 部署
+npm run deploy         # 部署到测试环境 (staging)
+npm run deploy:prod    # 部署到生产环境
 ```
 
 ### 📖 用户帮助中心 ⚡
