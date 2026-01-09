@@ -102,7 +102,7 @@
 
 <script>
 import { authService, brandService } from '@/config/supabase.js'
-import { authStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth.js'
 import ProductFeedback from '@/features/system/views/ProductFeedback.vue'
 
 export default {
@@ -115,7 +115,6 @@ export default {
       showUserMenu: false,
       isCollapsed: false,
       showFeedbackModal: false,
-      authStore,
       brand: {
         name: 'ALPHA&LEADER',
         subtitle: '安华理达',
@@ -125,23 +124,28 @@ export default {
     }
   },
   computed: {
+    authStore() {
+      return useAuthStore()
+    },
     currentPath() {
       return this.$route?.path || '/'
     },
     userName() {
-      if (authStore.state?.user?.user_metadata?.full_name) {
-        return authStore.state.user.user_metadata.full_name
+      const store = this.authStore
+      if (store.user?.user_metadata?.full_name) {
+        return store.user.user_metadata.full_name
       }
-      if (authStore.state?.user?.email) {
-        return authStore.state.user.email.split('@')[0]
+      if (store.user?.email) {
+        return store.user.email.split('@')[0]
       }
       return '用户'
     },
     userRole() {
-      return authStore.state?.title || authStore.state?.user?.user_metadata?.title || '律师'
+      const store = this.authStore
+      return store.title || store.user?.user_metadata?.title || '律师'
     },
     userAvatar() {
-      return authStore.state?.avatarUrl || null
+      return this.authStore.avatarUrl || null
     },
     helpCenterUrl() {
       // 优先使用环境变量配置的地址
@@ -218,14 +222,14 @@ export default {
           localStorage.removeItem(key)
         })
 
-        authStore.clearAuth()
+        this.authStore.clearAuth()
         console.log('Logout successful, reloading page...')
 
         // 强制页面刷新以确保所有状态被清除（使用 hash 路由格式）
         window.location.href = window.location.origin + window.location.pathname + '#/login'
       } catch (err) {
         console.error('Logout failed:', err)
-        authStore.clearAuth()
+        this.authStore.clearAuth()
         // 即使出错也强制刷新
         window.location.href = window.location.origin + window.location.pathname + '#/login'
       }

@@ -4,20 +4,10 @@
       <div class="brand-pattern" />
       <div class="brand-content">
         <div class="brand-logo">
-          <div
-            v-if="brand.logoUrl"
-            class="logo-img"
-          >
-            <img
-              :src="brand.logoUrl"
-              alt="Logo"
-              style="max-height: 48px;"
-            >
+          <div v-if="brand.logoUrl" class="logo-img">
+            <img :src="brand.logoUrl" alt="Logo" style="max-height: 48px" />
           </div>
-          <div
-            v-else
-            class="logo-box"
-          >
+          <div v-else class="logo-box">
             {{ brand.logoText }}
           </div>
           <div class="brand-text">
@@ -41,20 +31,13 @@
     <div class="form-section">
       <div class="form-container">
         <div class="form-header">
-          <div class="form-title">
-            欢迎回来
-          </div>
-          <div class="form-subtitle">
-            请输入您的账号信息以登录
-          </div>
+          <div class="form-title">欢迎回来</div>
+          <div class="form-subtitle">请输入您的账号信息以登录</div>
         </div>
 
         <form @submit.prevent="handleLogin">
           <!-- 错误提示 -->
-          <div
-            v-if="errorMessage"
-            class="error-message"
-          >
+          <div v-if="errorMessage" class="error-message">
             <i class="fas fa-exclamation-circle" /> {{ errorMessage }}
           </div>
 
@@ -62,14 +45,14 @@
             <label class="form-label">邮箱地址</label>
             <div class="input-wrapper">
               <i class="far fa-envelope input-icon" />
-              <input 
-                v-model="email" 
-                type="email" 
+              <input
+                v-model="email"
+                type="email"
                 class="form-input"
                 placeholder="name@company.com"
                 :disabled="isLoading"
                 required
-              >
+              />
             </div>
           </div>
 
@@ -77,47 +60,32 @@
             <label class="form-label">密码</label>
             <div class="input-wrapper">
               <i class="fas fa-lock input-icon" />
-              <input 
-                v-model="password" 
-                type="password" 
+              <input
+                v-model="password"
+                type="password"
                 class="form-input"
                 placeholder="请输入密码"
                 :disabled="isLoading"
                 required
-              >
+              />
             </div>
           </div>
 
           <div class="form-actions">
             <label class="remember-me">
-              <input
-                v-model="rememberMe"
-                type="checkbox"
-                :disabled="isLoading"
-              > 记住我
+              <input v-model="rememberMe" type="checkbox" :disabled="isLoading" /> 记住我
             </label>
-            <a
-              href="#"
-              class="forgot-password"
-              @click.prevent="goToForgotPassword"
-            >忘记密码？</a>
+            <a href="#" class="forgot-password" @click.prevent="goToForgotPassword">忘记密码？</a>
           </div>
 
-          <button
-            type="submit"
-            class="submit-btn"
-            :disabled="isLoading"
-          >
+          <button type="submit" class="submit-btn" :disabled="isLoading">
             <span v-if="!isLoading">登录</span>
             <span v-else><i class="fas fa-spinner fa-spin" /> 登录中...</span>
           </button>
         </form>
 
         <div class="form-footer">
-          还没有账号？ <a
-            href="#"
-            @click.prevent="goToRegister"
-          >立即注册</a>
+          还没有账号？ <a href="#" @click.prevent="goToRegister">立即注册</a>
         </div>
       </div>
     </div>
@@ -126,7 +94,7 @@
 
 <script>
 import { authService, brandService } from '@/config/supabase.js'
-import { authStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 export default {
   name: 'Login',
@@ -197,6 +165,7 @@ export default {
 
         if (data.user && data.session) {
           console.log('[Login] Login successful! Updating authStore...')
+          const authStore = useAuthStore()
           authStore.setAuth(data.session)
           console.log('[Login] authStore updated. Navigating to /...')
           this.$router.push('/')

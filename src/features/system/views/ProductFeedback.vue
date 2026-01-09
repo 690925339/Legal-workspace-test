@@ -101,7 +101,7 @@
 
 <script>
 import { getSupabaseClient } from '@/config/supabase.js'
-import { authStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 export default {
   name: 'ProductFeedback',
@@ -125,8 +125,13 @@ export default {
         attachments: []
       },
       isSubmitting: false,
-      submitSuccess: false,
-      authStore
+      submitSuccess: false
+    }
+  },
+
+  computed: {
+    authStore() {
+      return useAuthStore()
     }
   },
 
@@ -163,7 +168,7 @@ export default {
 
       try {
         const supabase = getSupabaseClient()
-        const userId = authStore.state.user?.id
+        const userId = this.authStore.user?.id
 
         if (!userId) {
           alert('请先登录')
@@ -179,10 +184,10 @@ export default {
           type: this.feedback.type,
           title: this.feedback.title.trim(),
           description: this.feedback.description.trim(),
-          user_email: this.feedback.email || authStore.state.user?.email || '',
+          user_email: this.feedback.email || this.authStore.user?.email || '',
           user_name:
-            authStore.state.user?.user_metadata?.full_name ||
-            authStore.state.user?.email?.split('@')[0] ||
+            this.authStore.user?.user_metadata?.full_name ||
+            this.authStore.user?.email?.split('@')[0] ||
             '匿名用户',
           browser_info: browserInfo,
           page_url: pageUrl,
