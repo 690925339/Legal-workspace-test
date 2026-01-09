@@ -102,7 +102,7 @@ function New-Backup {
 }
 
 # 构建项目
-function Build-Project {
+function Invoke-ProjectBuild {
     Write-Info "开始构建项目 (环境: $Env)..."
     
     if ($Env -eq "production") {
@@ -128,7 +128,7 @@ function Build-Project {
 }
 
 # 构建帮助中心
-function Build-HelpCenter {
+function Invoke-HelpCenterBuild {
     Write-Info "构建帮助中心..."
     
     npm run help:build
@@ -164,7 +164,7 @@ function Test-Deployment {
 }
 
 # 部署到服务器
-function Deploy-ToServer {
+function Publish-Deployment {
     Write-Info "准备部署到服务器..."
     Write-Info "目标服务器: $($ServerConfig.User)@$($ServerConfig.Host):$($ServerConfig.RemotePath)"
     
@@ -238,10 +238,10 @@ function Main {
     Invoke-LintCheck
     # Invoke-Tests  # 如需运行测试，取消此行注释
     New-Backup
-    Build-Project
-    Build-HelpCenter
+    Invoke-ProjectBuild
+    Invoke-HelpCenterBuild
     Test-Deployment
-    Deploy-ToServer
+    Publish-Deployment
     Clear-OldBackups
     Show-Summary
     
