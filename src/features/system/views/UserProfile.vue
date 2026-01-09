@@ -251,7 +251,7 @@
 
 <script>
 import { authService, profileService, getSupabaseClient } from '@/config/supabase.js'
-import { useAuthStore } from '@/stores/auth.js'
+import { authStore } from '@/stores/auth.js'
 
 export default {
   name: 'UserProfile',
@@ -293,12 +293,6 @@ export default {
     }
   },
 
-  computed: {
-    authStore() {
-      return useAuthStore()
-    }
-  },
-
   async mounted() {
     await this.loadProfile()
   },
@@ -312,7 +306,7 @@ export default {
 
       this.user.name = profile.full_name || ''
       this.user.title = profile.title || ''
-      this.user.email = this.authStore.user?.email || ''
+      this.user.email = authStore.state.user?.email || ''
       this.user.phone = profile.phone || ''
       this.user.department = profile.department || ''
       this.user.location = profile.location || ''
@@ -320,10 +314,10 @@ export default {
       this.user.avatar = profile.avatar_url || null
 
       if (profile.avatar_url) {
-        this.authStore.setAvatarUrl(profile.avatar_url)
+        authStore.setAvatarUrl(profile.avatar_url)
       }
       if (profile.title) {
-        this.authStore.setTitle(profile.title)
+        authStore.setTitle(profile.title)
       }
 
       this.preferences.emailNotifications = profile.email_notifications ?? true
@@ -336,7 +330,7 @@ export default {
      * 加载用户资料（缓存优先，避免闪烁）
      */
     async loadProfile() {
-      const userId = this.authStore.user?.id
+      const userId = authStore.state?.user?.id
 
       if (!userId) {
         console.error('No user logged in')
@@ -351,9 +345,9 @@ export default {
         if (error) {
           console.error('Error loading profile:', error)
           // 回退到 authStore 中的基础信息
-          this.user.email = this.authStore.user?.email || ''
-          this.user.name = this.authStore.user?.user_metadata?.full_name || ''
-          this.user.title = this.authStore.user?.user_metadata?.title || '律师'
+          this.user.email = authStore.state.user?.email || ''
+          this.user.name = authStore.state.user?.user_metadata?.full_name || ''
+          this.user.title = authStore.state.user?.user_metadata?.title || '律师'
         } else if (profile) {
           this.populateFormData(profile)
         }
@@ -374,7 +368,7 @@ export default {
       }
 
       try {
-        const userId = this.authStore.user?.id
+        const userId = authStore.state?.user?.id
 
         if (!userId) {
           alert('用户未登录')
@@ -416,15 +410,15 @@ export default {
           console.error('Error updating user metadata:', authError)
         }
 
-        if (this.authStore.user) {
-          this.authStore.user.user_metadata = {
-            ...this.authStore.user.user_metadata,
+        if (authStore.state.user) {
+          authStore.state.user.user_metadata = {
+            ...authStore.state.user.user_metadata,
             full_name: this.user.name,
             title: this.user.title
           }
         }
 
-        this.authStore.setTitle(this.user.title)
+        authStore.setTitle(this.user.title)
 
         this.saveSuccess = true
         setTimeout(() => {
@@ -489,7 +483,7 @@ export default {
 
       try {
         const supabase = getSupabaseClient()
-        const userId = this.authStore.user?.id
+        const userId = authStore.state?.user?.id
 
         if (!userId) {
           alert('用户未登录')
@@ -528,7 +522,7 @@ export default {
         }
 
         this.user.avatar = avatarUrl
-        this.authStore.setAvatarUrl(avatarUrl)
+        authStore.setAvatarUrl(avatarUrl)
 
         alert('头像上传成功')
       } catch (err) {
