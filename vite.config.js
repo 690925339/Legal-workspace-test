@@ -21,7 +21,8 @@ export default defineConfig({
   server: {
     host: true, // 允许局域网访问
     port: 8080,
-    open: true
+    open: true,
+    allowedHosts: ['ai-legal.alphatechx.com', 'localhost', '127.0.0.1']
   },
   css: {
     preprocessorOptions: {
