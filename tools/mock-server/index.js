@@ -12,7 +12,18 @@ const envConfig = dotenv.parse(fs.readFileSync(envPath))
 const app = express()
 const port = 3000
 
-app.use(cors())
+// 完整 CORS 配置 - 允许所有来源
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: false,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  })
+)
+
 app.use(express.json())
 
 const SUPABASE_URL = envConfig.VITE_SUPABASE_URL
@@ -276,8 +287,8 @@ app.delete('/api/v1/stakeholders/:id', supabaseMiddleware, async (req, res) => {
   res.status(204).send()
 })
 
-app.listen(port, () => {
-  console.log(`Mock BFF listening on port ${port}`)
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Mock BFF listening on http://0.0.0.0:${port}`)
   console.log(`Mode: Proxy (Forwarding RLS Token)`)
   console.log(`Connected to: ${SUPABASE_URL}`)
 })

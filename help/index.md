@@ -1,25 +1,17 @@
 ---
-layout: home
-
-hero:
-  name: Legal Workspace
-  text: 用户帮助中心
-  tagline: 快速上手,高效办公
-  actions:
-    - theme: brand
-      text: 快速入门
-      link: /getting-started
-    - theme: alt
-      text: 常见问题
-      link: /faq
-
-features:
-  - title: 📁 案件管理
-    details: 创建、编辑和管理您的法律案件,上传证据材料,跟踪案件进展
-  - title: 🔍 法律检索
-    details: 快速检索法律法规、司法解释和案例,获取准确的法律依据
-  - title: 📄 合同审查
-    details: 上传合同文件,AI 智能识别风险点,提供专业的修改建议
-  - title: ✍️ 文书生成
-    details: 使用模板快速生成各类法律文书,提高工作效率
+layout: page
 ---
+
+<script setup>
+import { onMounted } from 'vue'
+import { useRouter } from 'vitepress'
+
+onMounted(() => {
+  const router = useRouter()
+  router.go('/help/getting-started.html')
+})
+</script>
+
+# 正在跳转...
+
+请稍候，正在跳转到 [快速入门](/getting-started) 页面。

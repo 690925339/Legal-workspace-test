@@ -4,6 +4,14 @@ export default defineConfig({
     title: "安华理达AI法律助手 帮助中心",
     description: "安华理达AI法律助手 用户使用指南",
     base: '/help/',  // 子目录部署路径
+    head: [
+        ['link', { rel: 'icon', href: '/help/favicon.ico' }]
+    ],
+    vite: {
+        server: {
+            allowedHosts: ['ai-legal.alphatechx.com', 'localhost', '127.0.0.1', '.alphatechx.com']
+        }
+    },
     themeConfig: {
         nav: [
             { text: '快速入门', link: '/getting-started' }
@@ -38,3 +46,4 @@ export default defineConfig({
         }
     }
 })
+
