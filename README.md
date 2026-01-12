@@ -110,23 +110,58 @@ npm install
 
 复制 `.env.example` 为 `.env` 并填入配置：
 
+```bash
+cp .env.example .env
+```
+
+然后编辑 `.env` 文件：
+
 ```env
-# 基础配置 (必须)
+# ============================================
+# 应用配置
+# ============================================
+
+# Supabase 配置 (必须)
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
-# 数据模式 (BFF 代理)
-VITE_USE_BFF=false
-VITE_API_BASE_URL=http://localhost:3000/api
-
-# 扩展服务 (可选)
+# 通义法睿配置 (可选，用于合同审查/法律检索)
 VITE_FARUI_WORKSPACE_ID=
 VITE_FARUI_APP_ID=
 VITE_TUSHARE_TOKEN=
+
+# BFF代理模式 (可选)
+VITE_USE_BFF=false
+VITE_API_BASE_URL=http://localhost:3000
+
+# 帮助中心地址 (可选，留空则自动使用 /help/)
+VITE_HELP_CENTER_URL=
+
+# ============================================
+# 部署配置 (用于 deploy.ps1 脚本)
+# ============================================
+
+# 测试环境
+DEPLOY_STAGING_HOST=192.168.50.197
+DEPLOY_STAGING_USER=neo4j
+DEPLOY_STAGING_PATH=/www/wwwroot/legal-workspace-vue
+
+# 生产环境
+DEPLOY_PROD_HOST=ai-legal.alphatechx.com
+DEPLOY_PROD_USER=neo4j
+DEPLOY_PROD_PATH=/www/wwwroot/legal-workspace-vue
 ```
 
-> [!TIP]
-> 默认使用模式 1 (直连 Supabase)。切换到模式 2 (BFF 代理) 需要将 `VITE_USE_BFF` 设为 `true`。
+**获取配置值：**
+
+| 配置项           | 获取方式                                                    |
+| ---------------- | ----------------------------------------------------------- |
+| Supabase URL/Key | [Supabase Dashboard](https://supabase.com) → Settings → API |
+| 通义法睿         | 联系项目管理员获取                                          |
+| 部署服务器       | 填写目标服务器 IP 或域名                                    |
+
+> [!WARNING]
+> `.env` 文件包含敏感信息，已被 `.gitignore` 排除，请勿提交到 Git。
 
 ### 启动本地 Mock BFF 系统
 
@@ -171,33 +206,73 @@ http://localhost:8080
 > [!TIP]
 > 项目已配置 `host: true`，支持局域网内其他设备访问。启动后终端会显示 `Network: http://192.168.x.x:8080/...`，其他成员可使用该地址访问。
 
+### 🚀 环境部署
+
+| 环境     | 命令                                              | 访问地址                          |
+| -------- | ------------------------------------------------- | --------------------------------- |
+| **开发** | `npm run dev`                                     | `http://localhost:8080`           |
+| **测试** | `.\scripts\deploy.ps1 -Host <IP>`                 | `http://<IP>/legal-workspace-v3/` |
+| **生产** | `.\scripts\deploy.ps1 -Env production -Host <IP>` | `http://<IP>/legal-workspace-v3/` |
+
+#### 开发环境
+
+```bash
+npm run dev            # 启动主应用 (端口 8080)
+npm run help:dev       # 启动帮助中心 (端口 5174)
+npm run mock:server    # 启动 Mock API (端口 3000)
+```
+
+#### 测试/生产环境
+
+```powershell
+# 测试环境
+.\scripts\deploy.ps1 -Host 192.168.50.197
+
+# 生产环境
+.\scripts\deploy.ps1 -Env production -Host your-prod-server.com
+
+# 可选参数: -User <用户名>  -RemotePath <远程路径>
+```
+
+---
+
+#### 生产示例: ai-legal.alphatechx.com
+
+| 服务         | 端口 | 访问地址                                |
+| ------------ | ---- | --------------------------------------- |
+| **主应用**   | 8080 | `https://ai-legal.alphatechx.com`       |
+| **帮助中心** | 5174 | `https://ai-legal.alphatechx.com/help/` |
+| **Mock API** | 3000 | `https://ai-legal.alphatechx.com/api/`  |
+
+```powershell
+# 部署命令
+.\scripts\deploy.ps1 -Env production -Host ai-legal.alphatechx.com
+```
+
+> [!NOTE]
+> 需在服务器端配置 Nginx 反向代理，将域名请求转发到对应端口。
+
 ### 其他命令
 
 ```bash
-# 构建与预览
-npm run build          # 生产构建
-npm run preview        # 预览生产构建
+# 构建
+npm run build          # 构建生产包 (输出到 dist/)
+npm run preview        # 本地预览构建结果
 
 # 测试
-npm run test           # 运行测试
+npm run test           # 运行单元测试
 npm run test:ui        # 启动测试 UI 界面
-npm run test:coverage  # 运行测试并生成覆盖率报告
+npm run test:coverage  # 生成测试覆盖率报告
 
 # 代码质量
-npm run lint           # 代码检查和修复
-npm run format         # 代码格式化 (Prettier)
+npm run lint           # ESLint 代码检查和修复
+npm run format         # Prettier 代码格式化
 
 # 帮助中心
-npm run help:dev       # 启动帮助中心 (端口 5174)
-npm run help:build     # 构建帮助中心
-npm run help:preview   # 预览帮助中心构建
+npm run help:build     # 构建帮助中心文档
 
 # Mock 服务
-npm run mock:server    # 启动 BFF Mock 服务器 (端口 3000)
-
-# 部署
-npm run deploy         # 部署到测试环境 (staging)
-npm run deploy:prod    # 部署到生产环境
+npm run mock:server    # 启动本地 BFF Mock 服务器 (端口 3000)
 ```
 
 ### 📖 用户帮助中心 ⚡
@@ -216,8 +291,8 @@ npm run deploy:prod    # 部署到生产环境
 
 ### 🌐 在线演示
 
-- **主应用**: [https://690925339.github.io/Legal-workspace-test/](https://690925339.github.io/Legal-workspace-test/)
-- **说明**: 在线版仅供演示 UI 交互，由于缺少 Supabase 后端配置，部分数据保存功能可能受限。
+- **主应用**: [https://ai-legal.alphatechx.com](https://ai-legal.alphatechx.com)
+- **帮助中心**: [https://ai-legal.alphatechx.com/help/](https://ai-legal.alphatechx.com/help/)
 
 ## 📁 项目结构
 

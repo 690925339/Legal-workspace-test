@@ -1,21 +1,30 @@
 # ============================================
 # AI法律助手 - 部署脚本 (PowerShell)
 # ============================================
-# 用法: .\scripts\deploy.ps1 [-Env staging|production]
+# 用法: 
+#   .\scripts\deploy.ps1 -Env staging -Host 192.168.50.197 -User neo4j
+#   .\scripts\deploy.ps1 -Env production -Host your-prod-server.com
 # ============================================
 
 param(
     [ValidateSet("staging", "production")]
-    [string]$Env = "staging"
+    [string]$Env = "staging",
+    
+    [Parameter(Mandatory = $true, HelpMessage = "服务器主机地址")]
+    [string]$Host,
+    
+    [string]$User = "neo4j",
+    
+    [string]$RemotePath = "/www/wwwroot/legal-workspace-vue"
 )
 
 $ErrorActionPreference = "Stop"
 
-# ==================== 服务器配置 ====================
+# ==================== 服务器配置 (从参数读取) ====================
 $ServerConfig = @{
-    Host       = "192.168.50.197"
-    User       = "neo4j"
-    RemotePath = "/www/wwwroot/legal-workspace-vue"
+    Host       = $Host
+    User       = $User
+    RemotePath = $RemotePath
 }
 # ===================================================
 

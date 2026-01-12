@@ -16,8 +16,8 @@
     "help:build": "vitepress build help",
     "help:preview": "vitepress preview help",
     "mock:server": "cd tools/mock-server && node index.js",
-    "deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Env staging",
-    "deploy:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Env production",
+    "deploy": "echo '请直接使用 PowerShell 运行: .\\scripts\\deploy.ps1 -Env staging -Host <服务器IP>' && exit 1",
+    "deploy:prod": "echo '请直接使用 PowerShell 运行: .\\scripts\\deploy.ps1 -Env production -Host <服务器IP>' && exit 1",
     "prepare": "husky"
   },
   "dependencies": {
