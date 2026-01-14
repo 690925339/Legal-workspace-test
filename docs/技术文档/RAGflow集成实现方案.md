@@ -51,20 +51,14 @@ flowchart TB
 
 ### 1.2 全流程核心架构图
 
-该图展示了从用户上传证据、经过 AI 分类与人工确认、进入 RAGflow 解析建库、最终通过 Supabase 支持 AI 检索对话的完整生命周期。
+该图展示了从用户上传证据、直接进入 RAGflow 解析建库、最终通过 Supabase 支持 AI 检索对话的完整生命周期。
 
 ```mermaid
 flowchart TB
     subgraph UserInteraction["用户交互层"]
         START[用户上传证据]
-        CONFIRM[用户人工确认类目]
         QUERY[用户发起 AI 提问]
         ANSWER[展示 AI 回答与来源]
-    end
-
-    subgraph PreProcessing["预处理与分类"]
-        LLM_CLS[LLM 初步分类/分析]
-        CHECK{分类置信度?}
     end
 
     subgraph RAGflowCore["RAGflow 核心处理"]
@@ -84,14 +78,8 @@ flowchart TB
         LLM_GEN[LLM 生成最终回答]
     end
 
-    %% 流程连接
-    START --> LLM_CLS
-    LLM_CLS --> CHECK
-
-    CHECK -- "高置信度 (自动)" --> RF_UPLOAD
-    CHECK -- "低置信度 (需确认)" --> CONFIRM
-    CONFIRM --> RF_UPLOAD
-
+    %% 流程连接：上传后直接解析入库
+    START --> RF_UPLOAD
     RF_UPLOAD --> RF_PARSE
     RF_PARSE --> RF_EMBED
 
@@ -108,35 +96,17 @@ flowchart TB
 
 ### 1.3 关键环节实现方案
 
-#### A. 用户确认环节 (User Logic)
+#### A. 向量库同步 (Supabase Sync)
 
-**场景**：当 AI 对证据分类的置信度低于阈值（如 < 0.8），或用户希望手动修正 AI 的结果时。
+**场景**：用户上传证据后，直接进入 RAGflow 解析，完成后将数据持久化到 Supabase 以便快速检索。
 **实现方式**：
 
-1. **状态暂停**：证据状态标记为 `awaiting_confirmation`。
-2. **UI 交互**：在 `EvidenceUpload.js` 列表项中显示"待确认"徽标。
-3. **用户操作**：用户点击下拉修正分类，点击"确认"按钮。
-4. **触发流转**：
-   ```javascript
-   // 前端伪代码
-   async confirmCategory(item, correctCategory) {
-       item.category = correctCategory;
-       item.status = 'confirmed';
-       // 只有在用户确认后，才显式调用 RAGflow 上传
-       await this.vectorizeEvidence(item);
-   }
-   ```
+1. 用户上传证据后，**立即** 调用 RAGflow API 进行文档解析。
+2. RAGflow 解析任务是异步的，前端需轮询或等待 `POST /chunks` 返回。
+3. 获取 `embedding` 数组后，**必须** 携带 `evidence_id`, `case_id` 等业务元数据一同存入 `evidence_vectors` 表。
+4. 利用 Supabase 的 `rpc` 调用进行原子化批量插入，防止部分写入失败。
 
-#### B. 向量库同步 (Supabase Sync)
-
-**场景**：RAGflow 完成解析后，需要将数据持久化到 Supabase 以便快速检索。
-**实现方式**：
-
-1. RAGflow 解析任务是异步的，前端需轮询或等待 `POST /chunks` 返回。
-2. 获取 `embedding` 数组后，**必须** 携带 `evidence_id`, `case_id`, `category` 等业务元数据一同存入 `evidence_vectors` 表。
-3. 利用 Supabase 的 `rpc` 调用进行原子化批量插入，防止部分写入失败。
-
-#### C. 对话检索闭环 (Query Loop)
+#### B. 对话检索闭环 (Query Loop)
 
 **场景**：用户在"AI 小助手"中提问。
 **实现方式**：
@@ -144,46 +114,32 @@ flowchart TB
 1. **问题重写**（可选）：先用 LLM 将用户口语化问题转化为更适合检索的 Queries。
 2. **混合检索**：
    - **语义检索**：使用 embeddings 查找相似片段。
-   - **元数据过滤**：仅检索当前 `case_id` 下的向量（RLS 策略自动保证），或进一步过滤 `category`（如"只查合同"）。
+   - **元数据过滤**：仅检索当前 `case_id` 下的向量（RLS 策略自动保证）。
 3. **来源标注**：LLM 返回答案时，附带引用的 `chunk_id`，前端将其渲染为可点击的"来源 \[1\]"角标，点击高亮原文。
 
 ---
 
 ## 2. 核心功能流程
 
-### 2.1 详细序列图：分类 - 向量化流程
+### 2.1 详细序列图：上传 - 解析 - 入库流程
 
 ```mermaid
 sequenceDiagram
     participant U as 用户
     participant FE as 前端 (EvidenceUpload)
-    participant AI as AI 分析服务
     participant RAG as RAGflow 服务
     participant DB as Supabase (Vector Store)
 
     U->>FE: 上传证据文件
-    FE->>AI: 1. 请求证据分类/分析
-    AI-->>FE: 返回分类结果 & 状态
-
-    rect rgb(240, 248, 255)
-        note right of FE: 关键判定点
-        alt 分析成功 (Status == Success)
-            FE->>RAG: 2. 触发 RAGflow 上传 (uploadDocument)
-            RAG-->>FE: 返回文档 ID
-            FE->>RAG: 3. 触发解析 (parseDocuments)
-            RAG-->>FE: 解析完成
-            FE->>RAG: 4. 获取文档向量 (getChunks)
-            RAG-->>FE: 返回 Chunks & Embeddings
-            FE->>DB: 5. 存储向量数据 (storeVectors)
-            DB-->>FE: 存储成功
-            FE-->>U: 显示"已分析且已向量化"
-        else 分析失败/不确定
-            FE-->>U: 显示需人工核对
-            U->>FE: 人工确认/修改分类
-            FE->>RAG: 人工确认后触发 RAGflow 流程
-            note right of FE: (同上: 上传->解析->存储)
-        end
-    end
+    FE->>RAG: 1. 上传文档 (uploadDocument)
+    RAG-->>FE: 返回文档 ID
+    FE->>RAG: 2. 触发解析 (parseDocuments)
+    RAG-->>FE: 解析完成
+    FE->>RAG: 3. 获取文档向量 (getChunks)
+    RAG-->>FE: 返回 Chunks & Embeddings
+    FE->>DB: 4. 存储向量数据 (storeVectors)
+    DB-->>FE: 存储成功
+    FE-->>U: 显示"已解析并入库"
 ```
 
 ### 2.2 证据上传与向量化流程详情
@@ -409,36 +365,41 @@ export const RAGFLOW_CONFIG = {
 
 **新增功能**：
 
-1. 上传成功后自动调用 RAGflow 向量化
-2. 显示向量化进度状态
-3. 向量化完成后更新证据状态
+1. 上传成功后直接调用 RAGflow 解析并入库
+2. 显示解析进度状态
+3. 入库完成后更新证据状态
 
 **修改点**：
 
 ```javascript
-// 在 simulateAnalysis 成功后，添加向量化流程
-async simulateAnalysis(item) {
-  // ... 原有分析逻辑 ...
+// 文件上传后直接触发解析入库流程
+async handleFileUpload(file) {
+  const fileItem = this.createFileItem(file);
+  this.evidenceList.push(fileItem);
 
-  // 新增：调用向量化服务
-  if (item.status === 'success') {
-    await this.vectorizeEvidence(item);
-  }
+  // 直接调用向量化服务（无需分类判断）
+  await this.vectorizeEvidence(fileItem);
 },
 
 async vectorizeEvidence(fileItem) {
   try {
-    // 1. 上传到 RAGflow
-    const datasetId = await ragflowService.getDatasetByCaseId(this.caseInfo.id);
-    const docId = await ragflowService.uploadDocument(datasetId, fileItem.file);
+    fileItem.status = 'processing';
+    fileItem.statusText = '正在解析...';
 
-    // 2. 解析文档
+    // 1. 获取或创建案件数据集
+    const datasetId = await ragflowService.getOrCreateDataset(this.caseInfo.id, this.caseInfo.name);
+
+    // 2. 上传到 RAGflow
+    const docId = await ragflowService.uploadDocument(datasetId, fileItem.file);
+    fileItem.statusText = '正在生成向量...';
+
+    // 3. 解析文档
     await ragflowService.parseDocuments(datasetId, [docId]);
 
-    // 3. 获取向量
+    // 4. 获取向量
     const chunks = await ragflowService.getDocumentChunks(datasetId, docId);
 
-    // 4. 存储到 Supabase
+    // 5. 存储到 Supabase
     await evidenceVectorService.storeVectors(
       this.caseInfo.id,
       fileItem.id,
@@ -446,10 +407,14 @@ async vectorizeEvidence(fileItem) {
       chunks.map(c => c.embedding)
     );
 
-    // 5. 更新状态
+    // 6. 更新状态
+    fileItem.status = 'success';
+    fileItem.statusText = '已入库';
     fileItem.vectorized = true;
   } catch (error) {
-    console.error('向量化失败:', error);
+    console.error('解析入库失败:', error);
+    fileItem.status = 'error';
+    fileItem.statusText = '入库失败';
     fileItem.vectorizeError = error.message;
   }
 }
@@ -1095,6 +1060,6 @@ A: 取决于文件大小和硬件。本地 CPU 部署下，一份 50 页 PDF 通
 
 ---
 
-**文档版本**: v2.3  
-**更新日期**: 2025-12-25  
-**主要变更**: 新增方案评估与风险分析章节
+**文档版本**: v2.4  
+**更新日期**: 2026-01-13  
+**主要变更**: 简化流程，移除分类功能，证据上传后直接解析并入库
